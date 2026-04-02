@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>强化学习算法 - Annotated Easy-RL</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <style>
+
+html { font-size: 62.5%; }
+body {
+  font-size: 1.5em; line-height: 1.6; font-weight: 400;
+  font-family: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  margin: 0; padding: 0; color: #999; background: #1d2127;
+}
+a { color: #bbb; }
+a:visited { color: #aaa; }
+#container { background: #1d2127; position: relative; }
+#background {
+  position: absolute; top: 0; left: 40%; right: 0; bottom: 0;
+  z-index: 0; display: none; background: #282a36;
+  border-left: 1px solid #293340;
+}
+@media (min-width: 768px) { #background { display: block; } }
+
+a.parent {
+  text-transform: uppercase; font-weight: bold; font-size: 12px;
+  margin-right: 10px; text-decoration: none; color: #ffffff;
+}
+a.parent:after { content: ">"; font-size: 14px; margin-left: 4px; color: #aaa; }
+
+div.nav-bar {
+  padding: 15px 25px; position: relative; z-index: 10;
+  border-bottom: 1px solid #353745;
+}
+div.nav-bar h1 { margin: 10px 0 5px 0; font-size: 2.2rem; color: #fff; }
+div.nav-bar p { margin: 0; font-size: 1.3rem; color: #aaa; }
+
+div.section {
+  position: relative; border-top: 1px solid #353745;
+}
+div.section:after { clear: both; content: ""; display: block; }
+div.section:hover { background: #080a16; }
+div.section:hover div.code { background: #080a16; }
+
+div.section div.docs {
+  box-sizing: border-box; padding: 10px 8px 1px 8px;
+  vertical-align: top; text-align: left;
+}
+@media (min-width: 768px) {
+  div.section div.docs { float: left; width: 40%; min-height: 5px; }
+}
+@media (min-width: 1024px) {
+  div.section div.docs { padding: 10px 25px 1px 50px; }
+}
+div.section div.docs .section-link { position: relative; }
+div.section div.docs .section-link a {
+  font: 12px Arial; text-decoration: none; position: absolute;
+  top: 3px; left: -20px; padding: 1px 2px; opacity: 0;
+  -webkit-transition: opacity 0.2s linear; color: #454545;
+}
+div.section:hover div.docs .section-link a { opacity: 1; }
+div.section div.docs .katex-display { overflow-x: auto; overflow-y: hidden; }
+div.section div.docs img { max-width: 100%; }
+div.section div.docs p, div.section div.docs li {
+  color: #ccc; font-size: 1.4rem; line-height: 1.7;
+}
+div.section div.docs h1 { color: #fff; font-size: 2.4rem; margin: 20px 0 10px 0; }
+div.section div.docs h2 { color: #fff; font-size: 2.0rem; margin: 18px 0 8px 0; }
+div.section div.docs h3 { color: #fff; font-size: 1.7rem; margin: 15px 0 6px 0; }
+div.section div.docs h4 { color: #e0e0e0; font-size: 1.5rem; margin: 12px 0 5px 0; }
+div.section div.docs ul, div.section div.docs ol { padding-left: 20px; }
+div.section div.docs li { margin: 4px 0; }
+div.section div.docs code {
+  background: #282a36; color: #ccc; padding: 0.2rem 0.5rem;
+  margin: 0 0.2rem; font-size: 80%; border-radius: 4px;
+  border: 1px solid #484a56;
+}
+div.section div.docs table {
+  border-collapse: collapse; margin: 10px 0; width: 100%;
+}
+div.section div.docs th, div.section div.docs td {
+  border: 1px solid #484a56; padding: 8px 12px; text-align: left;
+}
+div.section div.docs th { background: #282a36; color: #fff; }
+
+div.section div.code {
+  padding: 14px 8px 16px 15px; vertical-align: top;
+  background: #282a36;
+}
+@media (min-width: 768px) {
+  div.section div.code { margin-left: 40%; }
+}
+div.section div.code pre {
+  font-size: 12px; white-space: pre;
+  font-family: Monaco, Consolas, "Lucida Console", monospace;
+  line-height: 18px; margin: 0; overflow-x: auto;
+}
+div.section div.code .lineno {
+  width: 30px; display: inline-block; text-align: right;
+  padding-right: 10px; opacity: 0.3; font-size: 10px;
+  white-space: pre; color: #6272a4; user-select: none;
+}
+
+div.footer {
+  margin-top: 25px; position: relative; padding: 10px 0;
+  text-align: center; background: #30353d;
+}
+div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
+
+.katex span { cursor: default; }
+.mjx-chtml { color: #ccc; }
+
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    <div class="nav-bar">
+      <h1>🍄 蘑菇书EasyRL — 理论公式与代码注释实现</h1>
+      <p>基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>，
+         采用<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>风格的侧边对照注释排版</p>
+    </div>
+    <div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#">#</a></div>
+    <h2><a href="html/tabular/index.html">表格型方法 (Tabular)</a></h2>
+    <p style="color:#888; font-size:1.2rem;">第三章</p>
+    <p>Q-Learning, Sarsa, Value Iteration</p>
+  </div>
+  <div class="code">
+    <pre style="color:#6272a4; font-size:1.3rem; padding:20px;">
+<a href="html/tabular/index.html" style="color:#8be9fd;">点击查看详情 →</a>
+    </pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#">#</a></div>
+    <h2><a href="html/pg/index.html">策略梯度 (Policy Gradient)</a></h2>
+    <p style="color:#888; font-size:1.2rem;">第四章</p>
+    <p>REINFORCE, 基线技巧, 折扣回报</p>
+  </div>
+  <div class="code">
+    <pre style="color:#6272a4; font-size:1.3rem; padding:20px;">
+<a href="html/pg/index.html" style="color:#8be9fd;">点击查看详情 →</a>
+    </pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#">#</a></div>
+    <h2><a href="html/ppo/index.html">PPO (近端策略优化)</a></h2>
+    <p style="color:#888; font-size:1.2rem;">第五章</p>
+    <p>PPO-Clip, PPO-Penalty</p>
+  </div>
+  <div class="code">
+    <pre style="color:#6272a4; font-size:1.3rem; padding:20px;">
+<a href="html/ppo/index.html" style="color:#8be9fd;">点击查看详情 →</a>
+    </pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#">#</a></div>
+    <h2><a href="html/ppo/gae.html">GAE (广义优势估计)</a></h2>
+    <p style="color:#888; font-size:1.2rem;">第五章</p>
+    <p>广义优势估计</p>
+  </div>
+  <div class="code">
+    <pre style="color:#6272a4; font-size:1.3rem; padding:20px;">
+<a href="html/ppo/gae.html" style="color:#8be9fd;">点击查看详情 →</a>
+    </pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#">#</a></div>
+    <h2><a href="html/dqn/index.html">DQN (深度Q网络)</a></h2>
+    <p style="color:#888; font-size:1.2rem;">第六章</p>
+    <p>DQN, Double DQN, Dueling DQN</p>
+  </div>
+  <div class="code">
+    <pre style="color:#6272a4; font-size:1.3rem; padding:20px;">
+<a href="html/dqn/index.html" style="color:#8be9fd;">点击查看详情 →</a>
+    </pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#">#</a></div>
+    <h2><a href="html/a2c/index.html">A2C (优势演员-评论员)</a></h2>
+    <p style="color:#888; font-size:1.2rem;">第九章</p>
+    <p>Advantage Actor-Critic</p>
+  </div>
+  <div class="code">
+    <pre style="color:#6272a4; font-size:1.3rem; padding:20px;">
+<a href="html/a2c/index.html" style="color:#8be9fd;">点击查看详情 →</a>
+    </pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#">#</a></div>
+    <h2><a href="html/ddpg/index.html">DDPG (深度确定性策略梯度)</a></h2>
+    <p style="color:#888; font-size:1.2rem;">第十二章</p>
+    <p>连续动作空间控制</p>
+  </div>
+  <div class="code">
+    <pre style="color:#6272a4; font-size:1.3rem; padding:20px;">
+<a href="html/ddpg/index.html" style="color:#8be9fd;">点击查看详情 →</a>
+    </pre>
+  </div>
+</div>
+
+    <div class="footer">
+      <p style="color:#666; font-size:1.2rem;">
+        基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
+        风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
+      </p>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false},
+          {left: '\\[', right: '\\]', display: true},
+          {left: '\\(', right: '\\)', display: false}
+        ],
+        throwOnError: false
+      });
+    });
+  </script>
+</body>
+</html>

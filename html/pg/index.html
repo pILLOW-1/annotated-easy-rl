@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>策略梯度 (Policy Gradient) - Annotated Easy-RL</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <style>
+
+html { font-size: 62.5%; }
+body {
+  font-size: 1.5em; line-height: 1.6; font-weight: 400;
+  font-family: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  margin: 0; padding: 0; color: #999; background: #1d2127;
+}
+a { color: #bbb; }
+a:visited { color: #aaa; }
+#container { background: #1d2127; position: relative; }
+#background {
+  position: absolute; top: 0; left: 40%; right: 0; bottom: 0;
+  z-index: 0; display: none; background: #282a36;
+  border-left: 1px solid #293340;
+}
+@media (min-width: 768px) { #background { display: block; } }
+
+a.parent {
+  text-transform: uppercase; font-weight: bold; font-size: 12px;
+  margin-right: 10px; text-decoration: none; color: #ffffff;
+}
+a.parent:after { content: ">"; font-size: 14px; margin-left: 4px; color: #aaa; }
+
+div.nav-bar {
+  padding: 15px 25px; position: relative; z-index: 10;
+  border-bottom: 1px solid #353745;
+}
+div.nav-bar h1 { margin: 10px 0 5px 0; font-size: 2.2rem; color: #fff; }
+div.nav-bar p { margin: 0; font-size: 1.3rem; color: #aaa; }
+
+div.section {
+  position: relative; border-top: 1px solid #353745;
+}
+div.section:after { clear: both; content: ""; display: block; }
+div.section:hover { background: #080a16; }
+div.section:hover div.code { background: #080a16; }
+
+div.section div.docs {
+  box-sizing: border-box; padding: 10px 8px 1px 8px;
+  vertical-align: top; text-align: left;
+}
+@media (min-width: 768px) {
+  div.section div.docs { float: left; width: 40%; min-height: 5px; }
+}
+@media (min-width: 1024px) {
+  div.section div.docs { padding: 10px 25px 1px 50px; }
+}
+div.section div.docs .section-link { position: relative; }
+div.section div.docs .section-link a {
+  font: 12px Arial; text-decoration: none; position: absolute;
+  top: 3px; left: -20px; padding: 1px 2px; opacity: 0;
+  -webkit-transition: opacity 0.2s linear; color: #454545;
+}
+div.section:hover div.docs .section-link a { opacity: 1; }
+div.section div.docs .katex-display { overflow-x: auto; overflow-y: hidden; }
+div.section div.docs img { max-width: 100%; }
+div.section div.docs p, div.section div.docs li {
+  color: #ccc; font-size: 1.4rem; line-height: 1.7;
+}
+div.section div.docs h1 { color: #fff; font-size: 2.4rem; margin: 20px 0 10px 0; }
+div.section div.docs h2 { color: #fff; font-size: 2.0rem; margin: 18px 0 8px 0; }
+div.section div.docs h3 { color: #fff; font-size: 1.7rem; margin: 15px 0 6px 0; }
+div.section div.docs h4 { color: #e0e0e0; font-size: 1.5rem; margin: 12px 0 5px 0; }
+div.section div.docs ul, div.section div.docs ol { padding-left: 20px; }
+div.section div.docs li { margin: 4px 0; }
+div.section div.docs code {
+  background: #282a36; color: #ccc; padding: 0.2rem 0.5rem;
+  margin: 0 0.2rem; font-size: 80%; border-radius: 4px;
+  border: 1px solid #484a56;
+}
+div.section div.docs table {
+  border-collapse: collapse; margin: 10px 0; width: 100%;
+}
+div.section div.docs th, div.section div.docs td {
+  border: 1px solid #484a56; padding: 8px 12px; text-align: left;
+}
+div.section div.docs th { background: #282a36; color: #fff; }
+
+div.section div.code {
+  padding: 14px 8px 16px 15px; vertical-align: top;
+  background: #282a36;
+}
+@media (min-width: 768px) {
+  div.section div.code { margin-left: 40%; }
+}
+div.section div.code pre {
+  font-size: 12px; white-space: pre;
+  font-family: Monaco, Consolas, "Lucida Console", monospace;
+  line-height: 18px; margin: 0; overflow-x: auto;
+}
+div.section div.code .lineno {
+  width: 30px; display: inline-block; text-align: right;
+  padding-right: 10px; opacity: 0.3; font-size: 10px;
+  white-space: pre; color: #6272a4; user-select: none;
+}
+
+div.footer {
+  margin-top: 25px; position: relative; padding: 10px 0;
+  text-align: center; background: #30353d;
+}
+div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
+
+.katex span { cursor: default; }
+.mjx-chtml { color: #ccc; }
+
+
+.highlight .c { color: #6272a4; }
+.highlight .k { color: #ff79c6; }
+.highlight .o { color: #ff4996; }
+.highlight .p { color: #a8a8a2; }
+.highlight .cm { color: #6272a4; }
+.highlight .c1 { color: #6272a4; }
+.highlight .kc { color: #ff79c6; }
+.highlight .kd { color: #8be9fd; font-style: italic; }
+.highlight .kn { color: #ff79c6; }
+.highlight .kp { color: #ff79c6; }
+.highlight .kr { color: #ff79c6; }
+.highlight .kt { color: #8be9fd; }
+.highlight .m { color: #bd93f9; }
+.highlight .s, .highlight .s2, .highlight .s1 { color: #f1fa8c; }
+.highlight .na { color: #50fa7b; }
+.highlight .nb { color: #8be9fd; font-style: italic; }
+.highlight .nc { color: #ffb86c; font-weight: bold; }
+.highlight .nd { color: #9d93ff; }
+.highlight .nf { color: #ffb86c; }
+.highlight .nl { color: #8be9fd; font-style: italic; }
+.highlight .nn { color: #f8f8f2; }
+.highlight .nt { color: #ff79c6; }
+.highlight .nv, .highlight .vc, .highlight .vg, .highlight .vi { color: #8be9fd; font-style: italic; }
+.highlight .ow { color: #ff79c6; }
+.highlight .n { color: #f8f8f2; }
+.highlight .nx { color: #f8f8f2; }
+.highlight .bp { color: #50fa7b; }
+.highlight .fm { color: #ffb86c; font-style: italic; }
+
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    <div class="nav-bar">
+  <a class="parent" href="../index.html">强化学习</a>
+  <h1>策略梯度 (Policy Gradient)</h1><p>REINFORCE算法 — 蘑菇书第四章</p></div>
+    <div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-0">#</a></div>
+    <p>---</p>
+<p>title: 策略梯度 (Policy Gradient) - REINFORCE算法</p>
+<p>summary: ></p>
+<p>基于蘑菇书EasyRL第四章的策略梯度算法的PyTorch实现，</p>
+<p>包含REINFORCE算法、基线技巧、折扣回报等核心公式的逐行注释。</p>
+<p>---</p>
+<h1>策略梯度 (Policy Gradient) - REINFORCE算法</h1>
+<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第四章的PyTorch实现。</p>
+<p>策略梯度方法直接优化策略 \(\pi_\theta(a|s)\)，通过梯度上升最大化期望累积奖励。</p>
+<h2>策略梯度定理</h2>
+<h3>轨迹概率</h3>
+<p>一条轨迹 \(\tau = (s_1, a_1, s_2, a_2, \ldots, s_T, a_T)\) 的概率为：</p>
+\[p_\theta(\tau) = p(s_1) \prod_{t=1}^{T} \pi_\theta(a_t | s_t) p(s_{t+1} | s_t, a_t)\]
+<h3>期望奖励</h3>
+\[\bar{R}_\theta = \mathbb{E}_{\tau \sim p_\theta(\tau)}[R(\tau)]\]
+<p>其中 \(R(\tau) = \sum_{t=1}^{T} r_t\) 是轨迹的总奖励。</p>
+<h3>策略梯度</h3>
+<p>对期望奖励求梯度：</p>
+\[\nabla_\theta \bar{R}_\theta = \mathbb{E}_{\tau \sim p_\theta(\tau)}\left[R(\tau) \nabla_\theta \log p_\theta(\tau)\right]\]
+<p>使用log-derivative技巧 \(\nabla f(x) = f(x) \nabla \log f(x)\)：</p>
+\[\begin{align}
+\nabla_\theta \bar{R}_\theta &= \mathbb{E}_{\tau \sim p_\theta(\tau)}\left[R(\tau) \nabla_\theta \log p_\theta(\tau)\right] \\
+&= \mathbb{E}_{\tau \sim p_\theta(\tau)}\left[R(\tau) \sum_{t=1}^{T} \nabla_\theta \log \pi_\theta(a_t | s_t)\right] \\
+&\approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} R(\tau^n) \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)
+\end{align}\]
+<h2>基线技巧 (Baseline)</h2>
+<p>策略梯度的方差很大。我们可以减去一个基线 \(b\) 来降低方差：</p>
+\[\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} (R(\tau^n) - b) \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)\]
+<p>基线 \(b\) 可以是状态价值函数 \(V(s_t)\)，此时：</p>
+\[\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} A(s_t^n, a_t^n) \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)\]
+<p>其中 \(A(s_t, a_t) = R(\tau^n) - V(s_t)\) 是优势函数。</p>
+<h2>折扣回报 (Discounted Return)</h2>
+<p>使用折扣因子 \(\gamma\) 来权衡近期和远期奖励：</p>
+\[G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma r_{t+2} + \gamma^2 r_{t+3} + \cdots\]
+<p>折扣回报满足递归关系：</p>
+\[G_t = r_{t+1} + \gamma G_{t+1}\]
+<p>REINFORCE更新规则：</p>
+\[\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)\]
+<p>参数更新：</p>
+\[\theta \leftarrow \theta + \eta \nabla_\theta \bar{R}_\theta\]
+<p>其中 \(\eta\) 是学习率。</p>
+  </div>
+  <div class="code">
+    
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-1">#</a></div>
+    
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">import</span> <span class="n">torch</span>
+<span class="lineno">2</span><span class="k">from</span> <span class="n">torch</span> <span class="k">import</span> <span class="n">nn</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-2">#</a></div>
+    <h2>策略网络</h2>
+<p>策略网络 \(\pi_\theta(a|s)\) 输出在给定状态下每个动作的概率分布。</p>
+\[\pi_\theta(a|s) = \frac{e^{f_\theta(s, a)}}{\sum_{a'} e^{f_\theta(s, a')}}\]
+<p>其中 \(f_\theta(s, a)\) 是网络的输出（logits）。</p>
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">PolicyNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="m">256</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">4</span>        <span class="nf">super</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="nf">__init__</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">5</span>        <span class="nb">self</span><span class="p">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Sequential</span><span class="p">(</span>
+<span class="lineno">6</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">7</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">8</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">9</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">10</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">11</span>        <span class="p">)</span>
+<span class="lineno">12</span>
+<span class="lineno">13</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
+<span class="lineno">14</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">15</span>        <span class="n">输出策略分布</span> $\<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span>\<span class="n">cdot</span><span class="o">|</span><span class="n">s</span><span class="p">)</span>$。
+<span class="lineno">16</span>
+<span class="lineno">17</span>        <span class="n">参数</span>：
+<span class="lineno">18</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> $<span class="n">s</span>$ — <span class="n">状态</span>
+<span class="lineno">19</span>
+<span class="lineno">20</span>        <span class="n">返回值</span>：
+<span class="lineno">21</span>        <span class="o">-</span> <span class="n">动作概率分布</span> $\<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">a</span><span class="o">|</span><span class="n">s</span><span class="p">)</span>$
+<span class="lineno">22</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">23</span>        <span class="n">logits</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">network</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="lineno">24</span>        <span class="n">action_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">25</span>        <span class="k">return</span> <span class="n">action_probs</span>
+<span class="lineno">26</span>
+<span class="lineno">27</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="lineno">28</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">29</span>        <span class="n">根据策略</span> $\<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">a</span><span class="o">|</span><span class="n">s</span><span class="p">)</span>$ <span class="n">采样动作</span>。
+<span class="lineno">30</span>
+<span class="lineno">31</span>        <span class="n">返回值</span>：
+<span class="lineno">32</span>        <span class="o">-</span> <span class="n">采样的动作</span> $<span class="n">a</span> \<span class="n">sim</span> \<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span>\<span class="n">cdot</span><span class="o">|</span><span class="n">s</span><span class="p">)</span>$
+<span class="lineno">33</span>        <span class="o">-</span> <span class="n">动作的对数概率</span> $\<span class="n">log</span> \<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">a</span><span class="o">|</span><span class="n">s</span><span class="p">)</span>$
+<span class="lineno">34</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">35</span>        <span class="n">action_probs</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">forward</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="lineno">36</span>        <span class="n">dist</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">distributions</span><span class="p">.</span><span class="nf">Categorical</span><span class="p">(</span><span class="n">action_probs</span><span class="p">)</span>
+<span class="lineno">37</span>        <span class="n">action</span> <span class="o">=</span> <span class="n">dist</span><span class="p">.</span><span class="nf">sample</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">38</span>        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">dist</span><span class="p">.</span><span class="nf">log_prob</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+<span class="lineno">39</span>        <span class="k">return</span> <span class="n">action</span><span class="p">.</span><span class="nf">item</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">log_prob</span>
+<span class="lineno">40</span>
+<span class="lineno">41</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-3">#</a></div>
+    <h2>价值网络</h2>
+<p>价值网络 \(V_\phi(s)\) 估计状态的期望累积奖励。</p>
+\[V_\phi(s) \approx \mathbb{E}_\pi\left[G_t \mid s_t = s\right]\]
+<p>用作策略梯度中的基线 \(b = V_\phi(s_t)\)。</p>
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ValueNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="m">256</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">4</span>        <span class="nf">super</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="nf">__init__</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">5</span>        <span class="nb">self</span><span class="p">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Sequential</span><span class="p">(</span>
+<span class="lineno">6</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">7</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">8</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">9</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">10</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">11</span>        <span class="p">)</span>
+<span class="lineno">12</span>
+<span class="lineno">13</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
+<span class="lineno">14</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">15</span>        <span class="n">输出状态价值</span> $<span class="nc">V_</span>\<span class="nf">phi</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>$。
+<span class="lineno">16</span>
+<span class="lineno">17</span>        <span class="n">参数</span>：
+<span class="lineno">18</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> $<span class="n">s</span>$ — <span class="n">状态</span>
+<span class="lineno">19</span>
+<span class="lineno">20</span>        <span class="n">返回值</span>：
+<span class="lineno">21</span>        <span class="o">-</span> <span class="n">状态价值</span> $<span class="nc">V_</span>\<span class="nf">phi</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>$
+<span class="lineno">22</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">23</span>        <span class="k">return</span> <span class="nb">self</span><span class="p">.</span><span class="nf">network</span><span class="p">(</span><span class="n">state</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">24</span>
+<span class="lineno">25</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-4">#</a></div>
+    <h2>计算折扣累积回报</h2>
+\[G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma G_{t+1}\]
+<p>从后往前递归计算，时间复杂度 \(O(T)\)。</p>
+<p>参数：</p>
+<ul>
+<li><code>rewards</code>: \([r_1, r_2, \ldots, r_T]\) — 轨迹的奖励序列</li>
+<li><code>gamma</code>: \(\gamma\) — 折扣因子</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><code>returns</code>: \([G_0, G_1, \ldots, G_{T-1}]\) — 每步的折扣累积回报</li>
+</ul>
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">compute_discounted_returns</span><span class="p">(</span><span class="n">rewards</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="lineno">2</span>    <span class="n">returns</span> <span class="o">=</span> <span class="p">[</span><span class="p">]</span>
+<span class="lineno">3</span>    <span class="n">discounted_sum</span> <span class="o">=</span> <span class="m">0</span>
+<span class="lineno">4</span>
+<span class="lineno">5</span>    <span class="c"># 从后往前计算 $G_t = r_{t+1} + \gamma G_{t+1}$</span>
+<span class="lineno">6</span>    <span class="k">for</span> <span class="n">reward</span> <span class="k">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">rewards</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">7</span>        <span class="n">discounted_sum</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">discounted_sum</span>
+<span class="lineno">8</span>        <span class="n">returns</span><span class="p">.</span><span class="nf">insert</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="n">discounted_sum</span><span class="p">)</span>
+<span class="lineno">9</span>
+<span class="lineno">10</span>    <span class="k">return</span> <span class="n">returns</span>
+<span class="lineno">11</span>
+<span class="lineno">12</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-5">#</a></div>
+    <h2>REINFORCE损失函数</h2>
+<p>REINFORCE更新规则：</p>
+\[\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)\]
+<p>由于优化器执行最小化，我们取负号：</p>
+\[L(\theta) = -\frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \log \pi_\theta(a_t^n | s_t^n)\]
+<p>参数：</p>
+<ul>
+<li><code>log_probs</code>: \([\log \pi_\theta(a_1|s_1), \ldots, \log \pi_\theta(a_T|s_T)]\) — 每步动作的对数概率</li>
+<li><code>returns</code>: \([G_0, G_1, \ldots, G_{T-1}]\) — 每步的折扣累积回报</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>REINFORCE损失（取负号）</li>
+</ul>
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">reinforce_loss</span><span class="p">(</span><span class="n">log_probs</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">returns</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
+<span class="lineno">2</span>    <span class="c"># $L(\theta) = -\sum_t G_t \log \pi_\theta(a_t|s_t)$</span>
+<span class="lineno">3</span>    <span class="n">loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="p">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">log_probs</span> <span class="o">*</span> <span class="n">returns</span><span class="p">)</span>
+<span class="lineno">4</span>    <span class="k">return</span> <span class="n">loss</span>
+<span class="lineno">5</span>
+<span class="lineno">6</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-6">#</a></div>
+    
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">actor_critic_loss</span><span class="p">(</span>
+<span class="lineno">2</span>    <span class="n">log_probs</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">3</span>    <span class="n">values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">4</span>    <span class="n">returns</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">5</span>    <span class="n">entropy</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span> <span class="o">=</span> <span class="nb">None</span><span class="p">,</span>
+<span class="lineno">6</span>    <span class="n">entropy_coef</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.01</span><span class="p">,</span>
+<span class="lineno">7</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="lineno">8</span>    <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">9</span>    <span class="c">## Actor-Critic损失函数</span>
+<span class="lineno">10</span>
+<span class="lineno">11</span>    <span class="nc">Actor</span><span class="o">-</span><span class="nc">Critic结合策略梯度和价值函数</span>：
+<span class="lineno">12</span>    $$\<span class="n">nabla_</span>\<span class="n">theta</span> <span class="nc">J</span> \<span class="n">approx</span> \<span class="n">mathbb</span><span class="p">{</span><span class="nc">E</span><span class="p">}</span><span class="n">_t</span>\<span class="n">left</span><span class="p">[</span><span class="nf">A</span><span class="p">(</span><span class="n">s_t</span><span class="p">,</span> <span class="n">a_t</span><span class="p">)</span> \<span class="n">nabla_</span>\<span class="n">theta</span> \<span class="n">log</span> \<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">a_t</span><span class="o">|</span><span class="n">s_t</span><span class="p">)</span>\<span class="n">right</span><span class="p">]</span>$$
+<span class="lineno">13</span>
+<span class="lineno">14</span>    <span class="n">其中优势函数</span> $<span class="nf">A</span><span class="p">(</span><span class="n">s_t</span><span class="p">,</span> <span class="n">a_t</span><span class="p">)</span> <span class="o">=</span> <span class="nc">G_t</span> <span class="o">-</span> <span class="nf">V</span><span class="p">(</span><span class="n">s_t</span><span class="p">)</span>$。
+<span class="lineno">15</span>
+<span class="lineno">16</span>    <span class="nc">Critic学习价值函数</span>：
+<span class="lineno">17</span>    $$<span class="nc">L_</span><span class="p">{</span><span class="n">critic</span><span class="p">}</span> <span class="o">=</span> \<span class="n">mathbb</span><span class="p">{</span><span class="nc">E</span><span class="p">}</span><span class="n">_t</span>\<span class="n">left</span><span class="p">[</span><span class="p">(</span><span class="nc">G_t</span> <span class="o">-</span> <span class="nf">V</span><span class="p">(</span><span class="n">s_t</span><span class="p">)</span><span class="p">)</span><span class="o">^</span><span class="m">2</span>\<span class="n">right</span><span class="p">]</span>$$
+<span class="lineno">18</span>
+<span class="lineno">19</span>    <span class="n">可选的熵正则化项鼓励探索</span>：
+<span class="lineno">20</span>    $$<span class="nc">L_</span><span class="p">{</span><span class="n">entropy</span><span class="p">}</span> <span class="o">=</span> <span class="o">-</span>\<span class="n">mathbb</span><span class="p">{</span><span class="nc">E</span><span class="p">}</span><span class="n">_t</span>\<span class="n">left</span><span class="p">[</span>\<span class="n">mathcal</span><span class="p">{</span><span class="nc">H</span><span class="p">}</span><span class="p">(</span>\<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span>\<span class="n">cdot</span><span class="o">|</span><span class="n">s_t</span><span class="p">)</span><span class="p">)</span>\<span class="n">right</span><span class="p">]</span>$$
+<span class="lineno">21</span>
+<span class="lineno">22</span>    <span class="n">总损失</span>：
+<span class="lineno">23</span>    $$<span class="nc">L</span> <span class="o">=</span> <span class="nc">L_</span><span class="p">{</span><span class="n">actor</span><span class="p">}</span> <span class="o">+</span> <span class="n">c_1</span> <span class="nc">L_</span><span class="p">{</span><span class="n">critic</span><span class="p">}</span> <span class="o">+</span> <span class="n">c_2</span> <span class="nc">L_</span><span class="p">{</span><span class="n">entropy</span><span class="p">}</span>$$
+<span class="lineno">24</span>
+<span class="lineno">25</span>    <span class="n">参数</span>：
+<span class="lineno">26</span>    <span class="o">-</span> `<span class="n">log_probs</span>`<span class="p">:</span> $\<span class="n">log</span> \<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">a_t</span><span class="o">|</span><span class="n">s_t</span><span class="p">)</span>$ — <span class="n">动作的对数概率</span>
+<span class="lineno">27</span>    <span class="o">-</span> `<span class="n">values</span>`<span class="p">:</span> $<span class="nf">V</span><span class="p">(</span><span class="n">s_t</span><span class="p">)</span>$ — <span class="n">状态价值估计</span>
+<span class="lineno">28</span>    <span class="o">-</span> `<span class="n">returns</span>`<span class="p">:</span> $<span class="nc">G_t</span>$ — <span class="n">折扣累积回报</span>
+<span class="lineno">29</span>    <span class="o">-</span> `<span class="n">entropy</span>`<span class="p">:</span> $\<span class="n">mathcal</span><span class="p">{</span><span class="nc">H</span><span class="p">}</span><span class="p">(</span>\<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span>\<span class="n">cdot</span><span class="o">|</span><span class="n">s_t</span><span class="p">)</span><span class="p">)</span>$ — <span class="n">策略熵</span>（<span class="n">可选</span>）
+<span class="lineno">30</span>    <span class="o">-</span> `<span class="n">entropy_coef</span>`<span class="p">:</span> <span class="n">熵正则化系数</span>
+<span class="lineno">31</span>
+<span class="lineno">32</span>    <span class="n">返回值</span>：
+<span class="lineno">33</span>    <span class="o">-</span> <span class="nc">Actor损失</span>
+<span class="lineno">34</span>    <span class="o">-</span> <span class="nc">Critic损失</span>
+<span class="lineno">35</span>    <span class="o">-</span> <span class="n">总损失</span>
+<span class="lineno">36</span>    <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">37</span>    <span class="c"># 优势函数：$A(s_t, a_t) = G_t - V(s_t)$</span>
+<span class="lineno">38</span>    <span class="n">advantages</span> <span class="o">=</span> <span class="n">returns</span> <span class="o">-</span> <span class="n">values</span><span class="p">.</span><span class="nf">detach</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">39</span>
+<span class="lineno">40</span>    <span class="c"># Actor损失：$-\mathbb{E}[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]$</span>
+<span class="lineno">41</span>    <span class="n">actor_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">log_probs</span> <span class="o">*</span> <span class="n">advantages</span><span class="p">)</span>
+<span class="lineno">42</span>
+<span class="lineno">43</span>    <span class="c"># Critic损失：$\mathbb{E}[(G_t - V(s_t))^2]$</span>
+<span class="lineno">44</span>    <span class="n">critic_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">(</span><span class="n">returns</span> <span class="o">-</span> <span class="n">values</span><span class="p">)</span> <span class="o">**</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno">45</span>
+<span class="lineno">46</span>    <span class="c"># 总损失</span>
+<span class="lineno">47</span>    <span class="n">total_loss</span> <span class="o">=</span> <span class="n">actor_loss</span> <span class="o">+</span> <span class="m">0.5</span> <span class="o">*</span> <span class="n">critic_loss</span>
+<span class="lineno">48</span>
+<span class="lineno">49</span>    <span class="k">if</span> <span class="n">entropy</span> <span class="k">is</span> <span class="k">not</span> <span class="nb">None</span><span class="p">:</span>
+<span class="lineno">50</span>        <span class="n">total_loss</span> <span class="o">-=</span> <span class="n">entropy_coef</span> <span class="o">*</span> <span class="n">entropy</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">51</span>
+<span class="lineno">52</span>    <span class="k">return</span> <span class="n">actor_loss</span><span class="p">,</span> <span class="n">critic_loss</span><span class="p">,</span> <span class="n">total_loss</span>
+<span class="lineno">53</span></pre>
+  </div>
+</div>
+
+    <div class="footer">
+      <a href="../index.html">← 返回强化学习算法列表</a>
+      <p style="color:#666; font-size:1.2rem; margin-top:10px;">
+        基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
+        风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
+      </p>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false},
+          {left: '\\[', right: '\\]', display: true},
+          {left: '\\(', right: '\\)', display: false}
+        ],
+        throwOnError: false
+      });
+    });
+  </script>
+</body>
+</html>

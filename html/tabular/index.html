@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>表格型方法 (Tabular Methods) - Annotated Easy-RL</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <style>
+
+html { font-size: 62.5%; }
+body {
+  font-size: 1.5em; line-height: 1.6; font-weight: 400;
+  font-family: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  margin: 0; padding: 0; color: #999; background: #1d2127;
+}
+a { color: #bbb; }
+a:visited { color: #aaa; }
+#container { background: #1d2127; position: relative; }
+#background {
+  position: absolute; top: 0; left: 40%; right: 0; bottom: 0;
+  z-index: 0; display: none; background: #282a36;
+  border-left: 1px solid #293340;
+}
+@media (min-width: 768px) { #background { display: block; } }
+
+a.parent {
+  text-transform: uppercase; font-weight: bold; font-size: 12px;
+  margin-right: 10px; text-decoration: none; color: #ffffff;
+}
+a.parent:after { content: ">"; font-size: 14px; margin-left: 4px; color: #aaa; }
+
+div.nav-bar {
+  padding: 15px 25px; position: relative; z-index: 10;
+  border-bottom: 1px solid #353745;
+}
+div.nav-bar h1 { margin: 10px 0 5px 0; font-size: 2.2rem; color: #fff; }
+div.nav-bar p { margin: 0; font-size: 1.3rem; color: #aaa; }
+
+div.section {
+  position: relative; border-top: 1px solid #353745;
+}
+div.section:after { clear: both; content: ""; display: block; }
+div.section:hover { background: #080a16; }
+div.section:hover div.code { background: #080a16; }
+
+div.section div.docs {
+  box-sizing: border-box; padding: 10px 8px 1px 8px;
+  vertical-align: top; text-align: left;
+}
+@media (min-width: 768px) {
+  div.section div.docs { float: left; width: 40%; min-height: 5px; }
+}
+@media (min-width: 1024px) {
+  div.section div.docs { padding: 10px 25px 1px 50px; }
+}
+div.section div.docs .section-link { position: relative; }
+div.section div.docs .section-link a {
+  font: 12px Arial; text-decoration: none; position: absolute;
+  top: 3px; left: -20px; padding: 1px 2px; opacity: 0;
+  -webkit-transition: opacity 0.2s linear; color: #454545;
+}
+div.section:hover div.docs .section-link a { opacity: 1; }
+div.section div.docs .katex-display { overflow-x: auto; overflow-y: hidden; }
+div.section div.docs img { max-width: 100%; }
+div.section div.docs p, div.section div.docs li {
+  color: #ccc; font-size: 1.4rem; line-height: 1.7;
+}
+div.section div.docs h1 { color: #fff; font-size: 2.4rem; margin: 20px 0 10px 0; }
+div.section div.docs h2 { color: #fff; font-size: 2.0rem; margin: 18px 0 8px 0; }
+div.section div.docs h3 { color: #fff; font-size: 1.7rem; margin: 15px 0 6px 0; }
+div.section div.docs h4 { color: #e0e0e0; font-size: 1.5rem; margin: 12px 0 5px 0; }
+div.section div.docs ul, div.section div.docs ol { padding-left: 20px; }
+div.section div.docs li { margin: 4px 0; }
+div.section div.docs code {
+  background: #282a36; color: #ccc; padding: 0.2rem 0.5rem;
+  margin: 0 0.2rem; font-size: 80%; border-radius: 4px;
+  border: 1px solid #484a56;
+}
+div.section div.docs table {
+  border-collapse: collapse; margin: 10px 0; width: 100%;
+}
+div.section div.docs th, div.section div.docs td {
+  border: 1px solid #484a56; padding: 8px 12px; text-align: left;
+}
+div.section div.docs th { background: #282a36; color: #fff; }
+
+div.section div.code {
+  padding: 14px 8px 16px 15px; vertical-align: top;
+  background: #282a36;
+}
+@media (min-width: 768px) {
+  div.section div.code { margin-left: 40%; }
+}
+div.section div.code pre {
+  font-size: 12px; white-space: pre;
+  font-family: Monaco, Consolas, "Lucida Console", monospace;
+  line-height: 18px; margin: 0; overflow-x: auto;
+}
+div.section div.code .lineno {
+  width: 30px; display: inline-block; text-align: right;
+  padding-right: 10px; opacity: 0.3; font-size: 10px;
+  white-space: pre; color: #6272a4; user-select: none;
+}
+
+div.footer {
+  margin-top: 25px; position: relative; padding: 10px 0;
+  text-align: center; background: #30353d;
+}
+div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
+
+.katex span { cursor: default; }
+.mjx-chtml { color: #ccc; }
+
+
+.highlight .c { color: #6272a4; }
+.highlight .k { color: #ff79c6; }
+.highlight .o { color: #ff4996; }
+.highlight .p { color: #a8a8a2; }
+.highlight .cm { color: #6272a4; }
+.highlight .c1 { color: #6272a4; }
+.highlight .kc { color: #ff79c6; }
+.highlight .kd { color: #8be9fd; font-style: italic; }
+.highlight .kn { color: #ff79c6; }
+.highlight .kp { color: #ff79c6; }
+.highlight .kr { color: #ff79c6; }
+.highlight .kt { color: #8be9fd; }
+.highlight .m { color: #bd93f9; }
+.highlight .s, .highlight .s2, .highlight .s1 { color: #f1fa8c; }
+.highlight .na { color: #50fa7b; }
+.highlight .nb { color: #8be9fd; font-style: italic; }
+.highlight .nc { color: #ffb86c; font-weight: bold; }
+.highlight .nd { color: #9d93ff; }
+.highlight .nf { color: #ffb86c; }
+.highlight .nl { color: #8be9fd; font-style: italic; }
+.highlight .nn { color: #f8f8f2; }
+.highlight .nt { color: #ff79c6; }
+.highlight .nv, .highlight .vc, .highlight .vg, .highlight .vi { color: #8be9fd; font-style: italic; }
+.highlight .ow { color: #ff79c6; }
+.highlight .n { color: #f8f8f2; }
+.highlight .nx { color: #f8f8f2; }
+.highlight .bp { color: #50fa7b; }
+.highlight .fm { color: #ffb86c; font-style: italic; }
+
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    <div class="nav-bar">
+  <a class="parent" href="../index.html">强化学习</a>
+  <h1>表格型方法 (Tabular Methods)</h1><p>Q-Learning & Sarsa — 蘑菇书第三章</p></div>
+    <div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-0">#</a></div>
+    <p>---</p>
+<p>title: 表格型方法 (Tabular Methods) - Q-Learning & Sarsa</p>
+<p>summary: ></p>
+<p>基于蘑菇书EasyRL第三章的表格型强化学习方法的Python实现，</p>
+<p>包含Q-Learning、Sarsa、Value Iteration等核心算法的逐行注释。</p>
+<p>---</p>
+<h1>表格型方法 (Tabular Methods) - Q-Learning & Sarsa</h1>
+<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第三章的Python实现。</p>
+<p>表格型方法使用表格来存储状态-动作价值函数 \(Q(s, a)\) 或状态价值函数 \(V(s)\)。</p>
+<p>适用于状态空间和动作空间都是离散且较小的场景。</p>
+<h2>贝尔曼方程</h2>
+<h3>状态价值函数</h3>
+\[V^\pi(s) = \mathbb{E}_\pi\left[G_t \mid s_t = s\right] = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s\right]\]
+<p>贝尔曼期望方程：</p>
+\[V^\pi(s) = \sum_a \pi(a|s) \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^\pi(s')\right]\]
+<h3>动作价值函数</h3>
+\[Q^\pi(s, a) = \mathbb{E}_\pi\left[G_t \mid s_t = s, a_t = a\right] = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s, a_t = a\right]\]
+<p>贝尔曼最优方程：</p>
+\[Q^*(s, a) = \sum_{s', r} p(s', r|s, a) \left[r + \gamma \max_{a'} Q^*(s', a')\right]\]
+<h2>Q-Learning (异策略)</h2>
+<p>Q-Learning是异策略(off-policy)的时序差分(TD)控制算法。</p>
+<h3>Q值更新规则</h3>
+\[Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t)\right]\]
+<p>其中：</p>
+<ul>
+<li>\(\alpha\) 是学习率</li>
+<li>\(\gamma\) 是折扣因子</li>
+<li>\(r_{t+1} + \gamma \max_a Q(s_{t+1}, a)\) 是TD目标</li>
+<li>\(r_{t+1} + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t)\) 是TD误差</li>
+</ul>
+<p>Q-Learning使用 \(\max_a Q(s_{t+1}, a)\) 来估计下一状态的价值，</p>
+<p>这对应于贪婪策略 \(\pi(s) = \arg\max_a Q(s, a)\)，</p>
+<p>但行为策略可以是 \(\varepsilon\)-贪心策略，因此是异策略的。</p>
+<h2>Sarsa (同策略)</h2>
+<p>Sarsa是同策略(on-policy)的时序差分(TD)控制算法。</p>
+<h3>Q值更新规则</h3>
+\[Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t)\right]\]
+<p>Sarsa使用实际采取的下一个动作 \(a_{t+1}\) 的Q值来更新，</p>
+<p>因此学习的就是行为策略本身的价值，是同策略的。</p>
+<h2>Q-Learning vs Sarsa</h2>
+<table>
+<thead><tr>
+<th>特性</th>
+<th>Q-Learning</th>
+<th>Sarsa</th>
+</tr></thead><tbody>
+<tr>
+<td>------</td>
+<td>-----------</td>
+<td>-------</td>
+</tr>
+<tr>
+<td>策略类型</td>
+<td>异策略(off-policy)</td>
+<td>同策略(on-policy)</td>
+</tr>
+<tr>
+<td>TD目标</td>
+<td>$r + \gamma \max_a Q(s', a)$</td>
+<td>$r + \gamma Q(s', a')$</td>
+</tr>
+<tr>
+<td>行为策略</td>
+<td>$\varepsilon$-贪心</td>
+<td>$\varepsilon$-贪心</td>
+</tr>
+<tr>
+<td>目标策略</td>
+<td>贪婪</td>
+<td>$\varepsilon$-贪心</td>
+</tr>
+<tr>
+<td>收敛性</td>
+<td>收敛到最优Q值</td>
+<td>收敛到行为策略的Q值</td>
+</tr>
+</tbody></table>
+<h2>价值迭代 (Value Iteration)</h2>
+<p>价值迭代是一种动态规划算法，用于求解已知环境模型的MDP。</p>
+<h3>更新规则</h3>
+\[V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]\]
+<p>价值迭代直接更新状态价值函数，直到收敛。</p>
+<p>收敛后，最优策略可以通过贪婪选择得到：</p>
+\[\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]\]
+<h2>\(\varepsilon\)-贪心策略</h2>
+\[\pi(a|s) = \begin{cases}
+1 - \varepsilon + \frac{\varepsilon}{|\mathcal{A}|} & \text{if } a = \arg\max_{a'} Q(s, a') \\
+\frac{\varepsilon}{|\mathcal{A}|} & \text{otherwise}
+\end{cases}$$
+
+或者简化为：
+$$a = \begin{cases}
+\arg\max_a Q(s, a) & \text{概率 } 1-\varepsilon \\
+\text{随机动作} & \text{概率 } \varepsilon
+\end{cases}$$\]
+  </div>
+  <div class="code">
+    
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-1">#</a></div>
+    
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="lineno">2</span><span class="k">from</span> <span class="n">collections</span> <span class="k">import</span> <span class="n">defaultdict</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-2">#</a></div>
+    <h2>Q-Learning智能体</h2>
+<p>Q-Learning更新规则：</p>
+\[Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') - Q(s, a)\right]\]
+<p>其中：</p>
+<ul>
+<li>\(\alpha\)：学习率</li>
+<li>\(\gamma\)：折扣因子</li>
+<li>\(r + \gamma \max_{a'} Q(s', a')\)：TD目标</li>
+<li>\(r + \gamma \max_{a'} Q(s', a') - Q(s, a)\)：TD误差 \(\delta\)</li>
+</ul>
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">QLearningAgent</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<span class="lineno">4</span>        <span class="nb">self</span><span class="p">,</span>
+<span class="lineno">5</span>        <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="lineno">6</span>        <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="lineno">7</span>        <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span>
+<span class="lineno">8</span>        <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.99</span><span class="p">,</span>
+<span class="lineno">9</span>        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span>
+<span class="lineno">10</span>    <span class="p">)</span><span class="p">:</span>
+<span class="lineno">11</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span> <span class="o">=</span> <span class="n">state_dim</span>
+<span class="lineno">12</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span> <span class="o">=</span> <span class="n">action_dim</span>
+<span class="lineno">13</span>        <span class="nb">self</span><span class="p">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">learning_rate</span>  <span class="c"># $\alpha$</span>
+<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>  <span class="c"># $\gamma$</span>
+<span class="lineno">15</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>  <span class="c"># $\varepsilon$</span>
+<span class="lineno">16</span>        <span class="c"># Q表：$Q(s, a)$</span>
+<span class="lineno">17</span>        <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="lineno">18</span>
+<span class="lineno">19</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="lineno">20</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">21</span>        <span class="n">使用</span>$\<span class="n">varepsilon</span>$<span class="o">-</span><span class="n">贪心策略选择动作</span>。
+<span class="lineno">22</span>
+<span class="lineno">23</span>        $$<span class="n">a</span> <span class="o">=</span> \<span class="n">begin</span><span class="p">{</span><span class="n">cases</span><span class="p">}</span>
+<span class="lineno">24</span>        \<span class="n">arg</span>\<span class="n">max_a</span> <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="o">&</span><span class="n">amp</span><span class="p">;</span> \<span class="n">text</span><span class="p">{</span><span class="n">概率</span> <span class="p">}</span> <span class="m">1</span><span class="o">-</span>\<span class="n">varepsilon</span> \\
+<span class="lineno">25</span>        \<span class="n">text</span><span class="p">{</span><span class="n">随机动作</span><span class="p">}</span> <span class="o">&</span><span class="n">amp</span><span class="p">;</span> \<span class="n">text</span><span class="p">{</span><span class="n">概率</span> <span class="p">}</span> \<span class="n">varepsilon</span>
+<span class="lineno">26</span>        \<span class="n">end</span><span class="p">{</span><span class="n">cases</span><span class="p">}</span>$$
+<span class="lineno">27</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">28</span>        <span class="k">if</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">random</span><span class="p">(</span><span class="p">)</span> <span class="o">&</span><span class="n">lt</span><span class="p">;</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">:</span>
+<span class="lineno">29</span>            <span class="c"># 探索：随机动作</span>
+<span class="lineno">30</span>            <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span>
+<span class="lineno">31</span>        <span class="k">else</span><span class="p">:</span>
+<span class="lineno">32</span>            <span class="c"># 利用：贪婪动作</span>
+<span class="lineno">33</span>            <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">]</span><span class="p">)</span>
+<span class="lineno">34</span>
+<span class="lineno">35</span>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span>
+<span class="lineno">36</span>        <span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">done</span><span class="p">:</span> <span class="n">bool</span>
+<span class="lineno">37</span>    <span class="p">)</span><span class="p">:</span>
+<span class="lineno">38</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">39</span>        <span class="n">更新Q值</span>。
+<span class="lineno">40</span>
+<span class="lineno">41</span>        $$<span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> \<span class="n">leftarrow</span> <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="o">+</span> \<span class="n">alpha</span> \<span class="n">left</span><span class="p">[</span><span class="n">r</span> <span class="o">+</span> \<span class="n">gamma</span> \<span class="n">max_</span><span class="p">{</span><span class="n">a</span><span class="o">&</span><span class="c">#x27;} Q(s&#x27;, a&#x27;) \times (1 - \text{done}) - Q(s, a)\right]$$</span>
+<span class="lineno">42</span>
+<span class="lineno">43</span>        <span class="n">参数</span>：
+<span class="lineno">44</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> $<span class="n">s_t</span>$ — <span class="n">当前状态</span>
+<span class="lineno">45</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> $<span class="n">a_t</span>$ — <span class="n">当前动作</span>
+<span class="lineno">46</span>        <span class="o">-</span> `<span class="n">reward</span>`<span class="p">:</span> $<span class="n">r_</span><span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="m">1</span><span class="p">}</span>$ — <span class="n">奖励</span>
+<span class="lineno">47</span>        <span class="o">-</span> `<span class="n">next_state</span>`<span class="p">:</span> $<span class="n">s_</span><span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="m">1</span><span class="p">}</span>$ — <span class="n">下一状态</span>
+<span class="lineno">48</span>        <span class="o">-</span> `<span class="n">done</span>`<span class="p">:</span> <span class="n">是否episode结束</span>
+<span class="lineno">49</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">50</span>        <span class="c"># TD目标：$r + \gamma \max_{a&#x27;} Q(s&#x27;, a&#x27;) \times (1 - \text{done})$</span>
+<span class="lineno">51</span>        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+<span class="lineno">52</span>            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span>
+<span class="lineno">53</span>        <span class="k">else</span><span class="p">:</span>
+<span class="lineno">54</span>            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nb">max</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span><span class="p">)</span>
+<span class="lineno">55</span>
+<span class="lineno">56</span>        <span class="c"># TD误差：$\delta = \text{TD目标} - Q(s, a)$</span>
+<span class="lineno">57</span>        <span class="n">td_error</span> <span class="o">=</span> <span class="n">td_target</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span>
+<span class="lineno">58</span>
+<span class="lineno">59</span>        <span class="c"># 更新Q值：$Q(s, a) \leftarrow Q(s, a) + \alpha \delta$</span>
+<span class="lineno">60</span>        <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">self</span><span class="p">.</span><span class="n">lr</span> <span class="o">*</span> <span class="n">td_error</span>
+<span class="lineno">61</span>
+<span class="lineno">62</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-3">#</a></div>
+    <h2>Sarsa智能体</h2>
+<p>Sarsa更新规则：</p>
+\[Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') - Q(s, a)\right]\]
+<p>与Q-Learning不同，Sarsa使用实际采取的下一个动作 \(a'\) 的Q值，</p>
+<p>因此是同策略(on-policy)算法。</p>
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">SarsaAgent</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<span class="lineno">4</span>        <span class="nb">self</span><span class="p">,</span>
+<span class="lineno">5</span>        <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="lineno">6</span>        <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="lineno">7</span>        <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span>
+<span class="lineno">8</span>        <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.99</span><span class="p">,</span>
+<span class="lineno">9</span>        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span>
+<span class="lineno">10</span>    <span class="p">)</span><span class="p">:</span>
+<span class="lineno">11</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span> <span class="o">=</span> <span class="n">state_dim</span>
+<span class="lineno">12</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span> <span class="o">=</span> <span class="n">action_dim</span>
+<span class="lineno">13</span>        <span class="nb">self</span><span class="p">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">learning_rate</span>
+<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
+<span class="lineno">15</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
+<span class="lineno">16</span>        <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="lineno">17</span>
+<span class="lineno">18</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="lineno">19</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>$\<span class="n">varepsilon</span>$<span class="o">-</span><span class="n">贪心策略选择动作</span>。<span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">20</span>        <span class="k">if</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">random</span><span class="p">(</span><span class="p">)</span> <span class="o">&</span><span class="n">lt</span><span class="p">;</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">:</span>
+<span class="lineno">21</span>            <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span>
+<span class="lineno">22</span>        <span class="k">else</span><span class="p">:</span>
+<span class="lineno">23</span>            <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">]</span><span class="p">)</span>
+<span class="lineno">24</span>
+<span class="lineno">25</span>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span>
+<span class="lineno">26</span>        <span class="nb">self</span><span class="p">,</span>
+<span class="lineno">27</span>        <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="lineno">28</span>        <span class="n">action</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="lineno">29</span>        <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="lineno">30</span>        <span class="n">next_state</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="lineno">31</span>        <span class="n">next_action</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="lineno">32</span>        <span class="n">done</span><span class="p">:</span> <span class="n">bool</span><span class="p">,</span>
+<span class="lineno">33</span>    <span class="p">)</span><span class="p">:</span>
+<span class="lineno">34</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">35</span>        <span class="n">更新Q值</span>。
+<span class="lineno">36</span>
+<span class="lineno">37</span>        $$<span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> \<span class="n">leftarrow</span> <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="o">+</span> \<span class="n">alpha</span> \<span class="n">left</span><span class="p">[</span><span class="n">r</span> <span class="o">+</span> \<span class="n">gamma</span> <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="o">&</span><span class="c">#x27;, a&#x27;) \times (1 - \text{done}) - Q(s, a)\right]$$</span>
+<span class="lineno">38</span>
+<span class="lineno">39</span>        <span class="n">注意</span>：<span class="nc">Sarsa需要下一个动作</span> $<span class="n">a</span><span class="o">&</span><span class="c">#x27;$ 来更新，这是同策略的关键。</span>
+<span class="lineno">40</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">41</span>        <span class="c"># TD目标：$r + \gamma Q(s&#x27;, a&#x27;) \times (1 - \text{done})$</span>
+<span class="lineno">42</span>        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+<span class="lineno">43</span>            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span>
+<span class="lineno">44</span>        <span class="k">else</span><span class="p">:</span>
+<span class="lineno">45</span>            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">next_state</span><span class="p">,</span> <span class="n">next_action</span><span class="p">]</span>
+<span class="lineno">46</span>
+<span class="lineno">47</span>        <span class="c"># TD误差</span>
+<span class="lineno">48</span>        <span class="n">td_error</span> <span class="o">=</span> <span class="n">td_target</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span>
+<span class="lineno">49</span>
+<span class="lineno">50</span>        <span class="c"># 更新Q值</span>
+<span class="lineno">51</span>        <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">self</span><span class="p">.</span><span class="n">lr</span> <span class="o">*</span> <span class="n">td_error</span>
+<span class="lineno">52</span>
+<span class="lineno">53</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-4">#</a></div>
+    <h2>价值迭代智能体</h2>
+<p>价值迭代是一种动态规划算法，适用于已知环境模型的场景。</p>
+<p>更新规则：</p>
+\[V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]\]
+<p>收敛后，最优策略：</p>
+\[\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]\]
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">ValueIterationAgent</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.99</span><span class="p">,</span> <span class="n">theta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">1e</span><span class="o">-</span><span class="m">6</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">4</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span> <span class="o">=</span> <span class="n">state_dim</span>
+<span class="lineno">5</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span> <span class="o">=</span> <span class="n">action_dim</span>
+<span class="lineno">6</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
+<span class="lineno">7</span>        <span class="nb">self</span><span class="p">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span>  <span class="c"># 收敛阈值</span>
+<span class="lineno">8</span>        <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="lineno">9</span>        <span class="nb">self</span><span class="p">.</span><span class="n">policy</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">int32</span><span class="p">)</span>
+<span class="lineno">10</span>        <span class="c"># 环境模型：P[s][a] = [(prob, next_state, reward, done), ...]</span>
+<span class="lineno">11</span>        <span class="nb">self</span><span class="p">.</span><span class="nc">P</span> <span class="o">=</span> <span class="nb">None</span>
+<span class="lineno">12</span>
+<span class="lineno">13</span>    <span class="k">def</span> <span class="nf">set_model</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="nc">P</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">14</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">15</span>        <span class="n">设置环境模型</span>。
+<span class="lineno">16</span>
+<span class="lineno">17</span>        <span class="n">参数</span>：
+<span class="lineno">18</span>        <span class="o">-</span> `<span class="nc">P</span>`<span class="p">:</span> <span class="n">状态转移模型</span>
+<span class="lineno">19</span>          <span class="nc">P</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">)</span><span class="p">,</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">]</span>
+<span class="lineno">20</span>          <span class="n">其中prob是转移到next_state的概率</span>
+<span class="lineno">21</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">22</span>        <span class="nb">self</span><span class="p">.</span><span class="nc">P</span> <span class="o">=</span> <span class="nc">P</span>
+<span class="lineno">23</span>
+<span class="lineno">24</span>    <span class="k">def</span> <span class="nf">iterate</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">25</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">26</span>        <span class="n">执行一次价值迭代</span>。
+<span class="lineno">27</span>
+<span class="lineno">28</span>        $$<span class="nc">V_</span><span class="p">{</span><span class="n">k</span><span class="o">+</span><span class="m">1</span><span class="p">}</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">=</span> \<span class="n">max_a</span> \<span class="n">sum_</span><span class="p">{</span><span class="n">s</span><span class="o">&</span><span class="c">#x27;, r} p(s&#x27;, r|s, a) \left[r + \gamma V_k(s&#x27;)\right]$$</span>
+<span class="lineno">29</span>
+<span class="lineno">30</span>        <span class="n">返回值</span>：
+<span class="lineno">31</span>        <span class="o">-</span> <span class="n">价值函数的最大变化量</span>
+<span class="lineno">32</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">33</span>        <span class="n">delta</span> <span class="o">=</span> <span class="m">0</span>
+<span class="lineno">34</span>        <span class="k">for</span> <span class="n">s</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">35</span>            <span class="n">v</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+<span class="lineno">36</span>            <span class="c"># 计算每个动作的期望价值</span>
+<span class="lineno">37</span>            <span class="n">action_values</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span>
+<span class="lineno">38</span>            <span class="k">for</span> <span class="n">a</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">39</span>                <span class="k">for</span> <span class="n">prob</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span> <span class="k">in</span> <span class="nb">self</span><span class="p">.</span><span class="nc">P</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="p">:</span>
+<span class="lineno">40</span>                    <span class="c"># 期望价值：$\sum_{s&#x27;, r} p(s&#x27;, r|s, a) [r + \gamma V(s&#x27;)]$</span>
+<span class="lineno">41</span>                    <span class="n">action_values</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">+=</span> <span class="n">prob</span> <span class="o">*</span> <span class="p">(</span><span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">done</span><span class="p">)</span><span class="p">)</span>
+<span class="lineno">42</span>
+<span class="lineno">43</span>            <span class="c"># 选择最大价值：$V_{k+1}(s) = \max_a Q(s, a)$</span>
+<span class="lineno">44</span>            <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nb">max</span><span class="p">(</span><span class="n">action_values</span><span class="p">)</span>
+<span class="lineno">45</span>            <span class="n">delta</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="p">)</span><span class="p">)</span>
+<span class="lineno">46</span>
+<span class="lineno">47</span>        <span class="k">return</span> <span class="n">delta</span>
+<span class="lineno">48</span>
+<span class="lineno">49</span>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="m">1000</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">50</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">51</span>        <span class="n">求解最优价值函数和策略</span>。
+<span class="lineno">52</span>
+<span class="lineno">53</span>        <span class="n">迭代直到价值函数收敛</span>（<span class="n">变化小于theta</span>）<span class="n">或达到最大迭代次数</span>。
+<span class="lineno">54</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">55</span>        <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iterations</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">56</span>            <span class="n">delta</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">iterate</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">57</span>            <span class="k">if</span> <span class="n">delta</span> <span class="o">&</span><span class="n">lt</span><span class="p">;</span> <span class="nb">self</span><span class="p">.</span><span class="n">theta</span><span class="p">:</span>
+<span class="lineno">58</span>                <span class="k">break</span>
+<span class="lineno">59</span>
+<span class="lineno">60</span>        <span class="c"># 提取最优策略</span>
+<span class="lineno">61</span>        <span class="nb">self</span><span class="p">.</span><span class="nf">extract_policy</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">62</span>
+<span class="lineno">63</span>    <span class="k">def</span> <span class="nf">extract_policy</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">64</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">65</span>        <span class="n">从最优价值函数提取最优策略</span>。
+<span class="lineno">66</span>
+<span class="lineno">67</span>        $$\<span class="n">pi</span><span class="o">^*</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">=</span> \<span class="n">arg</span>\<span class="n">max_a</span> \<span class="n">sum_</span><span class="p">{</span><span class="n">s</span><span class="o">&</span><span class="c">#x27;, r} p(s&#x27;, r|s, a) \left[r + \gamma V^*(s&#x27;)\right]$$</span>
+<span class="lineno">68</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">69</span>        <span class="k">for</span> <span class="n">s</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">70</span>            <span class="n">action_values</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span>
+<span class="lineno">71</span>            <span class="k">for</span> <span class="n">a</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">72</span>                <span class="k">for</span> <span class="n">prob</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span> <span class="k">in</span> <span class="nb">self</span><span class="p">.</span><span class="nc">P</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="p">:</span>
+<span class="lineno">73</span>                    <span class="n">action_values</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">+=</span> <span class="n">prob</span> <span class="o">*</span> <span class="p">(</span><span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">done</span><span class="p">)</span><span class="p">)</span>
+<span class="lineno">74</span>            <span class="nb">self</span><span class="p">.</span><span class="n">policy</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">action_values</span><span class="p">)</span>
+<span class="lineno">75</span></pre>
+  </div>
+</div>
+
+    <div class="footer">
+      <a href="../index.html">← 返回强化学习算法列表</a>
+      <p style="color:#666; font-size:1.2rem; margin-top:10px;">
+        基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
+        风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
+      </p>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false},
+          {left: '\\[', right: '\\]', display: true},
+          {left: '\\(', right: '\\)', display: false}
+        ],
+        throwOnError: false
+      });
+    });
+  </script>
+</body>
+</html>

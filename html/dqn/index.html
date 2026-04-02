@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度Q网络 (DQN) - Annotated Easy-RL</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <style>
+
+html { font-size: 62.5%; }
+body {
+  font-size: 1.5em; line-height: 1.6; font-weight: 400;
+  font-family: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  margin: 0; padding: 0; color: #999; background: #1d2127;
+}
+a { color: #bbb; }
+a:visited { color: #aaa; }
+#container { background: #1d2127; position: relative; }
+#background {
+  position: absolute; top: 0; left: 40%; right: 0; bottom: 0;
+  z-index: 0; display: none; background: #282a36;
+  border-left: 1px solid #293340;
+}
+@media (min-width: 768px) { #background { display: block; } }
+
+a.parent {
+  text-transform: uppercase; font-weight: bold; font-size: 12px;
+  margin-right: 10px; text-decoration: none; color: #ffffff;
+}
+a.parent:after { content: ">"; font-size: 14px; margin-left: 4px; color: #aaa; }
+
+div.nav-bar {
+  padding: 15px 25px; position: relative; z-index: 10;
+  border-bottom: 1px solid #353745;
+}
+div.nav-bar h1 { margin: 10px 0 5px 0; font-size: 2.2rem; color: #fff; }
+div.nav-bar p { margin: 0; font-size: 1.3rem; color: #aaa; }
+
+div.section {
+  position: relative; border-top: 1px solid #353745;
+}
+div.section:after { clear: both; content: ""; display: block; }
+div.section:hover { background: #080a16; }
+div.section:hover div.code { background: #080a16; }
+
+div.section div.docs {
+  box-sizing: border-box; padding: 10px 8px 1px 8px;
+  vertical-align: top; text-align: left;
+}
+@media (min-width: 768px) {
+  div.section div.docs { float: left; width: 40%; min-height: 5px; }
+}
+@media (min-width: 1024px) {
+  div.section div.docs { padding: 10px 25px 1px 50px; }
+}
+div.section div.docs .section-link { position: relative; }
+div.section div.docs .section-link a {
+  font: 12px Arial; text-decoration: none; position: absolute;
+  top: 3px; left: -20px; padding: 1px 2px; opacity: 0;
+  -webkit-transition: opacity 0.2s linear; color: #454545;
+}
+div.section:hover div.docs .section-link a { opacity: 1; }
+div.section div.docs .katex-display { overflow-x: auto; overflow-y: hidden; }
+div.section div.docs img { max-width: 100%; }
+div.section div.docs p, div.section div.docs li {
+  color: #ccc; font-size: 1.4rem; line-height: 1.7;
+}
+div.section div.docs h1 { color: #fff; font-size: 2.4rem; margin: 20px 0 10px 0; }
+div.section div.docs h2 { color: #fff; font-size: 2.0rem; margin: 18px 0 8px 0; }
+div.section div.docs h3 { color: #fff; font-size: 1.7rem; margin: 15px 0 6px 0; }
+div.section div.docs h4 { color: #e0e0e0; font-size: 1.5rem; margin: 12px 0 5px 0; }
+div.section div.docs ul, div.section div.docs ol { padding-left: 20px; }
+div.section div.docs li { margin: 4px 0; }
+div.section div.docs code {
+  background: #282a36; color: #ccc; padding: 0.2rem 0.5rem;
+  margin: 0 0.2rem; font-size: 80%; border-radius: 4px;
+  border: 1px solid #484a56;
+}
+div.section div.docs table {
+  border-collapse: collapse; margin: 10px 0; width: 100%;
+}
+div.section div.docs th, div.section div.docs td {
+  border: 1px solid #484a56; padding: 8px 12px; text-align: left;
+}
+div.section div.docs th { background: #282a36; color: #fff; }
+
+div.section div.code {
+  padding: 14px 8px 16px 15px; vertical-align: top;
+  background: #282a36;
+}
+@media (min-width: 768px) {
+  div.section div.code { margin-left: 40%; }
+}
+div.section div.code pre {
+  font-size: 12px; white-space: pre;
+  font-family: Monaco, Consolas, "Lucida Console", monospace;
+  line-height: 18px; margin: 0; overflow-x: auto;
+}
+div.section div.code .lineno {
+  width: 30px; display: inline-block; text-align: right;
+  padding-right: 10px; opacity: 0.3; font-size: 10px;
+  white-space: pre; color: #6272a4; user-select: none;
+}
+
+div.footer {
+  margin-top: 25px; position: relative; padding: 10px 0;
+  text-align: center; background: #30353d;
+}
+div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
+
+.katex span { cursor: default; }
+.mjx-chtml { color: #ccc; }
+
+
+.highlight .c { color: #6272a4; }
+.highlight .k { color: #ff79c6; }
+.highlight .o { color: #ff4996; }
+.highlight .p { color: #a8a8a2; }
+.highlight .cm { color: #6272a4; }
+.highlight .c1 { color: #6272a4; }
+.highlight .kc { color: #ff79c6; }
+.highlight .kd { color: #8be9fd; font-style: italic; }
+.highlight .kn { color: #ff79c6; }
+.highlight .kp { color: #ff79c6; }
+.highlight .kr { color: #ff79c6; }
+.highlight .kt { color: #8be9fd; }
+.highlight .m { color: #bd93f9; }
+.highlight .s, .highlight .s2, .highlight .s1 { color: #f1fa8c; }
+.highlight .na { color: #50fa7b; }
+.highlight .nb { color: #8be9fd; font-style: italic; }
+.highlight .nc { color: #ffb86c; font-weight: bold; }
+.highlight .nd { color: #9d93ff; }
+.highlight .nf { color: #ffb86c; }
+.highlight .nl { color: #8be9fd; font-style: italic; }
+.highlight .nn { color: #f8f8f2; }
+.highlight .nt { color: #ff79c6; }
+.highlight .nv, .highlight .vc, .highlight .vg, .highlight .vi { color: #8be9fd; font-style: italic; }
+.highlight .ow { color: #ff79c6; }
+.highlight .n { color: #f8f8f2; }
+.highlight .nx { color: #f8f8f2; }
+.highlight .bp { color: #50fa7b; }
+.highlight .fm { color: #ffb86c; font-style: italic; }
+
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    <div class="nav-bar">
+  <a class="parent" href="../index.html">强化学习</a>
+  <h1>深度Q网络 (DQN)</h1><p>Deep Q Networks — 蘑菇书第六章</p></div>
+    <div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-0">#</a></div>
+    <p>---</p>
+<p>title: 深度Q网络 (DQN) - Deep Q Networks</p>
+<p>summary: ></p>
+<p>基于蘑菇书EasyRL第六章的深度Q网络(DQN)算法的PyTorch实现，</p>
+<p>包含目标网络、经验回放、Dueling网络、Double DQN等核心公式的逐行注释。</p>
+<p>---</p>
+<h1>深度Q网络 (DQN) - Deep Q Networks</h1>
+<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第六章的PyTorch实现，</p>
+<p>参考论文<a href="https://arxiv.org/abs/1312.5602">Playing Atari with Deep Reinforcement Learning</a>，</p>
+<p>以及<a href="https://arxiv.org/abs/1511.06581">Dueling Network</a>和</p>
+<p><a href="https://arxiv.org/abs/1509.06461">Double Q-Learning</a>。</p>
+<h2>Q函数与贝尔曼方程</h2>
+<p>在强化学习中，Q函数定义为：</p>
+\[Q^\pi(s, a) = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t=s, a_t=a\right]\]
+<p>最优Q函数满足贝尔曼最优方程：</p>
+\[Q^*(s, a) = \mathbb{E}_{s' \sim \mathcal{E}}\left[r + \gamma \max_{a'} Q^*(s', a') \mid s, a\right]\]
+<h2>DQN的核心思想</h2>
+<p>DQN使用神经网络来近似Q函数：\(Q(s, a; \theta) \approx Q^*(s, a)\)</p>
+<p>训练目标是使Q函数的预测满足贝尔曼方程。定义目标值：</p>
+\[y_i = r_i + \gamma \max_{a'} Q(s_{i+1}, a'; \theta^-)\]
+<p>其中 \(\theta^-\) 是目标网络的参数，定期从主网络 \(\theta\) 复制。</p>
+<p>损失函数为：</p>
+\[L(\theta) = \mathbb{E}_{(s,a,r,s') \sim U(D)}\left[(y_i - Q(s, a; \theta))^2\right]\]
+<h2>目标网络 🎯</h2>
+<p>为了提高训练稳定性，DQN使用两个网络：</p>
+<ul>
+<li><strong>主网络</strong> (policy network)：参数 \(\theta\)，用于选择动作和计算Q值</li>
+<li><strong>目标网络</strong> (target network)：参数 \(\theta^-\)，定期从主网络复制，用于计算目标值</li>
+</ul>
+<p>目标值：</p>
+\[y_i = r_i + \gamma \max_{a'} Q(s_{i+1}, a'; \theta^-)\]
+<p>目标网络的参数 \(\theta^-\) 每隔一定步数更新为 \(\theta\)，这打破了样本间的相关性，提高了训练稳定性。</p>
+<h2>Double DQN</h2>
+<p>标准DQN中，max操作符使用同一个网络来选择和评估动作：</p>
+\[\max_{a'} Q(s', a'; \theta) = Q\left(s', \underset{a'}{\arg\max} Q(s', a'; \theta); \theta\right)\]
+<p>这会导致Q值的高估。Double DQN解耦了动作选择和价值评估：</p>
+\[\max_{a'} Q(s', a'; \theta^-) = Q\left(s', \underset{a'}{\arg\max} Q(s', a'; \theta); \theta^-\right)\]
+<ul>
+<li>使用主网络 \(\theta\) 选择动作：\(\underset{a'}{\arg\max} Q(s', a'; \theta)\)</li>
+<li>使用目标网络 \(\theta^-\) 评估价值：\(Q(s', \text{best\_action}; \theta^-)\)</li>
+</ul>
+<p>Double DQN的损失函数：</p>
+\[L(\theta) = \mathbb{E}\left[\left(r + \gamma Q\left(s', \underset{a'}{\arg\max} Q(s', a'; \theta); \theta^-\right) - Q(s, a; \theta)\right)^2\right]\]
+<h2>Dueling Network ⚔️</h2>
+<p>Dueling网络将Q值分解为状态价值和优势函数：</p>
+\[\begin{align}
+Q^\pi(s, a) &= V^\pi(s) + A^\pi(s, a) \\
+\mathbb{E}_{a \sim \pi(s)}\left[A^\pi(s, a)\right] &= 0
+\end{align}\]
+<p>实际计算中：</p>
+\[Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a' \in \mathcal{A}} A(s, a')\right)\]
+<p>Dueling网络的优势在于：</p>
+<ul>
+<li>在很多状态下，动作并不重要（优势函数接近0）</li>
+<li>在少数关键状态下，动作非常重要</li>
+<li>这种结构让网络可以更好地学习这种差异</li>
+</ul>
+<h2>经验回放</h2>
+<p>DQN使用经验回放缓冲区来存储和采样经验：</p>
+\[D = \{(s_t, a_t, r_t, s_{t+1})\}\]
+<p>训练时从缓冲区中随机采样：</p>
+\[(s, a, r, s') \sim U(D)\]
+<p>经验回放的好处：</p>
+<ol>
+<li>打破样本间的时间相关性</li>
+<li>提高数据利用率</li>
+<li>使训练更加稳定</li>
+</ol>
+<h2>探索策略</h2>
+<h3>\(\varepsilon\)-贪心策略</h3>
+\[a = \begin{cases}
+\underset{a}{\arg\max} Q(s, a) & \text{概率 } 1-\varepsilon \\
+\text{随机动作} & \text{概率 } \varepsilon
+\end{cases}$$
+
+$\varepsilon$ 通常从大到小衰减，初期多探索，后期多利用。
+
+### Boltzmann探索
+
+$$\pi(a|s) = \frac{e^{Q(s,a)/T}}{\sum_{a'} e^{Q(s,a')/T}}$$
+
+其中 $T$ 是温度参数，控制探索程度。\]
+  </div>
+  <div class="code">
+    
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-1">#</a></div>
+    
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">from</span> <span class="n">typing</span> <span class="k">import</span> <span class="nc">Tuple</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span><span class="k">import</span> <span class="n">torch</span>
+<span class="lineno">4</span><span class="k">from</span> <span class="n">torch</span> <span class="k">import</span> <span class="n">nn</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-2">#</a></div>
+    <h2>DQN损失函数</h2>
+<p>我们想要找到最优的动作价值函数：</p>
+\[\begin{align}
+Q^*(s,a) &= \max_\pi \mathbb{E}\left[r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots \mid s_t=s, a_t=a, \pi\right] \\
+Q^*(s,a) &= \mathbb{E}_{s' \sim \mathcal{E}}\left[r + \gamma \max_{a'} Q^*(s', a') \mid s, a\right]
+\end{align}\]
+<h3>目标网络 🎯</h3>
+<p>使用经验回放 \(U(D)\) 随机采样历史经验，并使用独立的Q网络</p>
+<p>参数 \(\textcolor{orange}{\theta^-}\) 来计算目标值。</p>
+<p>\(\textcolor{orange}{\theta^-}\) 定期更新。</p>
+<p>损失函数：</p>
+\[\mathcal{L}(\theta) = \mathbb{E}_{(s,a,r,s') \sim U(D)}\left[\left(r + \gamma \max_{a'} Q(s', a'; \textcolor{orange}{\theta^-}) - Q(s,a;\theta)\right)^2\right]\]
+<h3>Double Q-Learning</h3>
+<p>使用Double Q-Learning，其中：</p>
+<ul>
+<li>\(\textcolor{cyan}{\theta}\) 用于选择动作</li>
+<li>\(\textcolor{orange}{\theta^-}\) 用于评估价值</li>
+</ul>
+\[\begin{align}
+\mathcal{L}(\theta) = \mathbb{E}\Bigg[\bigg(&r + \gamma \textcolor{orange}{Q}\Big(s', \underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big) \\
+&- Q(s,a;\theta)\bigg)^2\Bigg]
+\end{align}\]
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">QFuncLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">4</span>        <span class="nf">super</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="nf">__init__</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">5</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
+<span class="lineno">6</span>        <span class="nb">self</span><span class="p">.</span><span class="n">huber_loss</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">SmoothL1Loss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=&</span><span class="n">quot</span><span class="p">;</span><span class="n">none</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="p">)</span>
+<span class="lineno">7</span>
+<span class="lineno">8</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+<span class="lineno">9</span>        <span class="nb">self</span><span class="p">,</span>
+<span class="lineno">10</span>        <span class="n">q</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">11</span>        <span class="n">action</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">12</span>        <span class="n">double_q</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">13</span>        <span class="n">target_q</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">14</span>        <span class="n">done</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">15</span>        <span class="n">reward</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">16</span>        <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span> <span class="o">=</span> <span class="nb">None</span><span class="p">,</span>
+<span class="lineno">17</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nc">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">]</span><span class="p">:</span>
+<span class="lineno">18</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">19</span>        <span class="n">计算DQN损失</span>。
+<span class="lineno">20</span>
+<span class="lineno">21</span>        <span class="n">参数映射</span>：
+<span class="lineno">22</span>        <span class="o">-</span> `<span class="n">q</span>`<span class="p">:</span> $<span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">a</span><span class="p">;</span>\<span class="n">theta</span><span class="p">)</span>$ — <span class="n">主网络输出的Q值</span>
+<span class="lineno">23</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> $<span class="n">a</span>$ — <span class="n">采取的动作</span>
+<span class="lineno">24</span>        <span class="o">-</span> `<span class="n">double_q</span>`<span class="p">:</span> $\<span class="n">textcolor</span><span class="p">{</span><span class="n">cyan</span><span class="p">}</span><span class="p">{</span><span class="nc">Q</span><span class="p">}</span><span class="p">(</span><span class="n">s</span><span class="o">&</span><span class="c">#x27;;\textcolor{cyan}{\theta})$ — 主网络对下一状态的Q值</span>
+<span class="lineno">25</span>        <span class="o">-</span> `<span class="n">target_q</span>`<span class="p">:</span> $\<span class="n">textcolor</span><span class="p">{</span><span class="n">orange</span><span class="p">}</span><span class="p">{</span><span class="nc">Q</span><span class="p">}</span><span class="p">(</span><span class="n">s</span><span class="o">&</span><span class="c">#x27;;\textcolor{orange}{\theta^-})$ — 目标网络对下一状态的Q值</span>
+<span class="lineno">26</span>        <span class="o">-</span> `<span class="n">done</span>`<span class="p">:</span> <span class="n">是否episode结束</span>
+<span class="lineno">27</span>        <span class="o">-</span> `<span class="n">reward</span>`<span class="p">:</span> $<span class="n">r</span>$ — <span class="n">奖励</span>
+<span class="lineno">28</span>        <span class="o">-</span> `<span class="n">weights</span>`<span class="p">:</span> <span class="n">优先级经验回放的权重</span>
+<span class="lineno">29</span>
+<span class="lineno">30</span>        <span class="n">返回值</span>：
+<span class="lineno">31</span>        <span class="o">-</span> <span class="nc">TD误差</span>（<span class="n">用于优先级回放</span>）
+<span class="lineno">32</span>        <span class="o">-</span> <span class="n">损失值</span>
+<span class="lineno">33</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">34</span>        <span class="c"># $Q(s,a;\theta)$ — 选择当前状态-动作对的Q值</span>
+<span class="lineno">35</span>        <span class="n">q_sampled_action</span> <span class="o">=</span> <span class="n">q</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">action</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="n">long</span><span class="p">)</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">36</span>
+<span class="lineno">37</span>        <span class="c"># 不传播梯度到目标网络</span>
+<span class="lineno">38</span>        <span class="c"># $$r + \gamma \textcolor{orange}{Q}\Big(s&#x27;, \underset{a&#x27;}{\arg\max} \textcolor{cyan}{Q}(s&#x27;, a&#x27;; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big)$$</span>
+<span class="lineno">39</span>        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">40</span>            <span class="c"># 使用主网络选择最佳动作</span>
+<span class="lineno">41</span>            <span class="c"># $$\underset{a&#x27;}{\arg\max} \textcolor{cyan}{Q}(s&#x27;, a&#x27;; \textcolor{cyan}{\theta})$$</span>
+<span class="lineno">42</span>            <span class="n">best_next_action</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">double_q</span><span class="p">,</span> <span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">43</span>
+<span class="lineno">44</span>            <span class="c"># 使用目标网络评估最佳动作的价值</span>
+<span class="lineno">45</span>            <span class="c"># $$\textcolor{orange}{Q}\Big(s&#x27;, \underset{a&#x27;}{\arg\max} \textcolor{cyan}{Q}(s&#x27;, a&#x27;; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big)$$</span>
+<span class="lineno">46</span>            <span class="n">best_next_q_value</span> <span class="o">=</span> <span class="n">target_q</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">best_next_action</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">47</span>
+<span class="lineno">48</span>            <span class="c"># 计算目标Q值</span>
+<span class="lineno">49</span>            <span class="c"># 乘以 `(1 - done)` 确保episode结束时不加上下一状态的价值</span>
+<span class="lineno">50</span>            <span class="c"># $$r + \gamma \textcolor{orange}{Q}\Big(s&#x27;, \text{best\_action}; \textcolor{orange}{\theta^-}\Big)$$</span>
+<span class="lineno">51</span>            <span class="n">q_update</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">best_next_q_value</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">done</span><span class="p">)</span>
+<span class="lineno">52</span>
+<span class="lineno">53</span>            <span class="c"># TD误差 $\delta = Q(s,a;\theta) - y$</span>
+<span class="lineno">54</span>            <span class="n">td_error</span> <span class="o">=</span> <span class="n">q_sampled_action</span> <span class="o">-</span> <span class="n">q_update</span>
+<span class="lineno">55</span>
+<span class="lineno">56</span>        <span class="c"># 使用Huber损失代替MSE，对异常值更不敏感</span>
+<span class="lineno">57</span>        <span class="n">losses</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">huber_loss</span><span class="p">(</span><span class="n">q_sampled_action</span><span class="p">,</span> <span class="n">q_update</span><span class="p">)</span>
+<span class="lineno">58</span>
+<span class="lineno">59</span>        <span class="k">if</span> <span class="n">weights</span> <span class="k">is</span> <span class="k">not</span> <span class="nb">None</span><span class="p">:</span>
+<span class="lineno">60</span>            <span class="c"># 优先级经验回放的加权损失</span>
+<span class="lineno">61</span>            <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">weights</span> <span class="o">*</span> <span class="n">losses</span><span class="p">)</span>
+<span class="lineno">62</span>        <span class="k">else</span><span class="p">:</span>
+<span class="lineno">63</span>            <span class="n">loss</span> <span class="o">=</span> <span class="n">losses</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">64</span>
+<span class="lineno">65</span>        <span class="k">return</span> <span class="n">td_error</span><span class="p">,</span> <span class="n">loss</span>
+<span class="lineno">66</span>
+<span class="lineno">67</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-3">#</a></div>
+    <h2>Dueling网络 ⚔️ 结构</h2>
+<p>使用<a href="https://arxiv.org/abs/1511.06581">Dueling网络</a>来计算Q值。</p>
+<p>Dueling网络的直觉：</p>
+<ul>
+<li>在大多数状态下，动作并不重要</li>
+<li>在少数状态下，动作非常关键</li>
+<li>Dueling网络可以很好地表示这种差异</li>
+</ul>
+\[\begin{align}
+Q^\pi(s,a) &= V^\pi(s) + A^\pi(s, a) \\
+\mathbb{E}_{a \sim \pi(s)}\left[A^\pi(s, a)\right] &= 0
+\end{align}\]
+<p>实际计算：</p>
+\[Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a' \in \mathcal{A}} A(s, a')\right)\]
+<p>\(V\) 和 \(A\) 网络共享前面的卷积层。</p>
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">DuelingQNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="m">256</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">4</span>        <span class="nf">super</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="nf">__init__</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">5</span>        <span class="c"># 共享特征提取器</span>
+<span class="lineno">6</span>        <span class="nb">self</span><span class="p">.</span><span class="n">feature</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Sequential</span><span class="p">(</span>
+<span class="lineno">7</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">8</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">9</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">10</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">11</span>        <span class="p">)</span>
+<span class="lineno">12</span>
+<span class="lineno">13</span>        <span class="c"># 状态价值头 $V(s)$</span>
+<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state_value</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Sequential</span><span class="p">(</span>
+<span class="lineno">15</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span> <span class="o">//</span> <span class="m">2</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">16</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">17</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span> <span class="o">//</span> <span class="m">2</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">18</span>        <span class="p">)</span>
+<span class="lineno">19</span>
+<span class="lineno">20</span>        <span class="c"># 优势函数头 $A(s, a)$</span>
+<span class="lineno">21</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_value</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Sequential</span><span class="p">(</span>
+<span class="lineno">22</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span> <span class="o">//</span> <span class="m">2</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">23</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">24</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span> <span class="o">//</span> <span class="m">2</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">25</span>        <span class="p">)</span>
+<span class="lineno">26</span>
+<span class="lineno">27</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
+<span class="lineno">28</span>        <span class="c"># 共享特征提取</span>
+<span class="lineno">29</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="lineno">30</span>
+<span class="lineno">31</span>        <span class="c"># $V(s)$ — 状态价值</span>
+<span class="lineno">32</span>        <span class="n">state_value</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">state_value</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="lineno">33</span>
+<span class="lineno">34</span>        <span class="c"># $A(s, a)$ — 动作优势</span>
+<span class="lineno">35</span>        <span class="n">action_value</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">action_value</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="lineno">36</span>
+<span class="lineno">37</span>        <span class="c"># $A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a&#x27;} A(s, a&#x27;)$ — 中心化的优势函数</span>
+<span class="lineno">38</span>        <span class="n">action_score_centered</span> <span class="o">=</span> <span class="n">action_value</span> <span class="o">-</span> <span class="n">action_value</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="nb">True</span><span class="p">)</span>
+<span class="lineno">39</span>
+<span class="lineno">40</span>        <span class="c"># $Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a&#x27;} A(s, a&#x27;)\right)$</span>
+<span class="lineno">41</span>        <span class="n">q</span> <span class="o">=</span> <span class="n">state_value</span> <span class="o">+</span> <span class="n">action_score_centered</span>
+<span class="lineno">42</span>
+<span class="lineno">43</span>        <span class="k">return</span> <span class="n">q</span>
+<span class="lineno">44</span>
+<span class="lineno">45</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-4">#</a></div>
+    <h2>\(\varepsilon\)-贪心探索策略</h2>
+\[a = \begin{cases}
+\underset{a}{\arg\max} Q(s, a) & \text{概率 } 1-\varepsilon \\
+\text{随机动作} & \text{概率 } \varepsilon
+\end{cases}$$
+
+$\varepsilon$ 随时间衰减：
+$$\varepsilon_t = \varepsilon_{end} + (\varepsilon_{start} - \varepsilon_{end}) \times e^{-t/\text{decay}}$$\]
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">EpsilonGreedy</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<span class="lineno">4</span>        <span class="nb">self</span><span class="p">,</span>
+<span class="lineno">5</span>        <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="lineno">6</span>        <span class="n">epsilon_start</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">1.0</span><span class="p">,</span>
+<span class="lineno">7</span>        <span class="n">epsilon_end</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.01</span><span class="p">,</span>
+<span class="lineno">8</span>        <span class="n">decay</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="m">1000</span><span class="p">,</span>
+<span class="lineno">9</span>    <span class="p">)</span><span class="p">:</span>
+<span class="lineno">10</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span> <span class="o">=</span> <span class="n">action_dim</span>
+<span class="lineno">11</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_start</span> <span class="o">=</span> <span class="n">epsilon_start</span>
+<span class="lineno">12</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span> <span class="o">=</span> <span class="n">epsilon_end</span>
+<span class="lineno">13</span>        <span class="nb">self</span><span class="p">.</span><span class="n">decay</span> <span class="o">=</span> <span class="n">decay</span>
+<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon_start</span>
+<span class="lineno">15</span>        <span class="nb">self</span><span class="p">.</span><span class="n">count</span> <span class="o">=</span> <span class="m">0</span>
+<span class="lineno">16</span>
+<span class="lineno">17</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="lineno">18</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">19</span>        <span class="n">根据</span>$\<span class="n">varepsilon</span>$<span class="o">-</span><span class="n">贪心策略选择动作</span>。
+<span class="lineno">20</span>
+<span class="lineno">21</span>        <span class="n">参数</span>：
+<span class="lineno">22</span>        <span class="o">-</span> `<span class="n">q_values</span>`<span class="p">:</span> $<span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">;</span>\<span class="n">theta</span><span class="p">)</span>$ — <span class="n">当前状态的Q值</span>
+<span class="lineno">23</span>
+<span class="lineno">24</span>        <span class="n">返回值</span>：
+<span class="lineno">25</span>        <span class="o">-</span> <span class="n">选择的动作</span>
+<span class="lineno">26</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">27</span>        <span class="nb">self</span><span class="p">.</span><span class="n">count</span> <span class="o">+=</span> <span class="m">1</span>
+<span class="lineno">28</span>        <span class="c"># 衰减$\varepsilon$</span>
+<span class="lineno">29</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span> <span class="o">+</span> <span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">epsilon_start</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+<span class="lineno">30</span>            <span class="o">-</span><span class="nb">self</span><span class="p">.</span><span class="n">count</span> <span class="o">/</span> <span class="nb">self</span><span class="p">.</span><span class="n">decay</span>
+<span class="lineno">31</span>        <span class="p">)</span>
+<span class="lineno">32</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">,</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span><span class="p">)</span>
+<span class="lineno">33</span>
+<span class="lineno">34</span>        <span class="k">if</span> <span class="n">torch</span><span class="p">.</span><span class="nf">rand</span><span class="p">(</span><span class="m">1</span><span class="p">)</span><span class="p">.</span><span class="nf">item</span><span class="p">(</span><span class="p">)</span> <span class="o">&</span><span class="n">lt</span><span class="p">;</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">:</span>
+<span class="lineno">35</span>            <span class="c"># 探索：随机动作</span>
+<span class="lineno">36</span>            <span class="k">return</span> <span class="n">torch</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">,</span> <span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">item</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">37</span>        <span class="k">else</span><span class="p">:</span>
+<span class="lineno">38</span>            <span class="c"># 利用：选择Q值最大的动作</span>
+<span class="lineno">39</span>            <span class="k">return</span> <span class="n">torch</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">q_values</span><span class="p">)</span><span class="p">.</span><span class="nf">item</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">40</span></pre>
+  </div>
+</div>
+
+    <div class="footer">
+      <a href="../index.html">← 返回强化学习算法列表</a>
+      <p style="color:#666; font-size:1.2rem; margin-top:10px;">
+        基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
+        风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
+      </p>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false},
+          {left: '\\[', right: '\\]', display: true},
+          {left: '\\(', right: '\\)', display: false}
+        ],
+        throwOnError: false
+      });
+    });
+  </script>
+</body>
+</html>
