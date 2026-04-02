@@ -3,9 +3,6 @@
 Generate HTML pages from annotated Python files in labml.ai style.
 Left column: theory/formulas (docs)
 Right column: code implementation
-
-The parser extracts docstrings from Python files and renders them as documentation
-on the left side, with the corresponding code on the right side.
 """
 
 import re
@@ -291,12 +288,11 @@ def render_markdown_to_html(md_text: str) -> str:
         nonlocal in_math_block, math_block_content
         if in_math_block:
             content = '\n'.join(math_block_content)
-            html_parts.append(f'\\[{content}\\]')
+            html_parts.append(f'$$\n{content}\n$$')
             math_block_content = []
             in_math_block = False
 
     def process_inline(text: str) -> str:
-        text = re.sub(r'\$([^\$]+)\$', r'\(\1\)', text)
         text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
         text = re.sub(r'\*(.+?)\*', r'<em>\1</em>', text)
         text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
@@ -314,7 +310,7 @@ def render_markdown_to_html(md_text: str) -> str:
             math_block_content.append(stripped); continue
         if stripped.startswith('$$') and stripped.endswith('$$') and len(stripped) > 4:
             close_list(); close_table()
-            html_parts.append(f'\\[{stripped[2:-2].strip()}\\]'); continue
+            html_parts.append(stripped); continue
         elif stripped.startswith('$$'):
             close_list(); close_table()
             in_math_block = True; math_block_content = [stripped[2:].strip()]; continue
@@ -350,14 +346,9 @@ def render_markdown_to_html(md_text: str) -> str:
 
 
 def extract_docstring_from_code_block(code_lines: list) -> tuple:
-    """
-    Extract docstring from a code block (class/function body).
-    Returns (docstring_text, code_without_docstring).
-    """
+    """Extract docstring from a code block. Returns (docstring_text, code_without_docstring)."""
     if not code_lines:
         return '', ''
-
-    # Find the first non-empty line
     first_content_idx = 0
     for i, line in enumerate(code_lines):
         if line.strip():
@@ -367,17 +358,13 @@ def extract_docstring_from_code_block(code_lines: list) -> tuple:
         return '', '\n'.join(code_lines)
 
     first_line = code_lines[first_content_idx].strip()
-
-    # Check if it starts with a docstring
     if first_line.startswith('"""') or first_line.startswith("'''"):
         quote = first_line[:3]
         if first_line.count(quote) >= 2 and len(first_line) > 6:
-            # Single-line docstring
             doc_text = first_line[3:first_line.rfind(quote)]
             remaining = code_lines[:first_content_idx] + code_lines[first_content_idx+1:]
             return doc_text.strip(), '\n'.join(remaining)
         else:
-            # Multi-line docstring
             doc_lines = [first_line[3:]]
             end_idx = first_content_idx + 1
             for j in range(first_content_idx + 1, len(code_lines)):
@@ -389,25 +376,15 @@ def extract_docstring_from_code_block(code_lines: list) -> tuple:
                 doc_lines.append(code_lines[j])
             remaining = code_lines[:first_content_idx] + code_lines[end_idx:]
             return '\n'.join(doc_lines).strip(), '\n'.join(remaining)
-
     return '', '\n'.join(code_lines)
 
 
 def parse_annotated_python(filepath: str) -> list:
-    """
-    Parse an annotated Python file into sections.
-    Each section is (docs_text, code_text).
-
-    Strategy:
-    1. Extract module-level docstring as first section
-    2. For each class/function, extract its docstring + body code
-    """
+    """Parse an annotated Python file into sections. Each section is (docs_text, code_text)."""
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
 
     sections = []
-
-    # Extract module docstring
     module_doc = ''
     doc_match = re.match(r'^("""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\')', content)
     if doc_match:
@@ -421,7 +398,6 @@ def parse_annotated_python(filepath: str) -> list:
     if module_doc:
         sections.append((module_doc, ''))
 
-    # Parse remaining code into sections based on top-level class/def
     lines = content.split('\n')
     section_starts = []
     for i, line in enumerate(lines):
@@ -433,7 +409,6 @@ def parse_annotated_python(filepath: str) -> list:
             sections.append(('', content))
         return sections
 
-    # Preamble before first class/def
     if section_starts[0] > 0:
         preamble = '\n'.join(lines[:section_starts[0]]).strip()
         if preamble:
@@ -442,28 +417,27 @@ def parse_annotated_python(filepath: str) -> list:
     for idx, start in enumerate(section_starts):
         end = section_starts[idx + 1] if idx + 1 < len(section_starts) else len(lines)
         block_lines = lines[start:end]
-
-        # Get the signature line (first line: class/def declaration)
         sig_line = block_lines[0]
         body_lines = block_lines[1:]
-
-        # Extract docstring from body
         doc_text, code_without_doc = extract_docstring_from_code_block(body_lines)
-
-        # Build code block: signature + remaining code
         if code_without_doc:
             code_text = sig_line + '\n' + code_without_doc
         else:
             code_text = sig_line
-
         sections.append((doc_text, code_text))
 
     return sections
 
 
+# ── GitHub Pages base URL ──────────────────────────────────────────
+# When served via GitHub Pages, all pages live at the repo root.
+# Pages are deployed from docs/ directory.
+BASE_URL = ""
+
+
 def generate_html_page(title, sections, parent_path="..", parent_title="强化学习", subtitle=""):
     """Generate a complete HTML page with side-by-side layout."""
-    nav_html = f'<div class="nav-bar">\n  <a class="parent" href="{parent_path}/index.html">{parent_title}</a>\n  <h1>{title}</h1>'
+    nav_html = f'<div class="nav-bar">\n  <a class="parent" href="{BASE_URL}/">{parent_title}</a>\n  <h1>{title}</h1>'
     if subtitle:
         nav_html += f'<p>{subtitle}</p>'
     nav_html += '</div>'
@@ -472,9 +446,7 @@ def generate_html_page(title, sections, parent_path="..", parent_title="强化�
     for idx, (docs_text, code_text) in enumerate(sections):
         if not docs_text and not code_text.strip():
             continue
-
         docs_html = render_markdown_to_html(docs_text) if docs_text else ""
-
         code_html = ""
         if code_text.strip():
             highlighted = highlight_python(code_text)
@@ -514,7 +486,7 @@ def generate_html_page(title, sections, parent_path="..", parent_title="强化�
     {nav_html}
     {sections_html}
     <div class="footer">
-      <a href="{parent_path}/index.html">← 返回强化学习算法列表</a>
+      <a href="{BASE_URL}/">← 返回强化学习算法列表</a>
       <p style="color:#666; font-size:1.2rem; margin-top:10px;">
         基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
         风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
@@ -543,13 +515,13 @@ def generate_html_page(title, sections, parent_path="..", parent_title="强化�
 def generate_index_page(html_dir):
     """Generate the main index page."""
     pages = [
-        ("表格型方法 (Tabular)", "第三章", "html/tabular/index.html", "Q-Learning, Sarsa, Value Iteration"),
-        ("策略梯度 (Policy Gradient)", "第四章", "html/pg/index.html", "REINFORCE, 基线技巧, 折扣回报"),
-        ("PPO (近端策略优化)", "第五章", "html/ppo/index.html", "PPO-Clip, PPO-Penalty"),
-        ("GAE (广义优势估计)", "第五章", "html/ppo/gae.html", "广义优势估计"),
-        ("DQN (深度Q网络)", "第六章", "html/dqn/index.html", "DQN, Double DQN, Dueling DQN"),
-        ("A2C (优势演员-评论员)", "第九章", "html/a2c/index.html", "Advantage Actor-Critic"),
-        ("DDPG (深度确定性策略梯度)", "第十二章", "html/ddpg/index.html", "连续动作空间控制"),
+        ("表格型方法 (Tabular)", "第三章", f"{BASE_URL}/tabular/", "Q-Learning, Sarsa, Value Iteration"),
+        ("策略梯度 (Policy Gradient)", "第四章", f"{BASE_URL}/pg/", "REINFORCE, 基线技巧, 折扣回报"),
+        ("PPO (近端策略优化)", "第五章", f"{BASE_URL}/ppo/", "PPO-Clip, PPO-Penalty"),
+        ("GAE (广义优势估计)", "第五章", f"{BASE_URL}/ppo/gae.html", "广义优势估计"),
+        ("DQN (深度Q网络)", "第六章", f"{BASE_URL}/dqn/", "DQN, Double DQN, Dueling DQN"),
+        ("A2C (优势演员-评论员)", "第九章", f"{BASE_URL}/a2c/", "Advantage Actor-Critic"),
+        ("DDPG (深度确定性策略梯度)", "第十二章", f"{BASE_URL}/ddpg/", "连续动作空间控制"),
     ]
 
     links_html = ""
