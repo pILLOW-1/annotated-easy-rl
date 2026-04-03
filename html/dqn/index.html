@@ -176,74 +176,44 @@ summary: &gt;
 以及<a href="https://arxiv.org/abs/1511.06581">Dueling Network</a>和
 <a href="https://arxiv.org/abs/1509.06461">Double Q-Learning</a>。</p>
 <h2>Q函数与贝尔曼方程</h2>
-<p>在强化学习中，Q函数定义为：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>Q</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>&#x003C0;</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msubsup><mo>&#x02211;</mo><mrow><mi>k</mi><mo>&#x0003D;</mo><mn>0</mn></mrow><mrow><mo>&#x0221E;</mo></mrow></msubsup><msup><mi>&#x003B3;</mi><mi>k</mi></msup><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mi>k</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x02223;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>a</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>最优Q函数满足贝尔曼最优方程：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>Q</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mi>&#x0007E;</mi><mi>&#x02130;</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><msup><mi>Q</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x02223;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
+<p>在强化学习中，Q函数定义为期望折扣累积奖励。</p>
+<p>最优Q函数满足贝尔曼最优方程。</p>
 <h2>DQN的核心思想</h2>
-<p>DQN使用神经网络来近似Q函数：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02248;</mo><msup><mi>Q</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></p>
+<p>DQN使用神经网络来近似Q函数。</p>
 <p>训练目标是使Q函数的预测满足贝尔曼方程。定义目标值：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>y</mi><mi>i</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mi>i</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>i</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mi>;</mi><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-
-<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup></mrow></math></span> 是目标网络的参数，定期从主网络 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math></span> 复制。</p>
-<p>损失函数为：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo>&#x0002C;</mo><mi>r</mi><mo>&#x0002C;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mi>&#x0007E;</mi><mi>U</mi><mo stretchy="false">&#x00028;</mo><mi>D</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>y</mi><mi>i</mi></msub><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<h2>目标网络 🎯</h2>
+<p>y_i = r_i + gamma * max Q(s_{i+1}, a'; theta^-)</p>
+<p>其中 theta^- 是目标网络的参数，定期从主网络 theta 复制。</p>
+<p>损失函数为MSE损失。</p>
+<h2>目标网络</h2>
 <p>为了提高训练稳定性，DQN使用两个网络：
-- <strong>主网络</strong> (policy network)：参数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math></span>，用于选择动作和计算Q值
-- <strong>目标网络</strong> (target network)：参数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup></mrow></math></span>，定期从主网络复制，用于计算目标值</p>
-<p>目标值：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>y</mi><mi>i</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mi>i</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>i</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mi>;</mi><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-
-<p>目标网络的参数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup></mrow></math></span> 每隔一定步数更新为 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math></span>，这打破了样本间的相关性，提高了训练稳定性。</p>
+- <strong>主网络</strong> (policy network)：参数 theta，用于选择动作和计算Q值
+- <strong>目标网络</strong> (target network)：参数 theta^-，定期从主网络复制，用于计算目标值</p>
+<p>目标网络的参数 theta^- 每隔一定步数更新为 theta，这打破了样本间的相关性，提高了训练稳定性。</p>
 <h2>Double DQN</h2>
-<p>标准DQN中，max操作符使用同一个网络来选择和评估动作：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>Q</mi><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><munder><mrow><mi>\arg</mi><mo>max</mo></mrow><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></munder><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow></mrow></math></div>
-
-<p>这会导致Q值的高估。Double DQN解耦了动作选择和价值评估：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mi>;</mi><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>Q</mi><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><munder><mrow><mi>\arg</mi><mo>max</mo></mrow><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></munder><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mi>;</mi><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow></mrow></math></div>
-
-<ul>
-<li>使用主网络 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math></span> 选择动作：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><munder><mrow><mi>\arg</mi><mo>max</mo></mrow><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></munder><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></li>
-<li>使用目标网络 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup></mrow></math></span> 评估价值：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mtext>best_action</mtext><mi>;</mi><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup><mo stretchy="false">&#x00029;</mo></mrow></math></span></li>
-</ul>
-<p>Double DQN的损失函数：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>&#x1D53C;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msup><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>Q</mi><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><munder><mrow><mi>\arg</mi><mo>max</mo></mrow><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></munder><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mi>;</mi><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow><mn>2</mn></msup><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<h2>Dueling Network ⚔️</h2>
-<p>Dueling网络将Q值分解为状态价值和优势函数：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><msup><mi>Q</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mi>&</mi><mo>&#x0003D;</mo><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><msup><mi>A</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mspace linebreak="newline" /><msub><mi>&#x1D53C;</mi><mrow><mi>a</mi><mi>&#x0007E;</mi><mi>&#x003C0;</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msup><mi>A</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mi>&</mi><mo>&#x0003D;</mo><mn>0</mn></mrow></mrow></math></div>
-
-<p>实际计算中：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mo stretchy="false">&#x0007C;</mo><mi>&#x1D49C;</mi><mo stretchy="false">&#x0007C;</mo></mrow></mfrac><msub><mo>&#x02211;</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo>&#x02208;</mo><mi>&#x1D49C;</mi></mrow></msub><mi>A</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow></mrow></math></div>
-
+<p>标准DQN中，max操作符使用同一个网络来选择和评估动作，这会导致Q值的高估。</p>
+<p>Double DQN解耦了动作选择和价值评估：
+- 使用主网络 theta 选择动作
+- 使用目标网络 theta^- 评估价值</p>
+<h2>Dueling Network</h2>
+<p>Dueling网络将Q值分解为状态价值和优势函数。</p>
+<p>实际计算中使用中心化的优势函数。</p>
 <p>Dueling网络的优势在于：
 - 在很多状态下，动作并不重要（优势函数接近0）
 - 在少数关键状态下，动作非常重要
 - 这种结构让网络可以更好地学习这种差异</p>
 <h2>经验回放</h2>
-<p>DQN使用经验回放缓冲区来存储和采样经验：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>D</mi><mo>&#x0003D;</mo><mo stretchy="false">&#x0007B;</mo><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x0007D;</mo></mrow></math></div>
-
-<p>训练时从缓冲区中随机采样：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo>&#x0002C;</mo><mi>r</mi><mo>&#x0002C;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mi>&#x0007E;</mi><mi>U</mi><mo stretchy="false">&#x00028;</mo><mi>D</mi><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-
+<p>DQN使用经验回放缓冲区来存储和采样经验。</p>
+<p>训练时从缓冲区中随机采样。</p>
 <p>经验回放的好处：
 1. 打破样本间的时间相关性
 2. 提高数据利用率
 3. 使训练更加稳定</p>
 <h2>探索策略</h2>
-<h3><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心策略</h3>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mtable><mtr><mtd columnalign="left"><munder><mrow><mi>\arg</mi><mo>max</mo></mrow><mrow><mi>a</mi></mrow></munder><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi></mtd></mtr><mtr><mtd columnalign="left"><mtext>随机动作</mtext></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mi>&#x003B5;</mi></mtd></mtr></mtable></mrow></mrow></math></div>
-
-<p><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span> 通常从大到小衰减，初期多探索，后期多利用。</p>
+<h3>epsilon-贪心策略</h3>
+<p>以 1-epsilon 的概率选择最优动作，以 epsilon 的概率随机选择动作。</p>
+<p>epsilon 通常从大到小衰减，初期多探索，后期多利用。</p>
 <h3>Boltzmann探索</h3>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C0;</mi><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><msup><mi>e</mi><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002F;</mo><mi>T</mi></mrow></msup></mrow><mrow><msub><mo>&#x02211;</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><msup><mi>e</mi><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x0002F;</mo><mi>T</mi></mrow></msup></mrow></mfrac></mrow></math></div>
-
-<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>T</mi></mrow></math></span> 是温度参数，控制探索程度。</p>
+<p>使用softmax分布选择动作，T是温度参数。</p>
   </div>
   <div class="code">
     
@@ -265,30 +235,23 @@ summary: &gt;
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>DQN损失函数</h2>
-<p>我们想要找到最优的动作价值函数：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><msup><mi>Q</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mi>&</mi><mo>&#x0003D;</mo><msub><mo>max</mo><mi>&#x003C0;</mi></msub><mi>&#x1D53C;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><msup><mi>&#x003B3;</mi><mn>2</mn></msup><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>2</mn></mrow></msub><mo>&#x0002B;</mo><mo>&#x022EF;</mo><mo>&#x02223;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>a</mi><mo>&#x0002C;</mo><mi>&#x003C0;</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mspace linebreak="newline" /><msup><mi>Q</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mi>&</mi><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mi>&#x0007E;</mi><mi>&#x02130;</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><msup><mi>Q</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x02223;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></mrow></math></div>
-
-<h3>目标网络 🎯</h3>
-<p>使用经验回放 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>U</mi><mo stretchy="false">&#x00028;</mo><mi>D</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 随机采样历史经验，并使用独立的Q网络
-参数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>\textcolor</mi><mrow><mi>o</mi><mi>r</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>e</mi></mrow><mrow><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup></mrow></mrow></math></span> 来计算目标值。
-<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>\textcolor</mi><mrow><mi>o</mi><mi>r</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>e</mi></mrow><mrow><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup></mrow></mrow></math></span> 定期更新。</p>
-<p>损失函数：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x02112;</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo>&#x0002C;</mo><mi>r</mi><mo>&#x0002C;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mi>&#x0007E;</mi><mi>U</mi><mo stretchy="false">&#x00028;</mo><mi>D</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msup><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mi>;</mi><mi>\textcolor</mi><mrow><mi>o</mi><mi>r</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>e</mi></mrow><mrow><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup></mrow><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow><mn>2</mn></msup><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
+<p>我们想要找到最优的动作价值函数。</p>
+<h3>目标网络</h3>
+<p>使用经验回放随机采样历史经验，并使用独立的Q网络
+参数 theta^- 来计算目标值。
+theta^- 定期更新。</p>
 <h3>Double Q-Learning</h3>
 <p>使用Double Q-Learning，其中：
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>\textcolor</mi><mrow><mi>c</mi><mi>y</mi><mi>a</mi><mi>n</mi></mrow><mrow><mi>&#x003B8;</mi></mrow></mrow></math></span> 用于选择动作
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>\textcolor</mi><mrow><mi>o</mi><mi>r</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>e</mi></mrow><mrow><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup></mrow></mrow></math></span> 用于评估价值</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><mi>&#x02112;</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>&#x1D53C;</mi><mo minsize="2.470em" maxsize="2.470em">[</mo><mo minsize="2.047em" maxsize="2.047em">(</mo><mi>&</mi><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>\textcolor</mi><mrow><mi>o</mi><mi>r</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>e</mi></mrow><mrow><mi>Q</mi></mrow><mo minsize="1.623em" maxsize="1.623em">(</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><munder><mrow><mi>\arg</mi><mo>max</mo></mrow><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></munder><mi>\textcolor</mi><mrow><mi>c</mi><mi>y</mi><mi>a</mi><mi>n</mi></mrow><mrow><mi>Q</mi></mrow><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mi>;</mi><mi>\textcolor</mi><mrow><mi>c</mi><mi>y</mi><mi>a</mi><mi>n</mi></mrow><mrow><mi>&#x003B8;</mi></mrow><mo stretchy="false">&#x00029;</mo><mi>;</mi><mi>\textcolor</mi><mrow><mi>o</mi><mi>r</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>e</mi></mrow><mrow><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup></mrow><mo minsize="1.623em" maxsize="1.623em">)</mo><mspace linebreak="newline" /><mi>&</mi><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><msup><mo minsize="2.047em" maxsize="2.047em">)</mo><mn>2</mn></msup><mo minsize="2.470em" maxsize="2.470em">]</mo></mrow></mrow></math></div>
-
+- theta 用于选择动作
+- theta^- 用于评估价值</p>
 <p>计算DQN损失。</p>
 <p>参数映射：
-- <code>q</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 主网络输出的Q值
-- <code>action</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> — 采取的动作
-- <code>double_q</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>\textcolor</mi><mrow><mi>c</mi><mi>y</mi><mi>a</mi><mi>n</mi></mrow><mrow><mi>Q</mi></mrow><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mi>;</mi><mi>\textcolor</mi><mrow><mi>c</mi><mi>y</mi><mi>a</mi><mi>n</mi></mrow><mrow><mi>&#x003B8;</mi></mrow><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 主网络对下一状态的Q值
-- <code>target_q</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>\textcolor</mi><mrow><mi>o</mi><mi>r</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>e</mi></mrow><mrow><mi>Q</mi></mrow><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mi>;</mi><mi>\textcolor</mi><mrow><mi>o</mi><mi>r</mi><mi>a</mi><mi>n</mi><mi>g</mi><mi>e</mi></mrow><mrow><msup><mi>&#x003B8;</mi><mo>&#x02212;</mo></msup></mrow><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 目标网络对下一状态的Q值
+- <code>q</code>: 主网络输出的Q值
+- <code>action</code>: 采取的动作
+- <code>double_q</code>: 主网络对下一状态的Q值
+- <code>target_q</code>: 目标网络对下一状态的Q值
 - <code>done</code>: 是否episode结束
-- <code>reward</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi></mrow></math></span> — 奖励
+- <code>reward</code>: 奖励
 - <code>weights</code>: 优先级经验回放的权重</p>
 <p>返回值：
 - TD误差（用于优先级回放）
@@ -312,57 +275,49 @@ summary: &gt;
 <span class="lineno">15</span>        <span class="n">reward</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">16</span>        <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span> <span class="o">=</span> <span class="nb">None</span><span class="p">,</span>
 <span class="lineno">17</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nc">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">]</span><span class="p">:</span>
-<span class="lineno">18</span>        <span class="c"># Q(s,a;\theta) — 选择当前状态-动作对的Q值</span>
+<span class="lineno">18</span>        <span class="c"># 选择当前状态-动作对的Q值</span>
 <span class="lineno">19</span>        <span class="n">q_sampled_action</span> <span class="o">=</span> <span class="n">q</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">action</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="n">long</span><span class="p">)</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">20</span>
 <span class="lineno">21</span>        <span class="c"># 不传播梯度到目标网络</span>
-<span class="lineno">22</span>        <span class="c"># r + \gamma \textcolor{orange}{Q}\Big(s', \underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big)</span>
-<span class="lineno">23</span>        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">24</span>            <span class="c"># 使用主网络选择最佳动作</span>
-<span class="lineno">25</span>            <span class="c"># \underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta})</span>
-<span class="lineno">26</span>            <span class="n">best_next_action</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">double_q</span><span class="p">,</span> <span class="o">-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">27</span>
-<span class="lineno">28</span>            <span class="c"># 使用目标网络评估最佳动作的价值</span>
-<span class="lineno">29</span>            <span class="c"># \textcolor{orange}{Q}\Big(s', \underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big)</span>
-<span class="lineno">30</span>            <span class="n">best_next_q_value</span> <span class="o">=</span> <span class="n">target_q</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">best_next_action</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">31</span>
-<span class="lineno">32</span>            <span class="c"># 计算目标Q值</span>
-<span class="lineno">33</span>            <span class="c"># 乘以 `(1 - done)` 确保episode结束时不加上下一状态的价值</span>
-<span class="lineno">34</span>            <span class="c"># r + \gamma \textcolor{orange}{Q}\Big(s', \text{best\_action}; \textcolor{orange}{\theta^-}\Big)</span>
-<span class="lineno">35</span>            <span class="n">q_update</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">best_next_q_value</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">done</span><span class="p">)</span>
-<span class="lineno">36</span>
-<span class="lineno">37</span>            <span class="c"># TD误差 \delta = Q(s,a;\theta) - y</span>
-<span class="lineno">38</span>            <span class="n">td_error</span> <span class="o">=</span> <span class="n">q_sampled_action</span> <span class="o">-</span> <span class="n">q_update</span>
-<span class="lineno">39</span>
-<span class="lineno">40</span>        <span class="c"># 使用Huber损失代替MSE，对异常值更不敏感</span>
-<span class="lineno">41</span>        <span class="n">losses</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">huber_loss</span><span class="p">(</span><span class="n">q_sampled_action</span><span class="p">,</span> <span class="n">q_update</span><span class="p">)</span>
-<span class="lineno">42</span>
-<span class="lineno">43</span>        <span class="k">if</span> <span class="n">weights</span> <span class="k">is</span> <span class="k">not</span> <span class="nb">None</span><span class="p">:</span>
-<span class="lineno">44</span>            <span class="c"># 优先级经验回放的加权损失</span>
-<span class="lineno">45</span>            <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">weights</span> <span class="o">*</span> <span class="n">losses</span><span class="p">)</span>
-<span class="lineno">46</span>        <span class="k">else</span><span class="p">:</span>
-<span class="lineno">47</span>            <span class="n">loss</span> <span class="o">=</span> <span class="n">losses</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">48</span>
-<span class="lineno">49</span>        <span class="k">return</span> <span class="n">td_error</span><span class="p">,</span> <span class="n">loss</span>
-<span class="lineno">50</span>
-<span class="lineno">51</span></pre>
+<span class="lineno">22</span>        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">23</span>            <span class="c"># 使用主网络选择最佳动作</span>
+<span class="lineno">24</span>            <span class="n">best_next_action</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">double_q</span><span class="p">,</span> <span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">25</span>
+<span class="lineno">26</span>            <span class="c"># 使用目标网络评估最佳动作的价值</span>
+<span class="lineno">27</span>            <span class="n">best_next_q_value</span> <span class="o">=</span> <span class="n">target_q</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">best_next_action</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">28</span>
+<span class="lineno">29</span>            <span class="c"># 计算目标Q值</span>
+<span class="lineno">30</span>            <span class="c"># 乘以 `(1 - done)` 确保episode结束时不加上下一状态的价值</span>
+<span class="lineno">31</span>            <span class="n">q_update</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">best_next_q_value</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">done</span><span class="p">)</span>
+<span class="lineno">32</span>
+<span class="lineno">33</span>            <span class="c"># TD误差</span>
+<span class="lineno">34</span>            <span class="n">td_error</span> <span class="o">=</span> <span class="n">q_sampled_action</span> <span class="o">-</span> <span class="n">q_update</span>
+<span class="lineno">35</span>
+<span class="lineno">36</span>        <span class="c"># 使用Huber损失代替MSE，对异常值更不敏感</span>
+<span class="lineno">37</span>        <span class="n">losses</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">huber_loss</span><span class="p">(</span><span class="n">q_sampled_action</span><span class="p">,</span> <span class="n">q_update</span><span class="p">)</span>
+<span class="lineno">38</span>
+<span class="lineno">39</span>        <span class="k">if</span> <span class="n">weights</span> <span class="k">is</span> <span class="k">not</span> <span class="nb">None</span><span class="p">:</span>
+<span class="lineno">40</span>            <span class="c"># 优先级经验回放的加权损失</span>
+<span class="lineno">41</span>            <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">weights</span> <span class="o">*</span> <span class="n">losses</span><span class="p">)</span>
+<span class="lineno">42</span>        <span class="k">else</span><span class="p">:</span>
+<span class="lineno">43</span>            <span class="n">loss</span> <span class="o">=</span> <span class="n">losses</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">44</span>
+<span class="lineno">45</span>        <span class="k">return</span> <span class="n">td_error</span><span class="p">,</span> <span class="n">loss</span>
+<span class="lineno">46</span>
+<span class="lineno">47</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
-    <h2>Dueling网络 ⚔️ 结构</h2>
-<p>使用<a href="https://arxiv.org/abs/1511.06581">Dueling网络</a>来计算Q值。</p>
+    <h2>Dueling网络结构</h2>
+<p>使用Dueling网络来计算Q值。</p>
 <p>Dueling网络的直觉：
 - 在大多数状态下，动作并不重要
 - 在少数状态下，动作非常关键
 - Dueling网络可以很好地表示这种差异</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><msup><mi>Q</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mi>&</mi><mo>&#x0003D;</mo><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><msup><mi>A</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mspace linebreak="newline" /><msub><mi>&#x1D53C;</mi><mrow><mi>a</mi><mi>&#x0007E;</mi><mi>&#x003C0;</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msup><mi>A</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mi>&</mi><mo>&#x0003D;</mo><mn>0</mn></mrow></mrow></math></div>
-
-<p>实际计算：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mo stretchy="false">&#x0007C;</mo><mi>&#x1D49C;</mi><mo stretchy="false">&#x0007C;</mo></mrow></mfrac><msub><mo>&#x02211;</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo>&#x02208;</mo><mi>&#x1D49C;</mi></mrow></msub><mi>A</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow></mrow></math></div>
-
-<p><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi></mrow></math></span> 和 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi></mrow></math></span> 网络共享前面的卷积层。</p>
+<p>Q(s, a) = V(s) + (A(s, a) - mean(A(s, a')))</p>
+<p>V 和 A 网络共享前面的卷积层。</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">DuelingQNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -377,14 +332,14 @@ summary: &gt;
 <span class="lineno">10</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
 <span class="lineno">11</span>        <span class="p">)</span>
 <span class="lineno">12</span>
-<span class="lineno">13</span>        <span class="c"># 状态价值头 V(s)</span>
+<span class="lineno">13</span>        <span class="c"># 状态价值头</span>
 <span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state_value</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Sequential</span><span class="p">(</span>
 <span class="lineno">15</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span> <span class="o">//</span> <span class="m">2</span><span class="p">)</span><span class="p">,</span>
 <span class="lineno">16</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
 <span class="lineno">17</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span> <span class="o">//</span> <span class="m">2</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span><span class="p">,</span>
 <span class="lineno">18</span>        <span class="p">)</span>
 <span class="lineno">19</span>
-<span class="lineno">20</span>        <span class="c"># 优势函数头 A(s, a)</span>
+<span class="lineno">20</span>        <span class="c"># 优势函数头</span>
 <span class="lineno">21</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_value</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Sequential</span><span class="p">(</span>
 <span class="lineno">22</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span> <span class="o">//</span> <span class="m">2</span><span class="p">)</span><span class="p">,</span>
 <span class="lineno">23</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
@@ -395,16 +350,16 @@ summary: &gt;
 <span class="lineno">28</span>        <span class="c"># 共享特征提取</span>
 <span class="lineno">29</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 <span class="lineno">30</span>
-<span class="lineno">31</span>        <span class="c"># V(s) — 状态价值</span>
+<span class="lineno">31</span>        <span class="c"># 状态价值</span>
 <span class="lineno">32</span>        <span class="n">state_value</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">state_value</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
 <span class="lineno">33</span>
-<span class="lineno">34</span>        <span class="c"># A(s, a) — 动作优势</span>
+<span class="lineno">34</span>        <span class="c"># 动作优势</span>
 <span class="lineno">35</span>        <span class="n">action_value</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">action_value</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
 <span class="lineno">36</span>
-<span class="lineno">37</span>        <span class="c"># A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a') — 中心化的优势函数</span>
+<span class="lineno">37</span>        <span class="c"># 中心化的优势函数</span>
 <span class="lineno">38</span>        <span class="n">action_score_centered</span> <span class="o">=</span> <span class="n">action_value</span> <span class="o">-</span> <span class="n">action_value</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="nb">True</span><span class="p">)</span>
 <span class="lineno">39</span>
-<span class="lineno">40</span>        <span class="c"># Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\right)</span>
+<span class="lineno">40</span>        <span class="c"># Q(s, a) = V(s) + 中心化的优势函数</span>
 <span class="lineno">41</span>        <span class="n">q</span> <span class="o">=</span> <span class="n">state_value</span> <span class="o">+</span> <span class="n">action_score_centered</span>
 <span class="lineno">42</span>
 <span class="lineno">43</span>        <span class="k">return</span> <span class="n">q</span>
@@ -415,15 +370,12 @@ summary: &gt;
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
-    <h2><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心探索策略</h2>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mtable><mtr><mtd columnalign="left"><munder><mrow><mi>\arg</mi><mo>max</mo></mrow><mrow><mi>a</mi></mrow></munder><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi></mtd></mtr><mtr><mtd columnalign="left"><mtext>随机动作</mtext></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mi>&#x003B5;</mi></mtd></mtr></mtable></mrow></mrow></math></div>
-
-<p><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span> 随时间衰减：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B5;</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msub><mi>&#x003B5;</mi><mrow><mi>e</mi><mi>n</mi><mi>d</mi></mrow></msub><mo>&#x0002B;</mo><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003B5;</mi><mrow><mi>s</mi><mi>t</mi><mi>a</mi><mi>r</mi><mi>t</mi></mrow></msub><mo>&#x02212;</mo><msub><mi>&#x003B5;</mi><mrow><mi>e</mi><mi>n</mi><mi>d</mi></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><msup><mi>e</mi><mrow><mo>&#x02212;</mo><mi>t</mi><mo>&#x0002F;</mo><mtext>decay</mtext></mrow></msup></mrow></math></div>
-
-<p>根据<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心策略选择动作。</p>
+    <h2>epsilon-贪心探索策略</h2>
+<p>以 1-epsilon 的概率选择最优动作，以 epsilon 的概率随机选择动作。</p>
+<p>epsilon 随时间衰减。</p>
+<p>根据epsilon-贪心策略选择动作。</p>
 <p>参数：
-- <code>q_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 当前状态的Q值</p>
+- <code>q_values</code>: 当前状态的Q值</p>
 <p>返回值：
 - 选择的动作</p>
   </div>
@@ -446,7 +398,7 @@ summary: &gt;
 <span class="lineno">16</span>
 <span class="lineno">17</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="lineno">18</span>        <span class="nb">self</span><span class="p">.</span><span class="n">count</span> <span class="o">+=</span> <span class="m">1</span>
-<span class="lineno">19</span>        <span class="c"># 衰减\varepsilon</span>
+<span class="lineno">19</span>        <span class="c"># 衰减epsilon</span>
 <span class="lineno">20</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span> <span class="o">+</span> <span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">epsilon_start</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
 <span class="lineno">21</span>            <span class="o">-</span><span class="nb">self</span><span class="p">.</span><span class="n">count</span> <span class="o">/</span> <span class="nb">self</span><span class="p">.</span><span class="n">decay</span>
 <span class="lineno">22</span>        <span class="p">)</span>

@@ -175,59 +175,39 @@ summary: &gt;
 参考论文<a href="https://arxiv.org/abs/1509.02971">Continuous control with deep reinforcement learning</a>。</p>
 <p>DDPG是DQN在连续动作空间的扩展，结合了DQN和确定性策略梯度的优点。</p>
 <h2>确定性策略梯度</h2>
-<p>在连续动作空间中，动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x02208;</mo><mi>&#x1D49C;</mi><mo>&#x02286;</mo><msup><mi>&#x0211D;</mi><mi>d</mi></msup></mrow></math></span> 是连续值。
-确定性策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BC;</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 直接输出动作，而不是动作的概率分布。</p>
-<p>确定性策略梯度定理：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>J</mi><mo>&#x02248;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><msup><mi>&#x003C1;</mi><mi>&#x003BC;</mi></msup></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mo>&#x02207;</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mi>;</mi><mi>&#x003D5;</mi><mo stretchy="false">&#x00029;</mo><msub><mo stretchy="false">&#x0007C;</mo><mrow><mi>a</mi><mo>&#x0003D;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>其中：
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是确定性策略（Actor）
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mi>;</mi><mi>&#x003D5;</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是动作价值函数（Critic）
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003C1;</mi><mi>&#x003BC;</mi></msup></mrow></math></span> 是策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BC;</mi></mrow></math></span> 下的状态分布</p>
+<p>在连续动作空间中，动作是连续值。
+确定性策略直接输出动作，而不是动作的概率分布。</p>
+<p>确定性策略梯度定理描述了梯度的计算方式。</p>
 <h2>DDPG算法</h2>
 <p>DDPG使用四个神经网络：
-1. <strong>Actor</strong> <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>：确定性策略，直接输出动作
-2. <strong>Critic</strong> <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>：动作价值函数
-3. <strong>Target Actor</strong> <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BC;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>：目标策略网络
-4. <strong>Target Critic</strong> <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mrow><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>：目标价值网络</p>
+1. <strong>Actor</strong>：确定性策略，直接输出动作
+2. <strong>Critic</strong>：动作价值函数
+3. <strong>Target Actor</strong>：目标策略网络
+4. <strong>Target Critic</strong>：目标价值网络</p>
 <h3>Critic更新</h3>
-<p>Critic通过最小化TD误差来学习：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003D5;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo>&#x0002C;</mo><mi>r</mi><mo>&#x0002C;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>y</mi><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>其中目标值：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>y</mi><mo>&#x0003D;</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>Q</mi><mrow><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-
+<p>Critic通过最小化TD误差来学习。</p>
+<p>目标值使用目标网络计算。</p>
 <h3>Actor更新</h3>
-<p>Actor通过最大化Critic的输出来学习：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>J</mi><mo>&#x02248;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mo>&#x02207;</mo><mi>a</mi></msub><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><msub><mo stretchy="false">&#x0007C;</mo><mrow><mi>a</mi><mo>&#x0003D;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>等价于最大化：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>J</mi><mo>&#x02248;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
+<p>Actor通过最大化Critic的输出来学习。</p>
 <h3>目标网络软更新</h3>
-<p>DDPG使用软更新来平滑地更新目标网络：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup><mo>&#x02190;</mo><mi>&#x003C4;</mi><mi>&#x003B8;</mi><mo>&#x0002B;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></math></div>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup><mo>&#x02190;</mo><mi>&#x003C4;</mi><mi>&#x003D5;</mi><mo>&#x0002B;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup></mrow></math></div>
-
-<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C4;</mi><mo>&#x0226A;</mo><mn>1</mn></mrow></math></span>（通常取0.001~0.01）。</p>
+<p>DDPG使用软更新来平滑地更新目标网络。</p>
+<p>其中 tau 远小于1（通常取0.001~0.01）。</p>
 <h2>探索策略</h2>
-<p>DDPG使用Ornstein-Uhlenbeck (OU) 过程来添加探索噪声：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>d</mi><msub><mi>x</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003BC;</mi><mo>&#x02212;</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>d</mi><mi>t</mi><mo>&#x0002B;</mo><mi>&#x003C3;</mi><mi>d</mi><msub><mi>W</mi><mi>t</mi></msub></mrow></math></div>
-
+<p>DDPG使用Ornstein-Uhlenbeck (OU) 过程来添加探索噪声。</p>
 <p>其中：
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math></span> 是均值回归速度
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BC;</mi></mrow></math></span> 是均值
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C3;</mi></mrow></math></span> 是波动率
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>W</mi><mi>t</mi></msub></mrow></math></span> 是维纳过程（布朗运动）</p>
+- theta 是均值回归速度
+- mu 是均值
+- sigma 是波动率
+- W_t 是维纳过程（布朗运动）</p>
 <p>OU过程产生的噪声具有时间相关性，适合连续控制任务。</p>
 <h2>蘑菇书中的DDPG</h2>
 <p>根据蘑菇书第十二章，DDPG的核心组件：
 1. <strong>Actor网络</strong>：输入状态，输出连续动作
 2. <strong>Critic网络</strong>：输入状态和动作，输出Q值
-3. <strong>经验回放缓冲区</strong>：存储 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo>&#x0002C;</mo><mi>r</mi><mo>&#x0002C;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>d</mi><mi>o</mi><mi>n</mi><mi>e</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 元组
+3. <strong>经验回放缓冲区</strong>：存储经验元组
 4. <strong>目标网络</strong>：Actor和Critic各有对应的目标网络</p>
 <p>训练流程：
-1. Actor根据当前策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 选择动作，加上OU噪声
+1. Actor根据当前策略选择动作，加上OU噪声
 2. 执行动作，观察奖励和下一状态
 3. 存储经验到回放缓冲区
 4. 从缓冲区采样小批量数据
@@ -254,17 +234,15 @@ summary: &gt;
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>Actor网络（确定性策略）</h2>
-<p>Actor <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是一个确定性策略网络，
-输入状态 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span>，输出连续动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span>。</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-
-<p>输出通常使用tanh激活函数，将动作限制在 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">[</mo><mo>&#x02212;</mo><mn>1</mn><mo>&#x0002C;</mo><mn>1</mn><mo stretchy="false">]</mo></mrow></math></span> 范围内，
+<p>Actor 是一个确定性策略网络，
+输入状态，输出连续动作。</p>
+<p>输出通常使用tanh激活函数，将动作限制在 [-1, 1] 范围内，
 然后缩放到实际的动作空间。</p>
-<p>输出确定性动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>。</p>
+<p>输出确定性动作。</p>
 <p>参数：
-- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> — 状态</p>
+- <code>state</code>: 状态</p>
 <p>返回值：
-- <code>action</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mtext>scale</mtext></mrow></math></span> — 缩放后的动作</p>
+- 缩放后的动作</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">Actor</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -292,16 +270,14 @@ summary: &gt;
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>Critic网络（动作价值函数）</h2>
-<p>Critic <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 估计状态-动作对的价值。</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02248;</mo><msup><mi>Q</mi><mi>&#x003BC;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-
-<p>输入状态 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> 和动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span>，输出标量Q值。</p>
-<p>输出动作价值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>。</p>
+<p>Critic 估计状态-动作对的价值。</p>
+<p>输入状态和动作，输出标量Q值。</p>
+<p>输出动作价值。</p>
 <p>参数：
-- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> — 状态
-- <code>action</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> — 动作</p>
+- <code>state</code>: 状态
+- <code>action</code>: 动作</p>
 <p>返回值：
-- <code>q_value</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 动作价值</p>
+- 动作价值</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">Critic</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -318,7 +294,7 @@ summary: &gt;
 <span class="lineno">12</span>        <span class="p">)</span>
 <span class="lineno">13</span>
 <span class="lineno">14</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">15</span>        <span class="c"># 拼接状态和动作：[s, a]</span>
+<span class="lineno">15</span>        <span class="c"># 拼接状态和动作</span>
 <span class="lineno">16</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">cat</span><span class="p">(</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">17</span>        <span class="k">return</span> <span class="nb">self</span><span class="p">.</span><span class="nf">network</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">18</span>
@@ -330,29 +306,21 @@ summary: &gt;
     <div class="section-link"><a href="#section-4">#</a></div>
     <h2>DDPG损失函数</h2>
 <h3>Critic损失</h3>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003D5;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo>&#x0002C;</mo><mi>r</mi><mo>&#x0002C;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>y</mi><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>其中目标值：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>y</mi><mo>&#x0003D;</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>Q</mi><mrow><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mtext>done</mtext><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-
+<p>使用MSE损失，目标值使用目标网络计算。</p>
 <h3>Actor损失</h3>
-<p>Actor通过最大化Critic的输出来学习：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>J</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>由于优化器执行最小化，Actor损失为：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mo>&#x02212;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
+<p>Actor通过最大化Critic的输出来学习。</p>
+<p>由于优化器执行最小化，Actor损失为负Q值的均值。</p>
 <p>计算Critic损失。</p>
 <p>参数映射：
-- <code>q_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 当前状态-动作对的Q值
-- <code>next_q_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mrow><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 目标网络对下一状态的Q值
-- <code>rewards</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi></mrow></math></span> — 奖励
+- <code>q_values</code>: 当前状态-动作对的Q值
+- <code>next_q_values</code>: 目标网络对下一状态的Q值
+- <code>rewards</code>: 奖励
 - <code>dones</code>: 是否episode结束</p>
 <p>返回值：
 - Critic损失</p>
 <p>计算Actor损失。</p>
 <p>参数：
-- <code>q_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></span> — Critic对Actor输出动作的Q值</p>
+- <code>q_values</code>: Critic对Actor输出动作的Q值</p>
 <p>返回值：
 - Actor损失（取负号）</p>
   </div>
@@ -370,44 +338,34 @@ summary: &gt;
 <span class="lineno">11</span>        <span class="n">rewards</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">12</span>        <span class="n">dones</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">13</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">14</span>        <span class="c"># 目标值：y = r + \gamma Q_{\phi'}(s', \mu_{\theta'}(s')) \times (1 - \text{done})</span>
+<span class="lineno">14</span>        <span class="c"># 目标值</span>
 <span class="lineno">15</span>        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
 <span class="lineno">16</span>            <span class="n">target_q</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">next_q_values</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">dones</span><span class="p">)</span>
 <span class="lineno">17</span>
-<span class="lineno">18</span>        <span class="c"># MSE损失：L(\phi) = \mathbb{E}[(Q_\phi(s, a) - y)^2]</span>
+<span class="lineno">18</span>        <span class="c"># MSE损失</span>
 <span class="lineno">19</span>        <span class="n">critic_loss</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">MSELoss</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="n">target_q</span><span class="p">)</span>
 <span class="lineno">20</span>
 <span class="lineno">21</span>        <span class="k">return</span> <span class="n">critic_loss</span>
 <span class="lineno">22</span>
 <span class="lineno">23</span>    <span class="k">def</span> <span class="nf">compute_actor_loss</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
 <span class="lineno">24</span>        <span class="c"># 最大化Q值等价于最小化负Q值</span>
-<span class="lineno">25</span>        <span class="c"># L(\theta) = -\mathbb{E}[Q_\phi(s, \mu_\theta(s))]</span>
-<span class="lineno">26</span>        <span class="n">actor_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">q_values</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">27</span>        <span class="k">return</span> <span class="n">actor_loss</span>
-<span class="lineno">28</span>
-<span class="lineno">29</span></pre>
+<span class="lineno">25</span>        <span class="n">actor_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">q_values</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">26</span>        <span class="k">return</span> <span class="n">actor_loss</span>
+<span class="lineno">27</span>
+<span class="lineno">28</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-5">#</a></div>
     <h2>Ornstein-Uhlenbeck噪声过程</h2>
-<p>OU过程用于生成时间相关的探索噪声：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>d</mi><msub><mi>x</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003BC;</mi><mo>&#x02212;</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>d</mi><mi>t</mi><mo>&#x0002B;</mo><mi>&#x003C3;</mi><mi>d</mi><msub><mi>W</mi><mi>t</mi></msub></mrow></math></div>
-
-<p>其中：
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math></span>：均值回归速度
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BC;</mi></mrow></math></span>：均值
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C3;</mi></mrow></math></span>：波动率
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>W</mi><mi>t</mi></msub></mrow></math></span>：维纳过程</p>
+<p>OU过程用于生成时间相关的探索噪声。</p>
 <p>OU过程的特性：
-1. 均值回归：噪声会趋向于均值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BC;</mi></mrow></math></span>
+1. 均值回归：噪声会趋向于均值
 2. 时间相关性：连续时间步的噪声相关
 3. 适合连续控制：噪声变化平滑</p>
 <p>重置噪声状态。</p>
 <p>采样OU噪声。</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>d</mi><mi>x</mi><mo>&#x0003D;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003BC;</mi><mo>&#x02212;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003C3;</mi><mi>&#x1D4A9;</mi><mo stretchy="false">&#x00028;</mo><mn>0</mn><mo>&#x0002C;</mo><mn>1</mn><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-
 <p>返回值：
 - OU噪声样本</p>
   </div>
@@ -443,13 +401,11 @@ summary: &gt;
   <div class="docs">
     <div class="section-link"><a href="#section-6">#</a></div>
     <h2>目标网络软更新</h2>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup><mo>&#x02190;</mo><mi>&#x003C4;</mi><mi>&#x003B8;</mi><mo>&#x0002B;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></math></div>
-
 <p>软更新使目标网络平滑地跟踪主网络，避免剧烈变化。</p>
 <p>参数：
-- <code>target</code>: 目标网络 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></math></span>
-- <code>source</code>: 主网络 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math></span>
-- <code>tau</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C4;</mi></mrow></math></span> — 软更新系数（通常取0.001~0.01）</p>
+- <code>target</code>: 目标网络
+- <code>source</code>: 主网络
+- <code>tau</code>: 软更新系数（通常取0.001~0.01）</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">soft_update</span><span class="p">(</span><span class="n">target</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span><span class="p">:</span>
@@ -465,8 +421,6 @@ summary: &gt;
   <div class="docs">
     <div class="section-link"><a href="#section-7">#</a></div>
     <h2>目标网络硬更新</h2>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup><mo>&#x02190;</mo><mi>&#x003B8;</mi></mrow></math></div>
-
 <p>直接将主网络的参数复制到目标网络。</p>
 <p>参数：
 - <code>target</code>: 目标网络
