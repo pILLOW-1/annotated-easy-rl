@@ -1,4 +1,4 @@
-"""
+r"""
 ---
 title: 广义优势估计 (GAE) - Generalized Advantage Estimation
 summary: 蘑菇书EasyRL中PPO算法使用的广义优势估计(GAE)的PyTorch实现。
@@ -66,7 +66,7 @@ import numpy as np
 
 
 class GAE:
-    """
+    r"""
     ## 广义优势估计计算器
 
     实现GAE公式：
@@ -76,7 +76,7 @@ class GAE:
     """
 
     def __init__(self, n_workers: int, worker_steps: int, gamma: float, lambda_: float):
-        """
+        r"""
         初始化GAE计算器。
 
         参数：
@@ -93,7 +93,7 @@ class GAE:
     def __call__(
         self, done: np.ndarray, rewards: np.ndarray, values: np.ndarray
     ) -> np.ndarray:
-        """
+        r"""
         计算优势函数。
 
         参数映射：
@@ -136,7 +136,7 @@ class GAE:
 
 
 def compute_returns(rewards: np.ndarray, gamma: float, dones: np.ndarray) -> np.ndarray:
-    """
+    r"""
     ## 计算折扣累积回报
 
     $$G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots = r_t + \gamma G_{t+1}$$

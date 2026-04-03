@@ -164,245 +164,319 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
     <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-0">#</a></div>
-    <hr />
-<p>title: 近端策略优化 (PPO) - Proximal Policy Optimization
-summary: &gt;
-  基于蘑菇书EasyRL第五章的近端策略优化(PPO)算法的PyTorch实现，
-  包含重要性采样、PPO-Penalty(PPO1)、PPO-Clip(PPO2)等核心公式的逐行注释。</p>
-<hr />
-<h1>近端策略优化 (PPO) - Proximal Policy Optimization</h1>
-<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第五章的PyTorch实现，
-参考论文<a href="https://arxiv.org/abs/1707.06347">Proximal Policy Optimization Algorithms</a>。</p>
-<p>PPO是一种基于策略梯度的强化学习算法。简单的策略梯度方法每个样本只做一次梯度更新，
-如果对同一个样本做多次梯度更新会导致策略偏离过大，产生糟糕的策略。
-PPO通过限制新旧策略之间的差异，使得我们可以对同一批样本做多次梯度更新。
-它通过裁剪梯度流来实现这一目标，如果更新后的策略与采样时的策略差异过大，就会裁剪梯度。</p>
-<h2>策略梯度基础</h2>
-<p>在策略梯度方法中，我们希望最大化策略的期望累积奖励：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>max</mo><mi>&#x003B8;</mi></msub><mi>J</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>&#x003C4;</mi><mi>&#x0007E;</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msubsup><mo>&#x02211;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>0</mn></mrow><mrow><mo>&#x0221E;</mo></mrow></msubsup><msup><mi>&#x003B3;</mi><mi>t</mi></msup><msub><mi>r</mi><mi>t</mi></msub><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>其中：
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mi>t</mi></msub></mrow></math></span> 是时刻 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>t</mi></mrow></math></span> 的奖励
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></math></span> 是参数为 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math></span> 的策略
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C4;</mi><mo>&#x0003D;</mo><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mn>0</mn></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mn>0</mn></msub><mo>&#x0002C;</mo><msub><mi>s</mi><mn>1</mn></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mn>1</mn></msub><mo>&#x0002C;</mo><mi>&#x02026;</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是从策略中采样的一条轨迹
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi><mo>&#x02208;</mo><mo stretchy="false">[</mo><mn>0</mn><mo>&#x0002C;</mo><mn>1</mn><mo stretchy="false">]</mo></mrow></math></span> 是折扣因子</p>
-<p>轨迹的概率为：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>p</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>p</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mn>1</mn></msub><mo stretchy="false">&#x00029;</mo><msubsup><mo>&#x0220F;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>T</mi></mrow></msubsup><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>p</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-
-<p>根据log-derivative技巧 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x02207;</mo><mi>f</mi><mo stretchy="false">&#x00028;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>f</mi><mo stretchy="false">&#x00028;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02207;</mo><mi>log</mi><mi>f</mi><mo stretchy="false">&#x00028;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>，策略梯度可以写为：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>J</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>&#x003C4;</mi><mi>&#x0007E;</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msubsup><mo>&#x02211;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>0</mn></mrow><mrow><mo>&#x0221E;</mo></mrow></msubsup><msup><mi>&#x003B3;</mi><mi>t</mi></msup><msup><mi>A</mi><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>A</mi><mrow><mi>&#x003C0;</mi></mrow></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msup><mi>Q</mi><mrow><mi>&#x003C0;</mi></mrow></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><msup><mi>V</mi><mrow><mi>&#x003C0;</mi></mrow></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是优势函数。</p>
-<h2>重要性采样与异策略学习</h2>
-<p>我们可以使用重要性采样将期望从 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></math></span> 转移到另一个策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub></mrow></math></span>：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x1D53C;</mi><mrow><mi>x</mi><mi>&#x0007E;</mi><mi>p</mi></mrow></msub><mo stretchy="false">[</mo><mi>f</mi><mo stretchy="false">&#x00028;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>x</mi><mi>&#x0007E;</mi><mi>q</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>f</mi><mo stretchy="false">&#x00028;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo><mfrac><mrow><mi>p</mi><mo stretchy="false">&#x00028;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><mi>q</mi><mo stretchy="false">&#x00028;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>应用重要性采样，策略梯度可以改写为：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>J</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>&#x0007E;</mi><msub><mi>&#x003C0;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mfrac><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>&#x003C0;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></mfrac><msup><mi>A</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>这让我们可以使用旧策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub></mrow></math></span> 采集的数据来更新新策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></math></span>。</p>
-<h2>PPO目标函数</h2>
-<h3>PPO1 (带KL惩罚)</h3>
-<p>PPO1在目标函数中添加KL散度惩罚项：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msubsup><mi>J</mi><mrow><mtext>PPO</mtext></mrow><mrow><msup><mi>&#x003B8;</mi><mi>k</mi></msup></mrow></msubsup><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msup><mi>J</mi><mrow><msup><mi>&#x003B8;</mi><mi>k</mi></msup></mrow></msup><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>&#x003B2;</mi><mtext>KL</mtext><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo>&#x0002C;</mo><msup><mi>&#x003B8;</mi><mi>k</mi></msup><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-
-<p>其中：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>J</mi><mrow><msup><mi>&#x003B8;</mi><mi>k</mi></msup></mrow></msup><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02248;</mo><msub><mo>&#x02211;</mo><mrow><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></msub><mfrac><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>&#x003C0;</mi><mrow><msup><mi>&#x003B8;</mi><mi>k</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></mfrac><msup><mi>A</mi><mrow><msup><mi>&#x003B8;</mi><mi>k</mi></msup></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-
-<p><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B2;</mi></mrow></math></span> 是自适应调整的参数。</p>
-<h3>PPO2 (裁剪版本)</h3>
-<p>PPO2使用裁剪的目标函数：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msubsup><mi>J</mi><mrow><mtext>PPO2</mtext></mrow><mrow><msup><mi>&#x003B8;</mi><mi>k</mi></msup></mrow></msubsup><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02248;</mo><msub><mo>&#x02211;</mo><mrow><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></msub><mo>min</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mfrac><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>&#x003C0;</mi><mrow><msup><mi>&#x003B8;</mi><mi>k</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></mfrac><msup><mi>A</mi><mrow><msup><mi>&#x003B8;</mi><mi>k</mi></msup></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mtext>clip</mtext><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mfrac><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>&#x003C0;</mi><mrow><msup><mi>&#x003B8;</mi><mi>k</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0002C;</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi><mo>&#x0002C;</mo><mn>1</mn><mo>&#x0002B;</mo><mi>&#x003B5;</mi><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow><msup><mi>A</mi><mrow><msup><mi>&#x003B8;</mi><mi>k</mi></msup></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow></mrow></math></div>
-
-<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span> 是超参数（通常取0.1~0.2）。</p>
-<p>裁剪操作确保新旧策略的比率 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mi>t</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>&#x003C0;</mi><mrow><msup><mi>&#x003B8;</mi><mi>k</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></mfrac></mrow></math></span>
-不会偏离1太多，从而限制了策略更新的幅度。</p>
-<h2>优势函数估计</h2>
-<p>优势函数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> 可以通过多种方式估计：</p>
-<ol>
-<li><strong>蒙特卡洛估计</strong>：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span>，其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msubsup><mo>&#x02211;</mo><mrow><mi>k</mi><mo>&#x0003D;</mo><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow><mrow><mi>T</mi></mrow></msubsup><msup><mi>&#x003B3;</mi><mrow><mi>k</mi><mo>&#x02212;</mo><mi>t</mi><mo>&#x02212;</mo><mn>1</mn></mrow></msup><msub><mi>r</mi><mi>k</mi></msub></mrow></math></span></li>
-<li><strong>TD残差</strong>：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span></li>
-<li><strong>GAE (Generalized Advantage Estimation)</strong>：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msubsup><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi><mrow><mi>G</mi><mi>A</mi><mi>E</mi></mrow></msubsup><mo>&#x0003D;</mo><msubsup><mo>&#x02211;</mo><mrow><mi>l</mi><mo>&#x0003D;</mo><mn>0</mn></mrow><mrow><mo>&#x0221E;</mo></mrow></msubsup><mo stretchy="false">&#x00028;</mo><mi>&#x003B3;</mi><mi>&#x003BB;</mi><msup><mo stretchy="false">&#x00029;</mo><mi>l</mi></msup><msub><mi>&#x003B4;</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mi>l</mi></mrow></msub></mrow></math></span></li>
-</ol>
-<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003B4;</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是TD残差。</p>
+    
   </div>
   <div class="code">
-    
+    <pre><span class="lineno">1</span><span class="n">r</span><span class="s2">"""
+<span class="lineno">2</span>---
+<span class="lineno">3</span>title: 近端策略优化 (PPO) - Proximal Policy Optimization
+<span class="lineno">4</span>summary: &gt;
+<span class="lineno">5</span>  基于蘑菇书EasyRL第五章的近端策略优化(PPO)算法的PyTorch实现，
+<span class="lineno">6</span>  包含重要性采样、PPO-Penalty(PPO1)、PPO-Clip(PPO2)等核心公式的逐行注释。
+<span class="lineno">7</span>---
+<span class="lineno">8</span>
+<span class="lineno">9</span># 近端策略优化 (PPO) - Proximal Policy Optimization
+<span class="lineno">10</span>
+<span class="lineno">11</span>本文件是[蘑菇书EasyRL](https://github.com/datawhalechina/easy-rl/)第五章的PyTorch实现，
+<span class="lineno">12</span>参考论文[Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347)。
+<span class="lineno">13</span>
+<span class="lineno">14</span>PPO是一种基于策略梯度的强化学习算法。简单的策略梯度方法每个样本只做一次梯度更新，
+<span class="lineno">15</span>如果对同一个样本做多次梯度更新会导致策略偏离过大，产生糟糕的策略。
+<span class="lineno">16</span>PPO通过限制新旧策略之间的差异，使得我们可以对同一批样本做多次梯度更新。
+<span class="lineno">17</span>它通过裁剪梯度流来实现这一目标，如果更新后的策略与采样时的策略差异过大，就会裁剪梯度。
+<span class="lineno">18</span>
+<span class="lineno">19</span>## 策略梯度基础
+<span class="lineno">20</span>
+<span class="lineno">21</span>在策略梯度方法中，我们希望最大化策略的期望累积奖励：
+<span class="lineno">22</span>
+<span class="lineno">23</span>\max_\theta J(\pi_\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{\infty} \gamma^t r_t\right]
+<span class="lineno">24</span>
+<span class="lineno">25</span>其中：
+<span class="lineno">26</span>- r_t 是时刻 t 的奖励
+<span class="lineno">27</span>- \pi_\theta 是参数为 \theta 的策略
+<span class="lineno">28</span>- \tau = (s_0, a_0, s_1, a_1, \ldots) 是从策略中采样的一条轨迹
+<span class="lineno">29</span>- \gamma \in [0, 1] 是折扣因子
+<span class="lineno">30</span>
+<span class="lineno">31</span>轨迹的概率为：
+<span class="lineno">32</span>
+<span class="lineno">33</span>p_\theta(\tau) = p(s_1) \prod_{t=1}^{T} \pi_\theta(a_t | s_t) p(s_{t+1} | s_t, a_t)
+<span class="lineno">34</span>
+<span class="lineno">35</span>根据log-derivative技巧 \nabla f(x) = f(x) \nabla \log f(x)，策略梯度可以写为：
+<span class="lineno">36</span>
+<span class="lineno">37</span>\nabla_\theta J(\pi_\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{\infty} \gamma^t A^{\pi_\theta}(s_t, a_t) \nabla_\theta \log \pi_\theta(a_t | s_t)\right]
+<span class="lineno">38</span>
+<span class="lineno">39</span>其中 A^{\pi}(s, a) = Q^{\pi}(s, a) - V^{\pi}(s) 是优势函数。
+<span class="lineno">40</span>
+<span class="lineno">41</span>## 重要性采样与异策略学习
+<span class="lineno">42</span>
+<span class="lineno">43</span>我们可以使用重要性采样将期望从 \pi_\theta 转移到另一个策略 \pi_{\theta'}：
+<span class="lineno">44</span>
+<span class="lineno">45</span>\mathbb{E}_{x \sim p}[f(x)] = \mathbb{E}_{x \sim q}\left[f(x) \frac{p(x)}{q(x)}\right]
+<span class="lineno">46</span>
+<span class="lineno">47</span>应用重要性采样，策略梯度可以改写为：
+<span class="lineno">48</span>
+<span class="lineno">49</span>\nabla_\theta J(\pi_\theta) = \mathbb{E}_{(s_t, a_t) \sim \pi_{\theta'}}\left[\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta'}(a_t | s_t)} A^{\theta'}(s_t, a_t) \nabla_\theta \log \pi_\theta(a_t | s_t)\right]
+<span class="lineno">50</span>
+<span class="lineno">51</span>这让我们可以使用旧策略 \pi_{\theta'} 采集的数据来更新新策略 \pi_\theta。
+<span class="lineno">52</span>
+<span class="lineno">53</span>## PPO目标函数
+<span class="lineno">54</span>
+<span class="lineno">55</span>### PPO1 (带KL惩罚)
+<span class="lineno">56</span>
+<span class="lineno">57</span>PPO1在目标函数中添加KL散度惩罚项：
+<span class="lineno">58</span>
+<span class="lineno">59</span>J_{\text{PPO}}^{\theta^k}(\theta) = J^{\theta^k}(\theta) - \beta \text{KL}(\theta, \theta^k)
+<span class="lineno">60</span>
+<span class="lineno">61</span>其中：
+<span class="lineno">62</span>
+<span class="lineno">63</span>J^{\theta^k}(\theta) \approx \sum_{(s_t, a_t)} \frac{\pi_\theta(a_t | s_t)}{\pi_{\theta^k}(a_t | s_t)} A^{\theta^k}(s_t, a_t)
+<span class="lineno">64</span>
+<span class="lineno">65</span>\beta 是自适应调整的参数。
+<span class="lineno">66</span>
+<span class="lineno">67</span>### PPO2 (裁剪版本)
+<span class="lineno">68</span>
+<span class="lineno">69</span>PPO2使用裁剪的目标函数：
+<span class="lineno">70</span>
+<span class="lineno">71</span>J_{\text{PPO2}}^{\theta^k}(\theta) \approx \sum_{(s_t, a_t)} \min\left(\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta^k}(a_t | s_t)} A^{\theta^k}(s_t, a_t), \text{clip}\left(\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta^k}(a_t | s_t)}, 1-\varepsilon, 1+\varepsilon\right) A^{\theta^k}(s_t, a_t)\right)
+<span class="lineno">72</span>
+<span class="lineno">73</span>其中 \varepsilon 是超参数（通常取0.1~0.2）。
+<span class="lineno">74</span>
+<span class="lineno">75</span>裁剪操作确保新旧策略的比率 r_t(\theta) = \frac{\pi_\theta(a_t | s_t)}{\pi_{\theta^k}(a_t | s_t)}
+<span class="lineno">76</span>不会偏离1太多，从而限制了策略更新的幅度。
+<span class="lineno">77</span>
+<span class="lineno">78</span>## 优势函数估计
+<span class="lineno">79</span>
+<span class="lineno">80</span>优势函数 A(s_t, a_t) 可以通过多种方式估计：
+<span class="lineno">81</span>
+<span class="lineno">82</span>1. **蒙特卡洛估计**：A(s_t, a_t) = G_t - V(s_t)，其中 G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k
+<span class="lineno">83</span>2. **TD残差**：A(s_t, a_t) = r_t + \gamma V(s_{t+1}) - V(s_t)
+<span class="lineno">84</span>3. **GAE (Generalized Advantage Estimation)**：\hat{A}_t^{GAE} = \sum_{l=0}^{\infty} (\gamma\lambda)^l \delta_{t+l}
+<span class="lineno">85</span>
+<span class="lineno">86</span>其中 \delta_t = r_t + \gamma V(s_{t+1}) - V(s_t) 是TD残差。
+<span class="lineno">87</span>"""</span>
+<span class="lineno">88</span>
+<span class="lineno">89</span><span class="k">import</span> <span class="n">torch</span>
+<span class="lineno">90</span><span class="k">from</span> <span class="n">torch</span> <span class="k">import</span> <span class="n">nn</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-1">#</a></div>
-    
+    <p>def forward(
+    self,
+    log_pi: torch.Tensor,
+    sampled_log_pi: torch.Tensor,
+    advantage: torch.Tensor,
+    clip: float,
+) -&gt; torch.Tensor:
+    r</p>
+<h1>策略比率 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mi>t</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>&#x003C0;</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0003D;</mo><mi>exp</mi><mo stretchy="false">&#x00028;</mo><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo>&#x02212;</mo><mi>log</mi><msub><mi>&#x003C0;</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span></h1>
+<h1>注意：这里的 ratio 不同于奖励 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mi>t</mi></msub></mrow></math></span></h1>
+<p>ratio = torch.exp(log_pi - sampled_log_pi)</p>
+<h1>### 裁剪策略比率</h1>
+<h1></h1>
+<h1><div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x02112;</mi><mrow><mi>C</mi><mi>L</mi><mi>I</mi><mi>P</mi></mrow></msup><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo>min</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><msub><mi>r</mi><mi>t</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi></msub><mo>&#x0002C;</mo><mtext>clip</mtext><mo stretchy="false">&#x00028;</mo><msub><mi>r</mi><mi>t</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi><mo>&#x0002C;</mo><mn>1</mn><mo>&#x0002B;</mo><mi>&#x003B5;</mi><mo stretchy="false">&#x00029;</mo><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi></msub><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div></h1>
+<h1></h1>
+<h1>策略比率被裁剪到 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">[</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi><mo>&#x0002C;</mo><mn>1</mn><mo>&#x0002B;</mo><mi>&#x003B5;</mi><mo stretchy="false">]</mo></mrow></math></span> 范围内。</h1>
+<h1>取最小值确保：</h1>
+<h1>- 当 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi></msub><mo>&#x0003E;</mo><mn>0</mn></mrow></math></span> 时，<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mi>t</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 不会超过 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1</mn><mo>&#x0002B;</mo><mi>&#x003B5;</mi></mrow></math></span></h1>
+<h1>- 当 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi></msub><mo>&#x0003C;</mo><mn>0</mn></mrow></math></span> 时，<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mi>t</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 不会低于 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi></mrow></math></span></h1>
+<h1></h1>
+<h1>这样限制了新旧策略之间的KL散度，防止策略更新过大导致性能崩溃。</h1>
+<h1>使用归一化的优势函数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>t</mi></msub><mo>&#x0003D;</mo><mfrac><mrow><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi></msub><mo>&#x02212;</mo><mi>&#x003BC;</mi><mo stretchy="false">&#x00028;</mo><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow><mrow><mi>&#x003C3;</mi><mo stretchy="false">&#x00028;</mo><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></mfrac></mrow></math></span></h1>
+<h1>虽然引入了偏差，但大幅降低了方差。</h1>
+<p>clipped_ratio = ratio.clamp(min=1.0 - clip, max=1.0 + clip)
+policy_reward = torch.min(ratio * advantage, clipped_ratio * advantage)</p>
+<h1>记录裁剪比例，用于监控</h1>
+<p>self.clip_fraction = (torch.abs(ratio - 1.0) &gt; clip).to(torch.float).mean()</p>
+<h1>取负号因为优化器执行最小化</h1>
+<p>return -policy_reward.mean()</p>
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="k">import</span> <span class="n">torch</span>
-<span class="lineno">2</span><span class="k">from</span> <span class="n">torch</span> <span class="k">import</span> <span class="n">nn</span></pre>
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ClippedPPOLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
+<span class="lineno">3</span>    ## PPO裁剪损失
+<span class="lineno">4</span>
+<span class="lineno">5</span>    PPO2的核心：裁剪策略比率以限制策略更新幅度。
+<span class="lineno">6</span>
+<span class="lineno">7</span>    目标函数：
+<span class="lineno">8</span>    J_{\text{PPO2}}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\varepsilon, 1+\varepsilon)\hat{A}_t\right)\right]
+<span class="lineno">9</span>
+<span class="lineno">10</span>    其中：
+<span class="lineno">11</span>    - r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)} 是策略比率
+<span class="lineno">12</span>    - \hat{A}_t 是优势函数的估计
+<span class="lineno">13</span>    - \varepsilon 是裁剪参数
+<span class="lineno">14</span>
+<span class="lineno">15</span>    推导过程：
+<span class="lineno">16</span>
+<span class="lineno">17</span>    \begin{align}
+<span class="lineno">18</span>    J(\pi_\theta) - J(\pi_{\theta_{old}})
+<span class="lineno">19</span>    &amp;= \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{\infty} \gamma^t A^{\pi_{old}}(s_t, a_t)\right] \\
+<span class="lineno">20</span>    &amp;= \frac{1}{1-\gamma} \mathbb{E}_{s \sim d^{\pi_\theta}, a \sim \pi_\theta}\left[A^{\pi_{old}}(s, a)\right] \\
+<span class="lineno">21</span>    &amp;= \frac{1}{1-\gamma} \mathbb{E}_{s \sim d^{\pi_{\theta_{old}}}, a \sim \pi_{\theta_{old}}}\left[\frac{\pi_\theta(a|s)}{\pi_{\theta_{old}}(a|s)} A^{\pi_{old}}(s, a)\right] \\
+<span class="lineno">22</span>    &amp;\approx \frac{1}{1-\gamma} \mathcal{L}^{CPI}
+<span class="lineno">23</span>    \end{align}
+<span class="lineno">24</span>
+<span class="lineno">25</span>    其中 \mathcal{L}^{CPI} 是CPI (Conservative Policy Iteration) 的目标函数。
+<span class="lineno">26</span>        计算PPO裁剪损失。
+<span class="lineno">27</span>
+<span class="lineno">28</span>        参数映射：
+<span class="lineno">29</span>        - `log_pi`: \log \pi_\theta(a_t|s_t) — 当前策略的对数概率
+<span class="lineno">30</span>        - `sampled_log_pi`: \log \pi_{\theta_{old}}(a_t|s_t) — 旧策略的对数概率
+<span class="lineno">31</span>        - `advantage`: \hat{A}_t — 优势函数估计
+<span class="lineno">32</span>        - `clip`: \varepsilon — 裁剪参数
+<span class="lineno">33</span>
+<span class="lineno">34</span>        返回值：
+<span class="lineno">35</span>        - PPO损失（取负号，因为优化器执行最小化）
+<span class="lineno">36</span>        # 策略比率 r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)} = \exp(\log \pi_\theta - \log \pi_{\theta_{old}})
+<span class="lineno">37</span>        # 注意：这里的 ratio 不同于奖励 r_t
+<span class="lineno">38</span>        ratio = torch.exp(log_pi - sampled_log_pi)
+<span class="lineno">39</span>
+<span class="lineno">40</span>        # ### 裁剪策略比率
+<span class="lineno">41</span>        #
+<span class="lineno">42</span>        # \mathcal{L}^{CLIP}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\varepsilon, 1+\varepsilon)\hat{A}_t\right)\right]
+<span class="lineno">43</span>        #
+<span class="lineno">44</span>        # 策略比率被裁剪到 [1-\varepsilon, 1+\varepsilon] 范围内。
+<span class="lineno">45</span>        # 取最小值确保：
+<span class="lineno">46</span>        # - 当 \hat{A}_t &gt; 0 时，r_t(\theta) 不会超过 1+\varepsilon
+<span class="lineno">47</span>        # - 当 \hat{A}_t &lt; 0 时，r_t(\theta) 不会低于 1-\varepsilon
+<span class="lineno">48</span>        #
+<span class="lineno">49</span>        # 这样限制了新旧策略之间的KL散度，防止策略更新过大导致性能崩溃。
+<span class="lineno">50</span>        # 使用归一化的优势函数 \bar{A}_t = \frac{\hat{A}_t - \mu(\hat{A}_t)}{\sigma(\hat{A}_t)}
+<span class="lineno">51</span>        # 虽然引入了偏差，但大幅降低了方差。
+<span class="lineno">52</span>        clipped_ratio = ratio.clamp(min=1.0 - clip, max=1.0 + clip)
+<span class="lineno">53</span>        policy_reward = torch.min(ratio * advantage, clipped_ratio * advantage)
+<span class="lineno">54</span>
+<span class="lineno">55</span>        # 记录裁剪比例，用于监控
+<span class="lineno">56</span>        self.clip_fraction = (torch.abs(ratio - 1.0) &gt; clip).to(torch.float).mean()
+<span class="lineno">57</span>
+<span class="lineno">58</span>        # 取负号因为优化器执行最小化
+<span class="lineno">59</span>        return -policy_reward.mean()
+<span class="lineno">60</span>
+<span class="lineno">61</span></span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
-    <h2>PPO裁剪损失</h2>
-<p>PPO2的核心：裁剪策略比率以限制策略更新幅度。</p>
-<p>目标函数：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>J</mi><mrow><mtext>PPO2</mtext></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo>min</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><msub><mi>r</mi><mi>t</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi></msub><mo>&#x0002C;</mo><mtext>clip</mtext><mo stretchy="false">&#x00028;</mo><msub><mi>r</mi><mi>t</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi><mo>&#x0002C;</mo><mn>1</mn><mo>&#x0002B;</mo><mi>&#x003B5;</mi><mo stretchy="false">&#x00029;</mo><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi></msub><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>其中：
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mi>t</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>&#x003C0;</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></mfrac></mrow></math></span> 是策略比率
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi></msub></mrow></math></span> 是优势函数的估计
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span> 是裁剪参数</p>
-<p>推导过程：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><mi>J</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>J</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub><mo stretchy="false">&#x00029;</mo><mi>&</mi><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>&#x003C4;</mi><mi>&#x0007E;</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msubsup><mo>&#x02211;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>0</mn></mrow><mrow><mo>&#x0221E;</mo></mrow></msubsup><msup><mi>&#x003B3;</mi><mi>t</mi></msup><msup><mi>A</mi><mrow><msub><mi>&#x003C0;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mspace linebreak="newline" /><mi>&</mi><mo>&#x0003D;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B3;</mi></mrow></mfrac><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><msup><mi>d</mi><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></msup><mo>&#x0002C;</mo><mi>a</mi><mi>&#x0007E;</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msup><mi>A</mi><mrow><msub><mi>&#x003C0;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mspace linebreak="newline" /><mi>&</mi><mo>&#x0003D;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B3;</mi></mrow></mfrac><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><msup><mi>d</mi><mrow><msub><mi>&#x003C0;</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub></mrow></msup><mo>&#x0002C;</mo><mi>a</mi><mi>&#x0007E;</mi><msub><mi>&#x003C0;</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mfrac><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>&#x003C0;</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><msup><mi>A</mi><mrow><msub><mi>&#x003C0;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mspace linebreak="newline" /><mi>&</mi><mo>&#x02248;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B3;</mi></mrow></mfrac><msup><mi>&#x02112;</mi><mrow><mi>C</mi><mi>P</mi><mi>I</mi></mrow></msup></mrow></mrow></math></div>
-
-<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x02112;</mi><mrow><mi>C</mi><mi>P</mi><mi>I</mi></mrow></msup></mrow></math></span> 是CPI (Conservative Policy Iteration) 的目标函数。</p>
-<p>计算PPO裁剪损失。</p>
-<p>参数映射：
-- <code>log_pi</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 当前策略的对数概率
-- <code>sampled_log_pi</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>log</mi><msub><mi>&#x003C0;</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 旧策略的对数概率
-- <code>advantage</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>A</mi></mrow><mo stretchy="false">&#x0005E;</mo></mover><mi>t</mi></msub></mrow></math></span> — 优势函数估计
-- <code>clip</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span> — 裁剪参数</p>
-<p>返回值：
-- PPO损失（取负号，因为优化器执行最小化）</p>
+    <p>def forward(
+    self,
+    value: torch.Tensor,
+    sampled_value: torch.Tensor,
+    sampled_return: torch.Tensor,
+    clip: float,
+) -&gt; torch.Tensor:
+    r</p>
+<h1>裁剪的价值函数：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mrow><mi>C</mi><mi>L</mi><mi>I</mi><mi>P</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>V</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub><mo>&#x0002B;</mo><mtext>clip</mtext><mo stretchy="false">&#x00028;</mo><mi>V</mi><mo>&#x02212;</mo><msub><mi>V</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub><mo>&#x0002C;</mo><mo>&#x02212;</mo><mi>&#x003B5;</mi><mo>&#x0002C;</mo><mi>&#x003B5;</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></h1>
+<p>clipped_value = sampled_value + (value - sampled_value).clamp(min=-clip, max=clip)</p>
+<h1>取两个损失的最大值：未裁剪的和裁剪的</h1>
+<p>vf_loss = torch.max((value - sampled_return) ** 2, (clipped_value - sampled_return) ** 2)</p>
+<h1>乘以1/2是为了与MSE损失保持一致</h1>
+<p>return 0.5 * vf_loss.mean()</p>
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ClippedPPOLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">2</span>
-<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
-<span class="lineno">4</span>        <span class="nb">self</span><span class="p">,</span>
-<span class="lineno">5</span>        <span class="n">log_pi</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
-<span class="lineno">6</span>        <span class="n">sampled_log_pi</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
-<span class="lineno">7</span>        <span class="n">advantage</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
-<span class="lineno">8</span>        <span class="n">clip</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-<span class="lineno">9</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">10</span>        <span class="c"># 策略比率 r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)} = \exp(\log \pi_\theta - \log \pi_{\theta_{old}})</span>
-<span class="lineno">11</span>        <span class="c"># 注意：这里的 ratio 不同于奖励 r_t</span>
-<span class="lineno">12</span>        <span class="n">ratio</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="n">log_pi</span> <span class="o">-</span> <span class="n">sampled_log_pi</span><span class="p">)</span>
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ClippedValueFunctionLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
+<span class="lineno">3</span>    ## 裁剪的价值函数损失
+<span class="lineno">4</span>
+<span class="lineno">5</span>    类似于策略的裁剪，价值函数的更新也需要裁剪以防止过大变化。
+<span class="lineno">6</span>
+<span class="lineno">7</span>    V_{CLIP}^{\pi_\theta}(s_t) = V^{\pi_{\theta_{old}}}(s_t) + \text{clip}\left(V^{\pi_\theta}(s_t) - V^{\pi_{\theta_{old}}}(s_t), -\varepsilon, +\varepsilon\right)
+<span class="lineno">8</span>
+<span class="lineno">9</span>    \mathcal{L}^{VF}(\theta) = \frac{1}{2} \mathbb{E}_t\left[\max\left((V^{\pi_\theta}(s_t) - R_t)^2, (V_{CLIP}^{\pi_\theta}(s_t) - R_t)^2\right)\right]
+<span class="lineno">10</span>
+<span class="lineno">11</span>    裁剪确保价值函数 V_\theta 不会显著偏离 V_{\theta_{old}}。
+<span class="lineno">12</span>        计算裁剪的价值函数损失。
 <span class="lineno">13</span>
-<span class="lineno">14</span>        <span class="c"># ### 裁剪策略比率</span>
-<span class="lineno">15</span>        <span class="c">#</span>
-<span class="lineno">16</span>        <span class="c"># \mathcal{L}^{CLIP}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\varepsilon, 1+\varepsilon)\hat{A}_t\right)\right]</span>
-<span class="lineno">17</span>        <span class="c">#</span>
-<span class="lineno">18</span>        <span class="c"># 策略比率被裁剪到 [1-\varepsilon, 1+\varepsilon] 范围内。</span>
-<span class="lineno">19</span>        <span class="c"># 取最小值确保：</span>
-<span class="lineno">20</span>        <span class="c"># - 当 \hat{A}_t &gt; 0 时，r_t(\theta) 不会超过 1+\varepsilon</span>
-<span class="lineno">21</span>        <span class="c"># - 当 \hat{A}_t &lt; 0 时，r_t(\theta) 不会低于 1-\varepsilon</span>
-<span class="lineno">22</span>        <span class="c">#</span>
-<span class="lineno">23</span>        <span class="c"># 这样限制了新旧策略之间的KL散度，防止策略更新过大导致性能崩溃。</span>
-<span class="lineno">24</span>        <span class="c"># 使用归一化的优势函数 \bar{A}_t = \frac{\hat{A}_t - \mu(\hat{A}_t)}{\sigma(\hat{A}_t)}</span>
-<span class="lineno">25</span>        <span class="c"># 虽然引入了偏差，但大幅降低了方差。</span>
-<span class="lineno">26</span>        <span class="n">clipped_ratio</span> <span class="o">=</span> <span class="n">ratio</span><span class="p">.</span><span class="nf">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="m">1.0</span> <span class="o">-</span> <span class="n">clip</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="m">1.0</span> <span class="o">+</span> <span class="n">clip</span><span class="p">)</span>
-<span class="lineno">27</span>        <span class="n">policy_reward</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nb">min</span><span class="p">(</span><span class="n">ratio</span> <span class="o">*</span> <span class="n">advantage</span><span class="p">,</span> <span class="n">clipped_ratio</span> <span class="o">*</span> <span class="n">advantage</span><span class="p">)</span>
-<span class="lineno">28</span>
-<span class="lineno">29</span>        <span class="c"># 记录裁剪比例，用于监控</span>
-<span class="lineno">30</span>        <span class="nb">self</span><span class="p">.</span><span class="n">clip_fraction</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nb">abs</span><span class="p">(</span><span class="n">ratio</span> <span class="o">-</span> <span class="m">1.0</span><span class="p">)</span> <span class="o">&</span><span class="n">gt</span><span class="p">;</span> <span class="n">clip</span><span class="p">)</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nb">float</span><span class="p">)</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">31</span>
-<span class="lineno">32</span>        <span class="c"># 取负号因为优化器执行最小化</span>
-<span class="lineno">33</span>        <span class="k">return</span> <span class="o">-</span><span class="n">policy_reward</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">34</span>
-<span class="lineno">35</span></pre>
+<span class="lineno">14</span>        参数映射：
+<span class="lineno">15</span>        - `value`: V^{\pi_\theta}(s_t) — 当前价值函数估计
+<span class="lineno">16</span>        - `sampled_value`: V^{\pi_{\theta_{old}}}(s_t) — 旧价值函数估计
+<span class="lineno">17</span>        - `sampled_return`: R_t — 蒙特卡洛回报
+<span class="lineno">18</span>        - `clip`: \varepsilon — 裁剪参数
+<span class="lineno">19</span>        # 裁剪的价值函数：V_{CLIP} = V_{old} + \text{clip}(V - V_{old}, -\varepsilon, \varepsilon)
+<span class="lineno">20</span>        clipped_value = sampled_value + (value - sampled_value).clamp(min=-clip, max=clip)
+<span class="lineno">21</span>
+<span class="lineno">22</span>        # 取两个损失的最大值：未裁剪的和裁剪的
+<span class="lineno">23</span>        vf_loss = torch.max((value - sampled_return) ** 2, (clipped_value - sampled_return) ** 2)
+<span class="lineno">24</span>
+<span class="lineno">25</span>        # 乘以1/2是为了与MSE损失保持一致
+<span class="lineno">26</span>        return 0.5 * vf_loss.mean()
+<span class="lineno">27</span>
+<span class="lineno">28</span></span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
-    <h2>裁剪的价值函数损失</h2>
-<p>类似于策略的裁剪，价值函数的更新也需要裁剪以防止过大变化。</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msubsup><mi>V</mi><mrow><mi>C</mi><mi>L</mi><mi>I</mi><mi>P</mi></mrow><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></msubsup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msup><mi>V</mi><mrow><msub><mi>&#x003C0;</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mtext>clip</mtext><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><msup><mi>V</mi><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><msup><mi>V</mi><mrow><msub><mi>&#x003C0;</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mo>&#x02212;</mo><mi>&#x003B5;</mi><mo>&#x0002C;</mo><mo>&#x0002B;</mo><mi>&#x003B5;</mi><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow></mrow></math></div>
+    <p>def <strong>init</strong>(self, state_dim: int, action_dim: int, hidden_dim: int = 256):
+    super().<strong>init</strong>()
+    # 共享特征提取器
+    self.feature = nn.Sequential(
+        nn.Linear(state_dim, hidden_dim),
+        nn.ReLU(),
+        nn.Linear(hidden_dim, hidden_dim),
+        nn.ReLU(),
+    )</p>
+<pre><code># Actor头：输出每个动作的对数概率（用于分类动作空间）
+self.actor = nn.Linear(hidden_dim, action_dim)
 
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x02112;</mi><mrow><mi>V</mi><mi>F</mi></mrow></msup><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn></mrow></mfrac><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo>max</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mo stretchy="false">&#x00028;</mo><msup><mi>V</mi><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><msub><mi>R</mi><mi>t</mi></msub><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo>&#x0002C;</mo><mo stretchy="false">&#x00028;</mo><msubsup><mi>V</mi><mrow><mi>C</mi><mi>L</mi><mi>I</mi><mi>P</mi></mrow><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></msubsup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><msub><mi>R</mi><mi>t</mi></msub><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+# Critic头：输出状态价值 &lt;span class="math-inline"&gt;&lt;math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"&gt;&lt;mrow&gt;&lt;mi&gt;V&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;mi&gt;s&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;/mrow&gt;&lt;/math&gt;&lt;/span&gt;
+self.critic = nn.Linear(hidden_dim, 1)
+</code></pre>
+<p>def forward(self, state: torch.Tensor):
+    # 提取特征
+    features = self.feature(state)</p>
+<pre><code># Actor: 输出动作 logits
+action_logits = self.actor(features)
+action_probs = torch.softmax(action_logits, dim=-1)
 
-<p>裁剪确保价值函数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003B8;</mi></msub></mrow></math></span> 不会显著偏离 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub></mrow></math></span>。</p>
-<p>计算裁剪的价值函数损失。</p>
-<p>参数映射：
-- <code>value</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>V</mi><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 当前价值函数估计
-- <code>sampled_value</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>V</mi><mrow><msub><mi>&#x003C0;</mi><mrow><msub><mi>&#x003B8;</mi><mrow><mi>o</mi><mi>l</mi><mi>d</mi></mrow></msub></mrow></msub></mrow></msup><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 旧价值函数估计
-- <code>sampled_return</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>R</mi><mi>t</mi></msub></mrow></math></span> — 蒙特卡洛回报
-- <code>clip</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span> — 裁剪参数</p>
-  </div>
-  <div class="code">
-    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ClippedValueFunctionLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">2</span>
-<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
-<span class="lineno">4</span>        <span class="nb">self</span><span class="p">,</span>
-<span class="lineno">5</span>        <span class="n">value</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
-<span class="lineno">6</span>        <span class="n">sampled_value</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
-<span class="lineno">7</span>        <span class="n">sampled_return</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
-<span class="lineno">8</span>        <span class="n">clip</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-<span class="lineno">9</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">10</span>        <span class="c"># 裁剪的价值函数：V_{CLIP} = V_{old} + \text{clip}(V - V_{old}, -\varepsilon, \varepsilon)</span>
-<span class="lineno">11</span>        <span class="n">clipped_value</span> <span class="o">=</span> <span class="n">sampled_value</span> <span class="o">+</span> <span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">sampled_value</span><span class="p">)</span><span class="p">.</span><span class="nf">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=-</span><span class="n">clip</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">clip</span><span class="p">)</span>
-<span class="lineno">12</span>
-<span class="lineno">13</span>        <span class="c"># 取两个损失的最大值：未裁剪的和裁剪的</span>
-<span class="lineno">14</span>        <span class="n">vf_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nb">max</span><span class="p">(</span><span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">sampled_return</span><span class="p">)</span> <span class="o">**</span> <span class="m">2</span><span class="p">,</span> <span class="p">(</span><span class="n">clipped_value</span> <span class="o">-</span> <span class="n">sampled_return</span><span class="p">)</span> <span class="o">**</span> <span class="m">2</span><span class="p">)</span>
-<span class="lineno">15</span>
-<span class="lineno">16</span>        <span class="c"># 乘以1/2是为了与MSE损失保持一致</span>
-<span class="lineno">17</span>        <span class="k">return</span> <span class="m">0.5</span> <span class="o">*</span> <span class="n">vf_loss</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">18</span>
-<span class="lineno">19</span></pre>
-  </div>
-</div>
-<div class="section">
-  <div class="docs">
-    <div class="section-link"><a href="#section-4">#</a></div>
-    <h2>PPO网络</h2>
-<p>共享特征提取器的Actor-Critic网络结构。
-Actor输出策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>，Critic输出价值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>。</p>
-<p>网络结构：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mo stretchy="false">&#x0007C;</mo><mi>&#x1D49C;</mi><mo stretchy="false">&#x0007C;</mo></mrow></mfrac><msub><mo>&#x02211;</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>A</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow></mrow></math></div>
+# Critic: 输出状态价值
+state_value = self.critic(features).squeeze(-1)
 
-<p>但PPO通常使用独立的Actor和Critic头：
-- Actor: 特征 → 策略分布 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>
-- Critic: 特征 → 价值估计 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></p>
-<p>评估给定状态-动作对的对数概率和价值。</p>
-<p>用于PPO更新时计算 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span>。</p>
+return action_probs, state_value
+</code></pre>
+<p>def evaluate(self, state: torch.Tensor, action: torch.Tensor):
+    r</p>
+<p>features = self.feature(state)
+action_logits = self.actor(features)
+state_value = self.critic(features).squeeze(-1)</p>
+<h1>计算动作的对数概率</h1>
+<p>action_probs = torch.softmax(action_logits, dim=-1)
+action_log_probs = torch.log(action_probs + 1e-8)</p>
+<h1>选择给定动作的对数概率</h1>
+<p>log_pi = action_log_probs.gather(-1, action.unsqueeze(-1)).squeeze(-1)</p>
+<p>return log_pi, state_value</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">PPONetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">2</span>
-<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="m">256</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">4</span>        <span class="nf">super</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="nf">__init__</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">5</span>        <span class="c"># 共享特征提取器</span>
-<span class="lineno">6</span>        <span class="nb">self</span><span class="p">.</span><span class="n">feature</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Sequential</span><span class="p">(</span>
-<span class="lineno">7</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
-<span class="lineno">8</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
-<span class="lineno">9</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
-<span class="lineno">10</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
-<span class="lineno">11</span>        <span class="p">)</span>
-<span class="lineno">12</span>
-<span class="lineno">13</span>        <span class="c"># Actor头：输出每个动作的对数概率（用于分类动作空间）</span>
-<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">actor</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span>
+<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
+<span class="lineno">3</span>    ## PPO网络
+<span class="lineno">4</span>
+<span class="lineno">5</span>    共享特征提取器的Actor-Critic网络结构。
+<span class="lineno">6</span>    Actor输出策略 \pi_\theta(a|s)，Critic输出价值 V_\theta(s)。
+<span class="lineno">7</span>
+<span class="lineno">8</span>    网络结构：
+<span class="lineno">9</span>    Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\right)
+<span class="lineno">10</span>
+<span class="lineno">11</span>    但PPO通常使用独立的Actor和Critic头：
+<span class="lineno">12</span>    - Actor: 特征 → 策略分布 \pi_\theta(\cdot|s)
+<span class="lineno">13</span>    - Critic: 特征 → 价值估计 V_\theta(s)
+<span class="lineno">14</span>        评估给定状态-动作对的对数概率和价值。
 <span class="lineno">15</span>
-<span class="lineno">16</span>        <span class="c"># Critic头：输出状态价值 V(s)</span>
-<span class="lineno">17</span>        <span class="nb">self</span><span class="p">.</span><span class="n">critic</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
-<span class="lineno">18</span>
-<span class="lineno">19</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">20</span>        <span class="c"># 提取特征</span>
-<span class="lineno">21</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
-<span class="lineno">22</span>
-<span class="lineno">23</span>        <span class="c"># Actor: 输出动作 logits</span>
-<span class="lineno">24</span>        <span class="n">action_logits</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">actor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
-<span class="lineno">25</span>        <span class="n">action_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="n">action_logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">26</span>
-<span class="lineno">27</span>        <span class="c"># Critic: 输出状态价值</span>
-<span class="lineno">28</span>        <span class="n">state_value</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">critic</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">29</span>
-<span class="lineno">30</span>        <span class="k">return</span> <span class="n">action_probs</span><span class="p">,</span> <span class="n">state_value</span>
-<span class="lineno">31</span>
-<span class="lineno">32</span>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">33</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
-<span class="lineno">34</span>        <span class="n">action_logits</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">actor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
-<span class="lineno">35</span>        <span class="n">state_value</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">critic</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">36</span>
-<span class="lineno">37</span>        <span class="c"># 计算动作的对数概率</span>
-<span class="lineno">38</span>        <span class="n">action_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="n">action_logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">39</span>        <span class="n">action_log_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">action_probs</span> <span class="o">+</span> <span class="m">1e</span><span class="o">-</span><span class="m">8</span><span class="p">)</span>
-<span class="lineno">40</span>
-<span class="lineno">41</span>        <span class="c"># 选择给定动作的对数概率</span>
-<span class="lineno">42</span>        <span class="n">log_pi</span> <span class="o">=</span> <span class="n">action_log_probs</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">action</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">43</span>
-<span class="lineno">44</span>        <span class="k">return</span> <span class="n">log_pi</span><span class="p">,</span> <span class="n">state_value</span>
-<span class="lineno">45</span></pre>
+<span class="lineno">16</span>        用于PPO更新时计算 \log \pi_\theta(a_t|s_t)。
+<span class="lineno">17</span>        features = self.feature(state)
+<span class="lineno">18</span>        action_logits = self.actor(features)
+<span class="lineno">19</span>        state_value = self.critic(features).squeeze(-1)
+<span class="lineno">20</span>
+<span class="lineno">21</span>        # 计算动作的对数概率
+<span class="lineno">22</span>        action_probs = torch.softmax(action_logits, dim=-1)
+<span class="lineno">23</span>        action_log_probs = torch.log(action_probs + 1e-8)
+<span class="lineno">24</span>
+<span class="lineno">25</span>        # 选择给定动作的对数概率
+<span class="lineno">26</span>        log_pi = action_log_probs.gather(-1, action.unsqueeze(-1)).squeeze(-1)
+<span class="lineno">27</span>
+<span class="lineno">28</span>        return log_pi, state_value
+<span class="lineno">29</span></span></pre>
   </div>
 </div>
 

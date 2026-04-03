@@ -1,4 +1,4 @@
-"""
+r"""
 ---
 title: 表格型方法 (Tabular Methods) - Q-Learning & Sarsa
 summary: >
@@ -100,7 +100,7 @@ from collections import defaultdict
 
 
 class QLearningAgent:
-    """
+    r"""
     ## Q-Learning智能体
 
     Q-Learning更新规则：
@@ -130,7 +130,7 @@ class QLearningAgent:
         self.q_table = np.zeros((state_dim, action_dim), dtype=np.float32)
 
     def select_action(self, state: int) -> int:
-        """
+        r"""
         使用$\varepsilon$-贪心策略选择动作。
 
         $$a = \begin{cases}
@@ -148,7 +148,7 @@ class QLearningAgent:
     def update(
         self, state: int, action: int, reward: float, next_state: int, done: bool
     ):
-        """
+        r"""
         更新Q值。
 
         $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') \times (1 - \text{done}) - Q(s, a)\right]$$
@@ -174,7 +174,7 @@ class QLearningAgent:
 
 
 class SarsaAgent:
-    """
+    r"""
     ## Sarsa智能体
 
     Sarsa更新规则：
@@ -200,7 +200,7 @@ class SarsaAgent:
         self.q_table = np.zeros((state_dim, action_dim), dtype=np.float32)
 
     def select_action(self, state: int) -> int:
-        """$\varepsilon$-贪心策略选择动作。"""
+        r"""$\varepsilon$-贪心策略选择动作。"""
         if np.random.random() < self.epsilon:
             return np.random.randint(self.action_dim)
         else:
@@ -215,7 +215,7 @@ class SarsaAgent:
         next_action: int,
         done: bool,
     ):
-        """
+        r"""
         更新Q值。
 
         $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') \times (1 - \text{done}) - Q(s, a)\right]$$
@@ -236,7 +236,7 @@ class SarsaAgent:
 
 
 class ValueIterationAgent:
-    """
+    r"""
     ## 价值迭代智能体
 
     价值迭代是一种动态规划算法，适用于已知环境模型的场景。
@@ -270,7 +270,7 @@ class ValueIterationAgent:
         self.P = P
 
     def iterate(self):
-        """
+        r"""
         执行一次价值迭代。
 
         $$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]$$
@@ -309,7 +309,7 @@ class ValueIterationAgent:
         self.extract_policy()
 
     def extract_policy(self):
-        """
+        r"""
         从最优价值函数提取最优策略。
 
         $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]$$

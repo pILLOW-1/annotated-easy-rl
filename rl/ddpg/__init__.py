@@ -1,4 +1,4 @@
-"""
+r"""
 ---
 title: 深度确定性策略梯度 (DDPG) - Deep Deterministic Policy Gradient
 summary: >
@@ -100,7 +100,7 @@ import numpy as np
 
 
 class Actor(nn.Module):
-    """
+    r"""
     ## Actor网络（确定性策略）
 
     Actor $\mu_\theta(s)$ 是一个确定性策略网络，
@@ -125,7 +125,7 @@ class Actor(nn.Module):
         )
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
-        """
+        r"""
         输出确定性动作 $a = \mu_\theta(s)$。
 
         参数：
@@ -139,7 +139,7 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    """
+    r"""
     ## Critic网络（动作价值函数）
 
     Critic $Q_\phi(s, a)$ 估计状态-动作对的价值。
@@ -161,7 +161,7 @@ class Critic(nn.Module):
         )
 
     def forward(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
-        """
+        r"""
         输出动作价值 $Q_\phi(s, a)$。
 
         参数：
@@ -177,7 +177,7 @@ class Critic(nn.Module):
 
 
 class DDPGLoss(nn.Module):
-    """
+    r"""
     ## DDPG损失函数
 
     ### Critic损失
@@ -207,7 +207,7 @@ class DDPGLoss(nn.Module):
         rewards: torch.Tensor,
         dones: torch.Tensor,
     ) -> torch.Tensor:
-        """
+        r"""
         计算Critic损失。
 
         参数映射：
@@ -229,7 +229,7 @@ class DDPGLoss(nn.Module):
         return critic_loss
 
     def compute_actor_loss(self, q_values: torch.Tensor) -> torch.Tensor:
-        """
+        r"""
         计算Actor损失。
 
         参数：
@@ -245,7 +245,7 @@ class DDPGLoss(nn.Module):
 
 
 class OUNoise:
-    """
+    r"""
     ## Ornstein-Uhlenbeck噪声过程
 
     OU过程用于生成时间相关的探索噪声：
@@ -282,7 +282,7 @@ class OUNoise:
         self.state = np.ones(self.action_dim) * self.mu
 
     def sample(self) -> np.ndarray:
-        """
+        r"""
         采样OU噪声。
 
         $$dx = \theta(\mu - x) + \sigma \mathcal{N}(0, 1)$$
@@ -297,7 +297,7 @@ class OUNoise:
 
 
 def soft_update(target: nn.Module, source: nn.Module, tau: float):
-    """
+    r"""
     ## 目标网络软更新
 
     $$\theta' \leftarrow \tau \theta + (1 - \tau) \theta'$$
@@ -316,7 +316,7 @@ def soft_update(target: nn.Module, source: nn.Module, tau: float):
 
 
 def hard_update(target: nn.Module, source: nn.Module):
-    """
+    r"""
     ## 目标网络硬更新
 
     $$\theta' \leftarrow \theta$$

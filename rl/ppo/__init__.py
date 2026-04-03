@@ -1,4 +1,4 @@
-"""
+r"""
 ---
 title: 近端策略优化 (PPO) - Proximal Policy Optimization
 summary: >
@@ -91,7 +91,7 @@ from torch import nn
 
 
 class ClippedPPOLoss(nn.Module):
-    """
+    r"""
     ## PPO裁剪损失
 
     PPO2的核心：裁剪策略比率以限制策略更新幅度。
@@ -124,7 +124,7 @@ class ClippedPPOLoss(nn.Module):
         advantage: torch.Tensor,
         clip: float,
     ) -> torch.Tensor:
-        """
+        r"""
         计算PPO裁剪损失。
 
         参数映射：
@@ -163,7 +163,7 @@ class ClippedPPOLoss(nn.Module):
 
 
 class ClippedValueFunctionLoss(nn.Module):
-    """
+    r"""
     ## 裁剪的价值函数损失
 
     类似于策略的裁剪，价值函数的更新也需要裁剪以防止过大变化。
@@ -182,7 +182,7 @@ class ClippedValueFunctionLoss(nn.Module):
         sampled_return: torch.Tensor,
         clip: float,
     ) -> torch.Tensor:
-        """
+        r"""
         计算裁剪的价值函数损失。
 
         参数映射：
@@ -202,7 +202,7 @@ class ClippedValueFunctionLoss(nn.Module):
 
 
 class PPONetwork(nn.Module):
-    """
+    r"""
     ## PPO网络
 
     共享特征提取器的Actor-Critic网络结构。
@@ -246,7 +246,7 @@ class PPONetwork(nn.Module):
         return action_probs, state_value
 
     def evaluate(self, state: torch.Tensor, action: torch.Tensor):
-        """
+        r"""
         评估给定状态-动作对的对数概率和价值。
 
         用于PPO更新时计算 $\log \pi_\theta(a_t|s_t)$。

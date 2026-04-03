@@ -1,4 +1,4 @@
-"""
+r"""
 ---
 title: 演员-评论员算法 (Actor-Critic) - A2C
 summary: >
@@ -80,7 +80,7 @@ from torch import nn
 
 
 class ActorCriticNetwork(nn.Module):
-    """
+    r"""
     ## Actor-Critic共享网络
 
     共享特征提取器的Actor-Critic网络：
@@ -106,7 +106,7 @@ class ActorCriticNetwork(nn.Module):
         self.critic = nn.Linear(hidden_dim, 1)
 
     def forward(self, state: torch.Tensor):
-        """
+        r"""
         前向传播。
 
         参数：
@@ -128,7 +128,7 @@ class ActorCriticNetwork(nn.Module):
         return action_probs, state_value
 
     def evaluate(self, state: torch.Tensor, action: torch.Tensor):
-        """
+        r"""
         评估给定状态-动作对。
 
         用于计算 $\log \pi_\theta(a_t|s_t)$ 和策略熵。
@@ -160,7 +160,7 @@ class ActorCriticNetwork(nn.Module):
 
 
 class A2CLoss(nn.Module):
-    """
+    r"""
     ## A2C损失函数
 
     A2C的总损失由三部分组成：
@@ -188,7 +188,7 @@ class A2CLoss(nn.Module):
         returns: torch.Tensor,
         entropy: torch.Tensor,
     ) -> tuple:
-        """
+        r"""
         计算A2C损失。
 
         参数映射：
@@ -230,7 +230,7 @@ def compute_td_targets(
     dones: torch.Tensor,
     gamma: float,
 ) -> torch.Tensor:
-    """
+    r"""
     ## 计算TD目标值
 
     $$G_t = r_t + \gamma V(s_{t+1}) \times (1 - \text{done})$$
@@ -258,7 +258,7 @@ def compute_advantages(
     dones: torch.Tensor,
     gamma: float,
 ) -> torch.Tensor:
-    """
+    r"""
     ## 计算优势函数（单步TD）
 
     $$A(s_t, a_t) = r_t + \gamma V(s_{t+1}) - V(s_t)$$

@@ -164,324 +164,353 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
     <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-0">#</a></div>
-    <hr />
-<p>title: 表格型方法 (Tabular Methods) - Q-Learning &amp; Sarsa
-summary: &gt;
-  基于蘑菇书EasyRL第三章的表格型强化学习方法的Python实现，
-  包含Q-Learning、Sarsa、Value Iteration等核心算法的逐行注释。</p>
-<hr />
-<h1>表格型方法 (Tabular Methods) - Q-Learning &amp; Sarsa</h1>
-<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第三章的Python实现。</p>
-<p>表格型方法使用表格来存储状态-动作价值函数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 或状态价值函数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>。
-适用于状态空间和动作空间都是离散且较小的场景。</p>
-<h2>贝尔曼方程</h2>
-<h3>状态价值函数</h3>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>&#x003C0;</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02223;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>s</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>&#x003C0;</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msubsup><mo>&#x02211;</mo><mrow><mi>k</mi><mo>&#x0003D;</mo><mn>0</mn></mrow><mrow><mo>&#x0221E;</mo></mrow></msubsup><msup><mi>&#x003B3;</mi><mi>k</mi></msup><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mi>k</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x02223;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>s</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>贝尔曼期望方程：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>&#x02211;</mo><mi>a</mi></msub><mi>&#x003C0;</mi><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<h3>动作价值函数</h3>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>Q</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>&#x003C0;</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02223;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>a</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>&#x003C0;</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msubsup><mo>&#x02211;</mo><mrow><mi>k</mi><mo>&#x0003D;</mo><mn>0</mn></mrow><mrow><mo>&#x0221E;</mo></mrow></msubsup><msup><mi>&#x003B3;</mi><mi>k</mi></msup><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mi>k</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x02223;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>a</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>贝尔曼最优方程：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>Q</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><msup><mi>Q</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<h2>Q-Learning (异策略)</h2>
-<p>Q-Learning是异策略(off-policy)的时序差分(TD)控制算法。</p>
-<h3>Q值更新规则</h3>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>其中：
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B1;</mi></mrow></math></span> 是学习率
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi></mrow></math></span> 是折扣因子
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是TD目标
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是TD误差</p>
-<p>Q-Learning使用 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 来估计下一状态的价值，
-这对应于贪婪策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C0;</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>，
-但行为策略可以是 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心策略，因此是异策略的。</p>
-<h2>Sarsa (同策略)</h2>
-<p>Sarsa是同策略(on-policy)的时序差分(TD)控制算法。</p>
-<h3>Q值更新规则</h3>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>Sarsa使用实际采取的下一个动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>a</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub></mrow></math></span> 的Q值来更新，
-因此学习的就是行为策略本身的价值，是同策略的。</p>
-<h2>Q-Learning vs Sarsa</h2>
-<table>
-<thead>
-<tr>
-<th>特性</th>
-<th>Q-Learning</th>
-<th>Sarsa</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>策略类型</td>
-<td>异策略(off-policy)</td>
-<td>同策略(on-policy)</td>
-</tr>
-<tr>
-<td>TD目标</td>
-<td><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></td>
-<td><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo></mrow></math></span></td>
-</tr>
-<tr>
-<td>行为策略</td>
-<td><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心</td>
-<td><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心</td>
-</tr>
-<tr>
-<td>目标策略</td>
-<td>贪婪</td>
-<td><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心</td>
-</tr>
-<tr>
-<td>收敛性</td>
-<td>收敛到最优Q值</td>
-<td>收敛到行为策略的Q值</td>
-</tr>
-</tbody>
-</table>
-<h2>价值迭代 (Value Iteration)</h2>
-<p>价值迭代是一种动态规划算法，用于求解已知环境模型的MDP。</p>
-<h3>更新规则</h3>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mrow><mi>k</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>V</mi><mi>k</mi></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>价值迭代直接更新状态价值函数，直到收敛。
-收敛后，最优策略可以通过贪婪选择得到：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003C0;</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msup><mi>V</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<h2><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心策略</h2>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C0;</mi><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mtable><mtr><mtd columnalign="left"><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi><mo>&#x0002B;</mo><mfrac><mrow><mi>&#x003B5;</mi></mrow><mrow><mo stretchy="false">&#x0007C;</mo><mi>&#x1D49C;</mi><mo stretchy="false">&#x0007C;</mo></mrow></mfrac></mtd><mtd columnalign="left"><mtext>if&#x000A0;</mtext><mi>a</mi><mo>&#x0003D;</mo><mi>\arg</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo></mtd></mtr><mtr><mtd columnalign="left"><mfrac><mrow><mi>&#x003B5;</mi></mrow><mrow><mo stretchy="false">&#x0007C;</mo><mi>&#x1D49C;</mi><mo stretchy="false">&#x0007C;</mo></mrow></mfrac></mtd><mtd columnalign="left"><mtext>otherwise</mtext></mtd></mtr></mtable></mrow></mrow></math></div>
-
-<p>或者简化为：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mtable><mtr><mtd columnalign="left"><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi></mtd></mtr><mtr><mtd columnalign="left"><mtext>随机动作</mtext></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mi>&#x003B5;</mi></mtd></mtr></mtable></mrow></mrow></math></div>
+    
   </div>
   <div class="code">
-    
+    <pre><span class="lineno">1</span><span class="n">r</span><span class="s2">"""
+<span class="lineno">2</span>---
+<span class="lineno">3</span>title: 表格型方法 (Tabular Methods) - Q-Learning &amp; Sarsa
+<span class="lineno">4</span>summary: &gt;
+<span class="lineno">5</span>  基于蘑菇书EasyRL第三章的表格型强化学习方法的Python实现，
+<span class="lineno">6</span>  包含Q-Learning、Sarsa、Value Iteration等核心算法的逐行注释。
+<span class="lineno">7</span>---
+<span class="lineno">8</span>
+<span class="lineno">9</span># 表格型方法 (Tabular Methods) - Q-Learning &amp; Sarsa
+<span class="lineno">10</span>
+<span class="lineno">11</span>本文件是[蘑菇书EasyRL](https://github.com/datawhalechina/easy-rl/)第三章的Python实现。
+<span class="lineno">12</span>
+<span class="lineno">13</span>表格型方法使用表格来存储状态-动作价值函数 Q(s, a) 或状态价值函数 V(s)。
+<span class="lineno">14</span>适用于状态空间和动作空间都是离散且较小的场景。
+<span class="lineno">15</span>
+<span class="lineno">16</span>## 贝尔曼方程
+<span class="lineno">17</span>
+<span class="lineno">18</span>### 状态价值函数
+<span class="lineno">19</span>
+<span class="lineno">20</span>V^\pi(s) = \mathbb{E}_\pi\left[G_t \mid s_t = s\right] = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s\right]
+<span class="lineno">21</span>
+<span class="lineno">22</span>贝尔曼期望方程：
+<span class="lineno">23</span>V^\pi(s) = \sum_a \pi(a|s) \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^\pi(s')\right]
+<span class="lineno">24</span>
+<span class="lineno">25</span>### 动作价值函数
+<span class="lineno">26</span>
+<span class="lineno">27</span>Q^\pi(s, a) = \mathbb{E}_\pi\left[G_t \mid s_t = s, a_t = a\right] = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s, a_t = a\right]
+<span class="lineno">28</span>
+<span class="lineno">29</span>贝尔曼最优方程：
+<span class="lineno">30</span>Q^*(s, a) = \sum_{s', r} p(s', r|s, a) \left[r + \gamma \max_{a'} Q^*(s', a')\right]
+<span class="lineno">31</span>
+<span class="lineno">32</span>## Q-Learning (异策略)
+<span class="lineno">33</span>
+<span class="lineno">34</span>Q-Learning是异策略(off-policy)的时序差分(TD)控制算法。
+<span class="lineno">35</span>
+<span class="lineno">36</span>### Q值更新规则
+<span class="lineno">37</span>
+<span class="lineno">38</span>Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t)\right]
+<span class="lineno">39</span>
+<span class="lineno">40</span>其中：
+<span class="lineno">41</span>- \alpha 是学习率
+<span class="lineno">42</span>- \gamma 是折扣因子
+<span class="lineno">43</span>- r_{t+1} + \gamma \max_a Q(s_{t+1}, a) 是TD目标
+<span class="lineno">44</span>- r_{t+1} + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t) 是TD误差
+<span class="lineno">45</span>
+<span class="lineno">46</span>Q-Learning使用 \max_a Q(s_{t+1}, a) 来估计下一状态的价值，
+<span class="lineno">47</span>这对应于贪婪策略 \pi(s) = \arg\max_a Q(s, a)，
+<span class="lineno">48</span>但行为策略可以是 \varepsilon-贪心策略，因此是异策略的。
+<span class="lineno">49</span>
+<span class="lineno">50</span>## Sarsa (同策略)
+<span class="lineno">51</span>
+<span class="lineno">52</span>Sarsa是同策略(on-policy)的时序差分(TD)控制算法。
+<span class="lineno">53</span>
+<span class="lineno">54</span>### Q值更新规则
+<span class="lineno">55</span>
+<span class="lineno">56</span>Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t)\right]
+<span class="lineno">57</span>
+<span class="lineno">58</span>Sarsa使用实际采取的下一个动作 a_{t+1} 的Q值来更新，
+<span class="lineno">59</span>因此学习的就是行为策略本身的价值，是同策略的。
+<span class="lineno">60</span>
+<span class="lineno">61</span>## Q-Learning vs Sarsa
+<span class="lineno">62</span>
+<span class="lineno">63</span>| 特性 | Q-Learning | Sarsa |
+<span class="lineno">64</span>|------|-----------|-------|
+<span class="lineno">65</span>| 策略类型 | 异策略(off-policy) | 同策略(on-policy) |
+<span class="lineno">66</span>| TD目标 | r + \gamma \max_a Q(s', a) | r + \gamma Q(s', a') |
+<span class="lineno">67</span>| 行为策略 | \varepsilon-贪心 | \varepsilon-贪心 |
+<span class="lineno">68</span>| 目标策略 | 贪婪 | \varepsilon-贪心 |
+<span class="lineno">69</span>| 收敛性 | 收敛到最优Q值 | 收敛到行为策略的Q值 |
+<span class="lineno">70</span>
+<span class="lineno">71</span>## 价值迭代 (Value Iteration)
+<span class="lineno">72</span>
+<span class="lineno">73</span>价值迭代是一种动态规划算法，用于求解已知环境模型的MDP。
+<span class="lineno">74</span>
+<span class="lineno">75</span>### 更新规则
+<span class="lineno">76</span>
+<span class="lineno">77</span>V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]
+<span class="lineno">78</span>
+<span class="lineno">79</span>价值迭代直接更新状态价值函数，直到收敛。
+<span class="lineno">80</span>收敛后，最优策略可以通过贪婪选择得到：
+<span class="lineno">81</span>
+<span class="lineno">82</span>\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]
+<span class="lineno">83</span>
+<span class="lineno">84</span>## \varepsilon-贪心策略
+<span class="lineno">85</span>
+<span class="lineno">86</span>\pi(a|s) = \begin{cases}
+<span class="lineno">87</span>1 - \varepsilon + \frac{\varepsilon}{|\mathcal{A}|} &amp; \text{if } a = \arg\max_{a'} Q(s, a') \\
+<span class="lineno">88</span>\frac{\varepsilon}{|\mathcal{A}|} &amp; \text{otherwise}
+<span class="lineno">89</span>\end{cases}
+<span class="lineno">90</span>
+<span class="lineno">91</span>或者简化为：
+<span class="lineno">92</span>a = \begin{cases}
+<span class="lineno">93</span>\arg\max_a Q(s, a) &amp; \text{概率 } 1-\varepsilon \\
+<span class="lineno">94</span>\text{随机动作} &amp; \text{概率 } \varepsilon
+<span class="lineno">95</span>\end{cases}
+<span class="lineno">96</span>"""</span>
+<span class="lineno">97</span>
+<span class="lineno">98</span><span class="k">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="lineno">99</span><span class="k">from</span> <span class="n">collections</span> <span class="k">import</span> <span class="n">defaultdict</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-1">#</a></div>
-    
+    <p>def <strong>init</strong>(
+    self,
+    state_dim: int,
+    action_dim: int,
+    learning_rate: float = 0.1,
+    gamma: float = 0.99,
+    epsilon: float = 0.1,
+):
+    self.state_dim = state_dim
+    self.action_dim = action_dim
+    self.lr = learning_rate  # <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B1;</mi></mrow></math></span>
+    self.gamma = gamma  # <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi></mrow></math></span>
+    self.epsilon = epsilon  # <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>
+    # Q表：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>
+    self.q_table = np.zeros((state_dim, action_dim), dtype=np.float32)</p>
+<p>def select_action(self, state: int) -&gt; int:
+    r</p>
+<p>if np.random.random() &lt; self.epsilon:
+        # 探索：随机动作
+        return np.random.randint(self.action_dim)
+    else:
+        # 利用：贪婪动作
+        return np.argmax(self.q_table[state])</p>
+<p>def update(
+    self, state: int, action: int, reward: float, next_state: int, done: bool
+):
+    r</p>
+<h1>TD目标：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mtext>done</mtext><mo stretchy="false">&#x00029;</mo></mrow></math></span></h1>
+<p>if done:
+    td_target = reward
+else:
+    td_target = reward + self.gamma * np.max(self.q_table[next_state])</p>
+<h1>TD误差：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B4;</mi><mo>&#x0003D;</mo><mtext>TD目标</mtext><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></h1>
+<p>td_error = td_target - self.q_table[state, action]</p>
+<h1>更新Q值：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mi>&#x003B4;</mi></mrow></math></span></h1>
+<p>self.q_table[state, action] += self.lr * td_error</p>
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="k">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
-<span class="lineno">2</span><span class="k">from</span> <span class="n">collections</span> <span class="k">import</span> <span class="n">defaultdict</span></pre>
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">QLearningAgent</span><span class="p">:</span>
+<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
+<span class="lineno">3</span>    ## Q-Learning智能体
+<span class="lineno">4</span>
+<span class="lineno">5</span>    Q-Learning更新规则：
+<span class="lineno">6</span>    Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') - Q(s, a)\right]
+<span class="lineno">7</span>
+<span class="lineno">8</span>    其中：
+<span class="lineno">9</span>    - \alpha：学习率
+<span class="lineno">10</span>    - \gamma：折扣因子
+<span class="lineno">11</span>    - r + \gamma \max_{a'} Q(s', a')：TD目标
+<span class="lineno">12</span>    - r + \gamma \max_{a'} Q(s', a') - Q(s, a)：TD误差 \delta
+<span class="lineno">13</span>        使用\varepsilon-贪心策略选择动作。
+<span class="lineno">14</span>
+<span class="lineno">15</span>        a = \begin{cases}
+<span class="lineno">16</span>        \arg\max_a Q(s, a) &amp; \text{概率 } 1-\varepsilon \\
+<span class="lineno">17</span>        \text{随机动作} &amp; \text{概率 } \varepsilon
+<span class="lineno">18</span>        \end{cases}
+<span class="lineno">19</span>        更新Q值。
+<span class="lineno">20</span>
+<span class="lineno">21</span>        Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') \times (1 - \text{done}) - Q(s, a)\right]
+<span class="lineno">22</span>
+<span class="lineno">23</span>        参数：
+<span class="lineno">24</span>        - `state`: s_t — 当前状态
+<span class="lineno">25</span>        - `action`: a_t — 当前动作
+<span class="lineno">26</span>        - `reward`: r_{t+1} — 奖励
+<span class="lineno">27</span>        - `next_state`: s_{t+1} — 下一状态
+<span class="lineno">28</span>        - `done`: 是否episode结束
+<span class="lineno">29</span>        # TD目标：r + \gamma \max_{a'} Q(s', a') \times (1 - \text{done})
+<span class="lineno">30</span>        if done:
+<span class="lineno">31</span>            td_target = reward
+<span class="lineno">32</span>        else:
+<span class="lineno">33</span>            td_target = reward + self.gamma * np.max(self.q_table[next_state])
+<span class="lineno">34</span>
+<span class="lineno">35</span>        # TD误差：\delta = \text{TD目标} - Q(s, a)
+<span class="lineno">36</span>        td_error = td_target - self.q_table[state, action]
+<span class="lineno">37</span>
+<span class="lineno">38</span>        # 更新Q值：Q(s, a) \leftarrow Q(s, a) + \alpha \delta
+<span class="lineno">39</span>        self.q_table[state, action] += self.lr * td_error
+<span class="lineno">40</span>
+<span class="lineno">41</span></span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
-    <h2>Q-Learning智能体</h2>
-<p>Q-Learning更新规则：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>其中：
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B1;</mi></mrow></math></span>：学习率
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi></mrow></math></span>：折扣因子
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo></mrow></math></span>：TD目标
-- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>：TD误差 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B4;</mi></mrow></math></span></p>
-<p>使用<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心策略选择动作。</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mtable><mtr><mtd columnalign="left"><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi></mtd></mtr><mtr><mtd columnalign="left"><mtext>随机动作</mtext></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mi>&#x003B5;</mi></mtd></mtr></mtable></mrow></mrow></math></div>
-
-<p>更新Q值。</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mtext>done</mtext><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>参数：
-- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>s</mi><mi>t</mi></msub></mrow></math></span> — 当前状态
-- <code>action</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>a</mi><mi>t</mi></msub></mrow></math></span> — 当前动作
-- <code>reward</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub></mrow></math></span> — 奖励
-- <code>next_state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub></mrow></math></span> — 下一状态
-- <code>done</code>: 是否episode结束</p>
+    <p>def <strong>init</strong>(
+    self,
+    state_dim: int,
+    action_dim: int,
+    learning_rate: float = 0.1,
+    gamma: float = 0.99,
+    epsilon: float = 0.1,
+):
+    self.state_dim = state_dim
+    self.action_dim = action_dim
+    self.lr = learning_rate
+    self.gamma = gamma
+    self.epsilon = epsilon
+    self.q_table = np.zeros((state_dim, action_dim), dtype=np.float32)</p>
+<p>def select_action(self, state: int) -&gt; int:
+    r</p>
+<h1>TD目标：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mtext>done</mtext><mo stretchy="false">&#x00029;</mo></mrow></math></span></h1>
+<p>if done:
+    td_target = reward
+else:
+    td_target = reward + self.gamma * self.q_table[next_state, next_action]</p>
+<h1>TD误差</h1>
+<p>td_error = td_target - self.q_table[state, action]</p>
+<h1>更新Q值</h1>
+<p>self.q_table[state, action] += self.lr * td_error</p>
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">QLearningAgent</span><span class="p">:</span>
-<span class="lineno">2</span>
-<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
-<span class="lineno">4</span>        <span class="nb">self</span><span class="p">,</span>
-<span class="lineno">5</span>        <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<span class="lineno">6</span>        <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<span class="lineno">7</span>        <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span>
-<span class="lineno">8</span>        <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.99</span><span class="p">,</span>
-<span class="lineno">9</span>        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span>
-<span class="lineno">10</span>    <span class="p">)</span><span class="p">:</span>
-<span class="lineno">11</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span> <span class="o">=</span> <span class="n">state_dim</span>
-<span class="lineno">12</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span> <span class="o">=</span> <span class="n">action_dim</span>
-<span class="lineno">13</span>        <span class="nb">self</span><span class="p">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">learning_rate</span>  <span class="c"># \alpha</span>
-<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>  <span class="c"># \gamma</span>
-<span class="lineno">15</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>  <span class="c"># \varepsilon</span>
-<span class="lineno">16</span>        <span class="c"># Q表：Q(s, a)</span>
-<span class="lineno">17</span>        <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="lineno">18</span>
-<span class="lineno">19</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="lineno">20</span>        <span class="k">if</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">random</span><span class="p">(</span><span class="p">)</span> <span class="o">&</span><span class="n">lt</span><span class="p">;</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">:</span>
-<span class="lineno">21</span>            <span class="c"># 探索：随机动作</span>
-<span class="lineno">22</span>            <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span>
-<span class="lineno">23</span>        <span class="k">else</span><span class="p">:</span>
-<span class="lineno">24</span>            <span class="c"># 利用：贪婪动作</span>
-<span class="lineno">25</span>            <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">]</span><span class="p">)</span>
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">SarsaAgent</span><span class="p">:</span>
+<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
+<span class="lineno">3</span>    ## Sarsa智能体
+<span class="lineno">4</span>
+<span class="lineno">5</span>    Sarsa更新规则：
+<span class="lineno">6</span>    Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') - Q(s, a)\right]
+<span class="lineno">7</span>
+<span class="lineno">8</span>    与Q-Learning不同，Sarsa使用实际采取的下一个动作 a' 的Q值，
+<span class="lineno">9</span>    因此是同策略(on-policy)算法。
+<span class="lineno">10</span>        if np.random.random() &lt; self.epsilon:
+<span class="lineno">11</span>            return np.random.randint(self.action_dim)
+<span class="lineno">12</span>        else:
+<span class="lineno">13</span>            return np.argmax(self.q_table[state])
+<span class="lineno">14</span>
+<span class="lineno">15</span>    def update(
+<span class="lineno">16</span>        self,
+<span class="lineno">17</span>        state: int,
+<span class="lineno">18</span>        action: int,
+<span class="lineno">19</span>        reward: float,
+<span class="lineno">20</span>        next_state: int,
+<span class="lineno">21</span>        next_action: int,
+<span class="lineno">22</span>        done: bool,
+<span class="lineno">23</span>    ):
+<span class="lineno">24</span>        r"""</span>
+<span class="lineno">25</span>        <span class="n">更新Q值</span>。
 <span class="lineno">26</span>
-<span class="lineno">27</span>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span>
-<span class="lineno">28</span>        <span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">done</span><span class="p">:</span> <span class="n">bool</span>
-<span class="lineno">29</span>    <span class="p">)</span><span class="p">:</span>
-<span class="lineno">30</span>        <span class="c"># TD目标：r + \gamma \max_{a'} Q(s', a') \times (1 - \text{done})</span>
-<span class="lineno">31</span>        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
-<span class="lineno">32</span>            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span>
-<span class="lineno">33</span>        <span class="k">else</span><span class="p">:</span>
-<span class="lineno">34</span>            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nb">max</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span><span class="p">)</span>
+<span class="lineno">27</span>        <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> \<span class="n">leftarrow</span> <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="o">+</span> \<span class="n">alpha</span> \<span class="n">left</span><span class="p">[</span><span class="n">r</span> <span class="o">+</span> \<span class="n">gamma</span> <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="s2">', a'</span><span class="p">)</span> \<span class="n">times</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> \<span class="n">text</span><span class="p">{</span><span class="n">done</span><span class="p">}</span><span class="p">)</span> <span class="o">-</span> <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>\<span class="n">right</span><span class="p">]</span>
+<span class="lineno">28</span>
+<span class="lineno">29</span>        <span class="n">注意</span>：<span class="nc">Sarsa需要下一个动作</span> <span class="n">a</span><span class="s2">' 来更新，这是同策略的关键。
+<span class="lineno">30</span>        # TD目标：r + \gamma Q(s'</span><span class="p">,</span> <span class="n">a</span><span class="s2">') \times (1 - \text{done})
+<span class="lineno">31</span>        if done:
+<span class="lineno">32</span>            td_target = reward
+<span class="lineno">33</span>        else:
+<span class="lineno">34</span>            td_target = reward + self.gamma * self.q_table[next_state, next_action]
 <span class="lineno">35</span>
-<span class="lineno">36</span>        <span class="c"># TD误差：\delta = \text{TD目标} - Q(s, a)</span>
-<span class="lineno">37</span>        <span class="n">td_error</span> <span class="o">=</span> <span class="n">td_target</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span>
+<span class="lineno">36</span>        # TD误差
+<span class="lineno">37</span>        td_error = td_target - self.q_table[state, action]
 <span class="lineno">38</span>
-<span class="lineno">39</span>        <span class="c"># 更新Q值：Q(s, a) \leftarrow Q(s, a) + \alpha \delta</span>
-<span class="lineno">40</span>        <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">self</span><span class="p">.</span><span class="n">lr</span> <span class="o">*</span> <span class="n">td_error</span>
+<span class="lineno">39</span>        # 更新Q值
+<span class="lineno">40</span>        self.q_table[state, action] += self.lr * td_error
 <span class="lineno">41</span>
-<span class="lineno">42</span></pre>
+<span class="lineno">42</span></span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
-    <h2>Sarsa智能体</h2>
-<p>Sarsa更新规则：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+    <p>def <strong>init</strong>(self, state_dim: int, action_dim: int, gamma: float = 0.99, theta: float = 1e-6):
+    self.state_dim = state_dim
+    self.action_dim = action_dim
+    self.gamma = gamma
+    self.theta = theta  # 收敛阈值
+    self.value_table = np.zeros(state_dim, dtype=np.float32)
+    self.policy = np.zeros(state_dim, dtype=np.int32)
+    # 环境模型：P[s][a] = [(prob, next_state, reward, done), ...]
+    self.P = None</p>
+<p>def set_model(self, P: dict):</p>
+<p>self.P = P</p>
+<p>def iterate(self):
+    r</p>
+<p>delta = 0
+    for s in range(self.state_dim):
+        v = self.value_table[s]
+        # 计算每个动作的期望价值
+        action_values = np.zeros(self.action_dim)
+        for a in range(self.action_dim):
+            for prob, next_state, reward, done in self.P[s][a]:
+                # 期望价值：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>V</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span>
+                action_values[a] += prob * (reward + self.gamma * self.value_table[next_state] * (1 - done))</p>
+<pre><code>    # 选择最大价值：&lt;span class="math-inline"&gt;&lt;math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"&gt;&lt;mrow&gt;&lt;msub&gt;&lt;mi&gt;V&lt;/mi&gt;&lt;mrow&gt;&lt;mi&gt;k&lt;/mi&gt;&lt;mo&gt;&amp;#x0002B;&lt;/mo&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;/mrow&gt;&lt;/msub&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;mi&gt;s&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;mo&gt;&amp;#x0003D;&lt;/mo&gt;&lt;msub&gt;&lt;mo&gt;max&lt;/mo&gt;&lt;mi&gt;a&lt;/mi&gt;&lt;/msub&gt;&lt;mi&gt;Q&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;mi&gt;s&lt;/mi&gt;&lt;mo&gt;&amp;#x0002C;&lt;/mo&gt;&lt;mi&gt;a&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;/mrow&gt;&lt;/math&gt;&lt;/span&gt;
+    self.value_table[s] = np.max(action_values)
+    delta = max(delta, abs(v - self.value_table[s]))
 
-<p>与Q-Learning不同，Sarsa使用实际采取的下一个动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></math></span> 的Q值，
-因此是同策略(on-policy)算法。</p>
-<p><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心策略选择动作。</p>
-<p>更新Q值。</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mtext>done</mtext><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>注意：Sarsa需要下一个动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></math></span> 来更新，这是同策略的关键。</p>
-  </div>
-  <div class="code">
-    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">SarsaAgent</span><span class="p">:</span>
-<span class="lineno">2</span>
-<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
-<span class="lineno">4</span>        <span class="nb">self</span><span class="p">,</span>
-<span class="lineno">5</span>        <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<span class="lineno">6</span>        <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<span class="lineno">7</span>        <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span>
-<span class="lineno">8</span>        <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.99</span><span class="p">,</span>
-<span class="lineno">9</span>        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span>
-<span class="lineno">10</span>    <span class="p">)</span><span class="p">:</span>
-<span class="lineno">11</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span> <span class="o">=</span> <span class="n">state_dim</span>
-<span class="lineno">12</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span> <span class="o">=</span> <span class="n">action_dim</span>
-<span class="lineno">13</span>        <span class="nb">self</span><span class="p">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">learning_rate</span>
-<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
-<span class="lineno">15</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
-<span class="lineno">16</span>        <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="lineno">17</span>
-<span class="lineno">18</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="lineno">19</span>        <span class="k">if</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">random</span><span class="p">(</span><span class="p">)</span> <span class="o">&</span><span class="n">lt</span><span class="p">;</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">:</span>
-<span class="lineno">20</span>            <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span>
-<span class="lineno">21</span>        <span class="k">else</span><span class="p">:</span>
-<span class="lineno">22</span>            <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">]</span><span class="p">)</span>
-<span class="lineno">23</span>
-<span class="lineno">24</span>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span>
-<span class="lineno">25</span>        <span class="nb">self</span><span class="p">,</span>
-<span class="lineno">26</span>        <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<span class="lineno">27</span>        <span class="n">action</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<span class="lineno">28</span>        <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-<span class="lineno">29</span>        <span class="n">next_state</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<span class="lineno">30</span>        <span class="n">next_action</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<span class="lineno">31</span>        <span class="n">done</span><span class="p">:</span> <span class="n">bool</span><span class="p">,</span>
-<span class="lineno">32</span>    <span class="p">)</span><span class="p">:</span>
-<span class="lineno">33</span>        <span class="c"># TD目标：r + \gamma Q(s', a') \times (1 - \text{done})</span>
-<span class="lineno">34</span>        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
-<span class="lineno">35</span>            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span>
-<span class="lineno">36</span>        <span class="k">else</span><span class="p">:</span>
-<span class="lineno">37</span>            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">next_state</span><span class="p">,</span> <span class="n">next_action</span><span class="p">]</span>
-<span class="lineno">38</span>
-<span class="lineno">39</span>        <span class="c"># TD误差</span>
-<span class="lineno">40</span>        <span class="n">td_error</span> <span class="o">=</span> <span class="n">td_target</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span>
-<span class="lineno">41</span>
-<span class="lineno">42</span>        <span class="c"># 更新Q值</span>
-<span class="lineno">43</span>        <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">self</span><span class="p">.</span><span class="n">lr</span> <span class="o">*</span> <span class="n">td_error</span>
-<span class="lineno">44</span>
-<span class="lineno">45</span></pre>
-  </div>
-</div>
-<div class="section">
-  <div class="docs">
-    <div class="section-link"><a href="#section-4">#</a></div>
-    <h2>价值迭代智能体</h2>
-<p>价值迭代是一种动态规划算法，适用于已知环境模型的场景。</p>
-<p>更新规则：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mrow><mi>k</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>V</mi><mi>k</mi></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>收敛后，最优策略：</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003C0;</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msup><mi>V</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>设置环境模型。</p>
-<p>参数：
-- <code>P</code>: 状态转移模型
-  P[s][a] = [(prob, next_state, reward, done), ...]
-  其中prob是转移到next_state的概率</p>
-<p>执行一次价值迭代。</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mrow><mi>k</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>V</mi><mi>k</mi></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
-
-<p>返回值：
-- 价值函数的最大变化量</p>
-<p>求解最优价值函数和策略。</p>
-<p>迭代直到价值函数收敛（变化小于theta）或达到最大迭代次数。</p>
-<p>从最优价值函数提取最优策略。</p>
-<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003C0;</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msup><mi>V</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+return delta
+</code></pre>
+<p>def solve(self, max_iterations: int = 1000):</p>
+<p>for _ in range(max_iterations):
+        delta = self.iterate()
+        if delta &lt; self.theta:
+            break</p>
+<pre><code># 提取最优策略
+self.extract_policy()
+</code></pre>
+<p>def extract_policy(self):
+    r</p>
+<p>for s in range(self.state_dim):
+    action_values = np.zeros(self.action_dim)
+    for a in range(self.action_dim):
+        for prob, next_state, reward, done in self.P[s][a]:
+            action_values[a] += prob * (reward + self.gamma * self.value_table[next_state] * (1 - done))
+    self.policy[s] = np.argmax(action_values)</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">ValueIterationAgent</span><span class="p">:</span>
-<span class="lineno">2</span>
-<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.99</span><span class="p">,</span> <span class="n">theta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">1e</span><span class="o">-</span><span class="m">6</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">4</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span> <span class="o">=</span> <span class="n">state_dim</span>
-<span class="lineno">5</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span> <span class="o">=</span> <span class="n">action_dim</span>
-<span class="lineno">6</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
-<span class="lineno">7</span>        <span class="nb">self</span><span class="p">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span>  <span class="c"># 收敛阈值</span>
-<span class="lineno">8</span>        <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="lineno">9</span>        <span class="nb">self</span><span class="p">.</span><span class="n">policy</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">int32</span><span class="p">)</span>
-<span class="lineno">10</span>        <span class="c"># 环境模型：P[s][a] = [(prob, next_state, reward, done), ...]</span>
-<span class="lineno">11</span>        <span class="nb">self</span><span class="p">.</span><span class="nc">P</span> <span class="o">=</span> <span class="nb">None</span>
-<span class="lineno">12</span>
-<span class="lineno">13</span>    <span class="k">def</span> <span class="nf">set_model</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="nc">P</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="nc">P</span> <span class="o">=</span> <span class="nc">P</span>
-<span class="lineno">15</span>
-<span class="lineno">16</span>    <span class="k">def</span> <span class="nf">iterate</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">17</span>        <span class="n">delta</span> <span class="o">=</span> <span class="m">0</span>
-<span class="lineno">18</span>        <span class="k">for</span> <span class="n">s</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">19</span>            <span class="n">v</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
-<span class="lineno">20</span>            <span class="c"># 计算每个动作的期望价值</span>
-<span class="lineno">21</span>            <span class="n">action_values</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span>
-<span class="lineno">22</span>            <span class="k">for</span> <span class="n">a</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">23</span>                <span class="k">for</span> <span class="n">prob</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span> <span class="k">in</span> <span class="nb">self</span><span class="p">.</span><span class="nc">P</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="p">:</span>
-<span class="lineno">24</span>                    <span class="c"># 期望价值：\sum_{s', r} p(s', r|s, a) [r + \gamma V(s')]</span>
-<span class="lineno">25</span>                    <span class="n">action_values</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">+=</span> <span class="n">prob</span> <span class="o">*</span> <span class="p">(</span><span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">done</span><span class="p">)</span><span class="p">)</span>
-<span class="lineno">26</span>
-<span class="lineno">27</span>            <span class="c"># 选择最大价值：V_{k+1}(s) = \max_a Q(s, a)</span>
-<span class="lineno">28</span>            <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nb">max</span><span class="p">(</span><span class="n">action_values</span><span class="p">)</span>
-<span class="lineno">29</span>            <span class="n">delta</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="p">)</span><span class="p">)</span>
-<span class="lineno">30</span>
-<span class="lineno">31</span>        <span class="k">return</span> <span class="n">delta</span>
-<span class="lineno">32</span>
-<span class="lineno">33</span>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="m">1000</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">34</span>        <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iterations</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">35</span>            <span class="n">delta</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">iterate</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">36</span>            <span class="k">if</span> <span class="n">delta</span> <span class="o">&</span><span class="n">lt</span><span class="p">;</span> <span class="nb">self</span><span class="p">.</span><span class="n">theta</span><span class="p">:</span>
-<span class="lineno">37</span>                <span class="k">break</span>
-<span class="lineno">38</span>
-<span class="lineno">39</span>        <span class="c"># 提取最优策略</span>
-<span class="lineno">40</span>        <span class="nb">self</span><span class="p">.</span><span class="nf">extract_policy</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">41</span>
-<span class="lineno">42</span>    <span class="k">def</span> <span class="nf">extract_policy</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">43</span>        <span class="k">for</span> <span class="n">s</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">44</span>            <span class="n">action_values</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span>
-<span class="lineno">45</span>            <span class="k">for</span> <span class="n">a</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">46</span>                <span class="k">for</span> <span class="n">prob</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span> <span class="k">in</span> <span class="nb">self</span><span class="p">.</span><span class="nc">P</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="p">:</span>
-<span class="lineno">47</span>                    <span class="n">action_values</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">+=</span> <span class="n">prob</span> <span class="o">*</span> <span class="p">(</span><span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">done</span><span class="p">)</span><span class="p">)</span>
-<span class="lineno">48</span>            <span class="nb">self</span><span class="p">.</span><span class="n">policy</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">action_values</span><span class="p">)</span>
-<span class="lineno">49</span></pre>
+<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
+<span class="lineno">3</span>    ## 价值迭代智能体
+<span class="lineno">4</span>
+<span class="lineno">5</span>    价值迭代是一种动态规划算法，适用于已知环境模型的场景。
+<span class="lineno">6</span>
+<span class="lineno">7</span>    更新规则：
+<span class="lineno">8</span>    V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]
+<span class="lineno">9</span>
+<span class="lineno">10</span>    收敛后，最优策略：
+<span class="lineno">11</span>    \pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]
+<span class="lineno">12</span>        设置环境模型。
+<span class="lineno">13</span>
+<span class="lineno">14</span>        参数：
+<span class="lineno">15</span>        - `P`: 状态转移模型
+<span class="lineno">16</span>          P[s][a] = [(prob, next_state, reward, done), ...]
+<span class="lineno">17</span>          其中prob是转移到next_state的概率
+<span class="lineno">18</span>        执行一次价值迭代。
+<span class="lineno">19</span>
+<span class="lineno">20</span>        V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]
+<span class="lineno">21</span>
+<span class="lineno">22</span>        返回值：
+<span class="lineno">23</span>        - 价值函数的最大变化量
+<span class="lineno">24</span>        求解最优价值函数和策略。
+<span class="lineno">25</span>
+<span class="lineno">26</span>        迭代直到价值函数收敛（变化小于theta）或达到最大迭代次数。
+<span class="lineno">27</span>        从最优价值函数提取最优策略。
+<span class="lineno">28</span>
+<span class="lineno">29</span>        \pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]
+<span class="lineno">30</span>        for s in range(self.state_dim):
+<span class="lineno">31</span>            action_values = np.zeros(self.action_dim)
+<span class="lineno">32</span>            for a in range(self.action_dim):
+<span class="lineno">33</span>                for prob, next_state, reward, done in self.P[s][a]:
+<span class="lineno">34</span>                    action_values[a] += prob * (reward + self.gamma * self.value_table[next_state] * (1 - done))
+<span class="lineno">35</span>            self.policy[s] = np.argmax(action_values)
+<span class="lineno">36</span></span></pre>
   </div>
 </div>
 

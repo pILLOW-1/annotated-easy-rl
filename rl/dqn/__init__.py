@@ -1,4 +1,4 @@
-"""
+r"""
 ---
 title: 深度Q网络 (DQN) - Deep Q Networks
 summary: >
@@ -122,7 +122,7 @@ from torch import nn
 
 
 class QFuncLoss(nn.Module):
-    """
+    r"""
     ## DQN损失函数
 
     我们想要找到最优的动作价值函数：
@@ -168,7 +168,7 @@ class QFuncLoss(nn.Module):
         reward: torch.Tensor,
         weights: torch.Tensor = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
+        r"""
         计算DQN损失。
 
         参数映射：
@@ -219,7 +219,7 @@ class QFuncLoss(nn.Module):
 
 
 class DuelingQNetwork(nn.Module):
-    """
+    r"""
     ## Dueling网络 ⚔️ 结构
 
     使用[Dueling网络](https://arxiv.org/abs/1511.06581)来计算Q值。
@@ -284,7 +284,7 @@ class DuelingQNetwork(nn.Module):
 
 
 class EpsilonGreedy:
-    """
+    r"""
     ## $\varepsilon$-贪心探索策略
 
     $$a = \begin{cases}
@@ -311,7 +311,7 @@ class EpsilonGreedy:
         self.count = 0
 
     def select_action(self, q_values: torch.Tensor) -> int:
-        """
+        r"""
         根据$\varepsilon$-贪心策略选择动作。
 
         参数：

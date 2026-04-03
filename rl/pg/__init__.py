@@ -1,4 +1,4 @@
-"""
+r"""
 ---
 title: 策略梯度 (Policy Gradient) - REINFORCE算法
 summary: >
@@ -75,7 +75,7 @@ from torch import nn
 
 
 class PolicyNetwork(nn.Module):
-    """
+    r"""
     ## 策略网络
 
     策略网络 $\pi_\theta(a|s)$ 输出在给定状态下每个动作的概率分布。
@@ -96,7 +96,7 @@ class PolicyNetwork(nn.Module):
         )
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
-        """
+        r"""
         输出策略分布 $\pi_\theta(\cdot|s)$。
 
         参数：
@@ -110,7 +110,7 @@ class PolicyNetwork(nn.Module):
         return action_probs
 
     def select_action(self, state: torch.Tensor) -> tuple:
-        """
+        r"""
         根据策略 $\pi_\theta(a|s)$ 采样动作。
 
         返回值：
@@ -125,7 +125,7 @@ class PolicyNetwork(nn.Module):
 
 
 class ValueNetwork(nn.Module):
-    """
+    r"""
     ## 价值网络
 
     价值网络 $V_\phi(s)$ 估计状态的期望累积奖励。
@@ -146,7 +146,7 @@ class ValueNetwork(nn.Module):
         )
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
-        """
+        r"""
         输出状态价值 $V_\phi(s)$。
 
         参数：
@@ -159,7 +159,7 @@ class ValueNetwork(nn.Module):
 
 
 def compute_discounted_returns(rewards: list, gamma: float) -> list:
-    """
+    r"""
     ## 计算折扣累积回报
 
     $$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma G_{t+1}$$
@@ -185,7 +185,7 @@ def compute_discounted_returns(rewards: list, gamma: float) -> list:
 
 
 def reinforce_loss(log_probs: torch.Tensor, returns: torch.Tensor) -> torch.Tensor:
-    """
+    r"""
     ## REINFORCE损失函数
 
     REINFORCE更新规则：
@@ -213,7 +213,7 @@ def actor_critic_loss(
     entropy: torch.Tensor = None,
     entropy_coef: float = 0.01,
 ) -> tuple:
-    """
+    r"""
     ## Actor-Critic损失函数
 
     Actor-Critic结合策略梯度和价值函数：
