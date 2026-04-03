@@ -152,92 +152,92 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
     <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-0">#</a></div>
-    <p>---</p>
-<p>title: 深度Q网络 (DQN) - Deep Q Networks</p>
-<p>summary: ></p>
-<p>基于蘑菇书EasyRL第六章的深度Q网络(DQN)算法的PyTorch实现，</p>
-<p>包含目标网络、经验回放、Dueling网络、Double DQN等核心公式的逐行注释。</p>
-<p>---</p>
+    <hr />
+<p>title: 深度Q网络 (DQN) - Deep Q Networks
+summary: &gt;
+  基于蘑菇书EasyRL第六章的深度Q网络(DQN)算法的PyTorch实现，
+  包含目标网络、经验回放、Dueling网络、Double DQN等核心公式的逐行注释。</p>
+<hr />
 <h1>深度Q网络 (DQN) - Deep Q Networks</h1>
-<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第六章的PyTorch实现，</p>
-<p>参考论文<a href="https://arxiv.org/abs/1312.5602">Playing Atari with Deep Reinforcement Learning</a>，</p>
-<p>以及<a href="https://arxiv.org/abs/1511.06581">Dueling Network</a>和</p>
-<p><a href="https://arxiv.org/abs/1509.06461">Double Q-Learning</a>。</p>
+<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第六章的PyTorch实现，
+参考论文<a href="https://arxiv.org/abs/1312.5602">Playing Atari with Deep Reinforcement Learning</a>，
+以及<a href="https://arxiv.org/abs/1511.06581">Dueling Network</a>和
+<a href="https://arxiv.org/abs/1509.06461">Double Q-Learning</a>。</p>
 <h2>Q函数与贝尔曼方程</h2>
 <p>在强化学习中，Q函数定义为：</p>
 $$Q^\pi(s, a) = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t=s, a_t=a\right]$$
+
 <p>最优Q函数满足贝尔曼最优方程：</p>
 $$Q^*(s, a) = \mathbb{E}_{s' \sim \mathcal{E}}\left[r + \gamma \max_{a'} Q^*(s', a') \mid s, a\right]$$
+
 <h2>DQN的核心思想</h2>
 <p>DQN使用神经网络来近似Q函数：$Q(s, a; \theta) \approx Q^*(s, a)$</p>
 <p>训练目标是使Q函数的预测满足贝尔曼方程。定义目标值：</p>
 $$y_i = r_i + \gamma \max_{a'} Q(s_{i+1}, a'; \theta^-)$$
+
 <p>其中 $\theta^-$ 是目标网络的参数，定期从主网络 $\theta$ 复制。</p>
 <p>损失函数为：</p>
 $$L(\theta) = \mathbb{E}_{(s,a,r,s') \sim U(D)}\left[(y_i - Q(s, a; \theta))^2\right]$$
+
 <h2>目标网络 🎯</h2>
-<p>为了提高训练稳定性，DQN使用两个网络：</p>
-<ul>
-<li><strong>主网络</strong> (policy network)：参数 $\theta$，用于选择动作和计算Q值</li>
-<li><strong>目标网络</strong> (target network)：参数 $\theta^-$，定期从主网络复制，用于计算目标值</li>
-</ul>
+<p>为了提高训练稳定性，DQN使用两个网络：
+- <strong>主网络</strong> (policy network)：参数 $\theta$，用于选择动作和计算Q值
+- <strong>目标网络</strong> (target network)：参数 $\theta^-$，定期从主网络复制，用于计算目标值</p>
 <p>目标值：</p>
 $$y_i = r_i + \gamma \max_{a'} Q(s_{i+1}, a'; \theta^-)$$
+
 <p>目标网络的参数 $\theta^-$ 每隔一定步数更新为 $\theta$，这打破了样本间的相关性，提高了训练稳定性。</p>
 <h2>Double DQN</h2>
 <p>标准DQN中，max操作符使用同一个网络来选择和评估动作：</p>
 $$\max_{a'} Q(s', a'; \theta) = Q\left(s', \underset{a'}{\arg\max} Q(s', a'; \theta); \theta\right)$$
+
 <p>这会导致Q值的高估。Double DQN解耦了动作选择和价值评估：</p>
 $$\max_{a'} Q(s', a'; \theta^-) = Q\left(s', \underset{a'}{\arg\max} Q(s', a'; \theta); \theta^-\right)$$
+
 <ul>
 <li>使用主网络 $\theta$ 选择动作：$\underset{a'}{\arg\max} Q(s', a'; \theta)$</li>
 <li>使用目标网络 $\theta^-$ 评估价值：$Q(s', \text{best\_action}; \theta^-)$</li>
 </ul>
 <p>Double DQN的损失函数：</p>
 $$L(\theta) = \mathbb{E}\left[\left(r + \gamma Q\left(s', \underset{a'}{\arg\max} Q(s', a'; \theta); \theta^-\right) - Q(s, a; \theta)\right)^2\right]$$
+
 <h2>Dueling Network ⚔️</h2>
 <p>Dueling网络将Q值分解为状态价值和优势函数：</p>
-$$
-\begin{align}
-Q^\pi(s, a) &= V^\pi(s) + A^\pi(s, a) \\
-\mathbb{E}_{a \sim \pi(s)}\left[A^\pi(s, a)\right] &= 0
-\end{align}
-$$
+<p>\begin{align}
+Q^\pi(s, a) &amp;= V^\pi(s) + A^\pi(s, a) \
+\mathbb{E}_{a \sim \pi(s)}\left[A^\pi(s, a)\right] &amp;= 0
+\end{align}</p>
 <p>实际计算中：</p>
 $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a' \in \mathcal{A}} A(s, a')\right)$$
-<p>Dueling网络的优势在于：</p>
-<ul>
-<li>在很多状态下，动作并不重要（优势函数接近0）</li>
-<li>在少数关键状态下，动作非常重要</li>
-<li>这种结构让网络可以更好地学习这种差异</li>
-</ul>
+
+<p>Dueling网络的优势在于：
+- 在很多状态下，动作并不重要（优势函数接近0）
+- 在少数关键状态下，动作非常重要
+- 这种结构让网络可以更好地学习这种差异</p>
 <h2>经验回放</h2>
 <p>DQN使用经验回放缓冲区来存储和采样经验：</p>
 $$D = \{(s_t, a_t, r_t, s_{t+1})\}$$
+
 <p>训练时从缓冲区中随机采样：</p>
 $$(s, a, r, s') \sim U(D)$$
-<p>经验回放的好处：</p>
-<ol>
-<li>打破样本间的时间相关性</li>
-<li>提高数据利用率</li>
-<li>使训练更加稳定</li>
-</ol>
+
+<p>经验回放的好处：
+1. 打破样本间的时间相关性
+2. 提高数据利用率
+3. 使训练更加稳定</p>
 <h2>探索策略</h2>
 <h3>$\varepsilon$-贪心策略</h3>
-$$
-a = \begin{cases}
+$$a = \begin{cases}
 \underset{a}{\arg\max} Q(s, a) & \text{概率 } 1-\varepsilon \\
 \text{随机动作} & \text{概率 } \varepsilon
 \end{cases}$$
 
-$\varepsilon$ 通常从大到小衰减，初期多探索，后期多利用。
-
-### Boltzmann探索
-
+$\varepsilon$
+<p>通常从大到小衰减，初期多探索，后期多利用。</p>
+<h3>Boltzmann探索</h3>
 $$\pi(a|s) = \frac{e^{Q(s,a)/T}}{\sum_{a'} e^{Q(s,a')/T}}$$
 
-其中 $T$ 是温度参数，控制探索程度。
-$$
+<p>其中 $T$ 是温度参数，控制探索程度。</p>
   </div>
   <div class="code">
     
@@ -259,31 +259,33 @@ $$
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>DQN损失函数</h2>
-<p>我们想要找到最优的动作价值函数：</p>
-$$
+<pre><code>我们想要找到最优的动作价值函数：
+
 \begin{align}
-Q^*(s,a) &= \max_\pi \mathbb{E}\left[r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots \mid s_t=s, a_t=a, \pi\right] \\
-Q^*(s,a) &= \mathbb{E}_{s' \sim \mathcal{E}}\left[r + \gamma \max_{a'} Q^*(s', a') \mid s, a\right]
+Q^*(s,a) &amp;= \max_\pi \mathbb{E}\left[r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots \mid s_t=s, a_t=a, \pi\right] \\
+Q^*(s,a) &amp;= \mathbb{E}_{s' \sim \mathcal{E}}\left[r + \gamma \max_{a'} Q^*(s', a') \mid s, a\right]
 \end{align}
-$$
-<h3>目标网络 🎯</h3>
-<p>使用经验回放 $U(D)$ 随机采样历史经验，并使用独立的Q网络</p>
-<p>参数 $\textcolor{orange}{\theta^-}$ 来计算目标值。</p>
-<p>$\textcolor{orange}{\theta^-}$ 定期更新。</p>
-<p>损失函数：</p>
+
+### 目标网络 🎯
+
+使用经验回放 $U(D)$ 随机采样历史经验，并使用独立的Q网络
+参数 $\textcolor{orange}{\theta^-}$ 来计算目标值。
+$\textcolor{orange}{\theta^-}$ 定期更新。
+
+损失函数：
 $$\mathcal{L}(\theta) = \mathbb{E}_{(s,a,r,s') \sim U(D)}\left[\left(r + \gamma \max_{a'} Q(s', a'; \textcolor{orange}{\theta^-}) - Q(s,a;\theta)\right)^2\right]$$
-<h3>Double Q-Learning</h3>
-<p>使用Double Q-Learning，其中：</p>
-<ul>
-<li>$\textcolor{cyan}{\theta}$ 用于选择动作</li>
-<li>$\textcolor{orange}{\theta^-}$ 用于评估价值</li>
-</ul>
-$$
+
+### Double Q-Learning
+
+使用Double Q-Learning，其中：
+- $\textcolor{cyan}{\theta}$ 用于选择动作
+- $\textcolor{orange}{\theta^-}$ 用于评估价值
+
 \begin{align}
-\mathcal{L}(\theta) = \mathbb{E}\Bigg[\bigg(&r + \gamma \textcolor{orange}{Q}\Big(s', \underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big) \\
-&- Q(s,a;\theta)\bigg)^2\Bigg]
+\mathcal{L}(\theta) = \mathbb{E}\Bigg[\bigg(&amp;r + \gamma \textcolor{orange}{Q}\Big(s', \underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big) \\
+&amp;- Q(s,a;\theta)\bigg)^2\Bigg]
 \end{align}
-$$
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">QFuncLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -359,22 +361,23 @@ $$
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>Dueling网络 ⚔️ 结构</h2>
-<p>使用<a href="https://arxiv.org/abs/1511.06581">Dueling网络</a>来计算Q值。</p>
-<p>Dueling网络的直觉：</p>
-<ul>
-<li>在大多数状态下，动作并不重要</li>
-<li>在少数状态下，动作非常关键</li>
-<li>Dueling网络可以很好地表示这种差异</li>
-</ul>
-$$
+<pre><code>使用[Dueling网络](https://arxiv.org/abs/1511.06581)来计算Q值。
+
+Dueling网络的直觉：
+- 在大多数状态下，动作并不重要
+- 在少数状态下，动作非常关键
+- Dueling网络可以很好地表示这种差异
+
 \begin{align}
-Q^\pi(s,a) &= V^\pi(s) + A^\pi(s, a) \\
-\mathbb{E}_{a \sim \pi(s)}\left[A^\pi(s, a)\right] &= 0
+Q^\pi(s,a) &amp;= V^\pi(s) + A^\pi(s, a) \\
+\mathbb{E}_{a \sim \pi(s)}\left[A^\pi(s, a)\right] &amp;= 0
 \end{align}
-$$
-<p>实际计算：</p>
+
+实际计算：
 $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a' \in \mathcal{A}} A(s, a')\right)$$
-<p>$V$ 和 $A$ 网络共享前面的卷积层。</p>
+
+$V$ 和 $A$ 网络共享前面的卷积层。
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">DuelingQNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -428,15 +431,14 @@ $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a' \in \mathcal{
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
     <h2>$\varepsilon$-贪心探索策略</h2>
-$$
-a = \begin{cases}
-\underset{a}{\arg\max} Q(s, a) & \text{概率 } 1-\varepsilon \\
-\text{随机动作} & \text{概率 } \varepsilon
-\end{cases}$$
+<pre><code>$$a = \begin{cases}
+    \underset{a}{\arg\max} Q(s, a) & \text{概率 } 1-\varepsilon \\
+    \text{随机动作} & \text{概率 } \varepsilon
+    \end{cases}$$
 
 $\varepsilon$ 随时间衰减：
 $$\varepsilon_t = \varepsilon_{end} + (\varepsilon_{start} - \varepsilon_{end}) \times e^{-t/\text{decay}}$$
-$$
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">EpsilonGreedy</span><span class="p">:</span>
@@ -497,9 +499,7 @@ $$
       renderMathInElement(document.body, {
         delimiters: [
           {left: '$$', right: '$$', display: true},
-          {left: '$', right: '$', display: false},
-          {left: '\\[', right: '\\]', display: true},
-          {left: '\\(', right: '\\)', display: false}
+          {left: '$', right: '$', display: false}
         ],
         throwOnError: false
       });

@@ -152,57 +152,59 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
     <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-0">#</a></div>
-    <p>---</p>
-<p>title: 表格型方法 (Tabular Methods) - Q-Learning & Sarsa</p>
-<p>summary: ></p>
-<p>基于蘑菇书EasyRL第三章的表格型强化学习方法的Python实现，</p>
-<p>包含Q-Learning、Sarsa、Value Iteration等核心算法的逐行注释。</p>
-<p>---</p>
-<h1>表格型方法 (Tabular Methods) - Q-Learning & Sarsa</h1>
+    <hr />
+<p>title: 表格型方法 (Tabular Methods) - Q-Learning &amp; Sarsa
+summary: &gt;
+  基于蘑菇书EasyRL第三章的表格型强化学习方法的Python实现，
+  包含Q-Learning、Sarsa、Value Iteration等核心算法的逐行注释。</p>
+<hr />
+<h1>表格型方法 (Tabular Methods) - Q-Learning &amp; Sarsa</h1>
 <p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第三章的Python实现。</p>
-<p>表格型方法使用表格来存储状态-动作价值函数 $Q(s, a)$ 或状态价值函数 $V(s)$。</p>
-<p>适用于状态空间和动作空间都是离散且较小的场景。</p>
+<p>表格型方法使用表格来存储状态-动作价值函数 $Q(s, a)$ 或状态价值函数 $V(s)$。
+适用于状态空间和动作空间都是离散且较小的场景。</p>
 <h2>贝尔曼方程</h2>
 <h3>状态价值函数</h3>
 $$V^\pi(s) = \mathbb{E}_\pi\left[G_t \mid s_t = s\right] = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s\right]$$
+
 <p>贝尔曼期望方程：</p>
 $$V^\pi(s) = \sum_a \pi(a|s) \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^\pi(s')\right]$$
+
 <h3>动作价值函数</h3>
 $$Q^\pi(s, a) = \mathbb{E}_\pi\left[G_t \mid s_t = s, a_t = a\right] = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s, a_t = a\right]$$
+
 <p>贝尔曼最优方程：</p>
 $$Q^*(s, a) = \sum_{s', r} p(s', r|s, a) \left[r + \gamma \max_{a'} Q^*(s', a')\right]$$
+
 <h2>Q-Learning (异策略)</h2>
 <p>Q-Learning是异策略(off-policy)的时序差分(TD)控制算法。</p>
 <h3>Q值更新规则</h3>
 $$Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t)\right]$$
-<p>其中：</p>
-<ul>
-<li>$\alpha$ 是学习率</li>
-<li>$\gamma$ 是折扣因子</li>
-<li>$r_{t+1} + \gamma \max_a Q(s_{t+1}, a)$ 是TD目标</li>
-<li>$r_{t+1} + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t)$ 是TD误差</li>
-</ul>
-<p>Q-Learning使用 $\max_a Q(s_{t+1}, a)$ 来估计下一状态的价值，</p>
-<p>这对应于贪婪策略 $\pi(s) = \arg\max_a Q(s, a)$，</p>
-<p>但行为策略可以是 $\varepsilon$-贪心策略，因此是异策略的。</p>
+
+<p>其中：
+- $\alpha$ 是学习率
+- $\gamma$ 是折扣因子
+- $r_{t+1} + \gamma \max_a Q(s_{t+1}, a)$ 是TD目标
+- $r_{t+1} + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t)$ 是TD误差</p>
+<p>Q-Learning使用 $\max_a Q(s_{t+1}, a)$ 来估计下一状态的价值，
+这对应于贪婪策略 $\pi(s) = \arg\max_a Q(s, a)$，
+但行为策略可以是 $\varepsilon$-贪心策略，因此是异策略的。</p>
 <h2>Sarsa (同策略)</h2>
 <p>Sarsa是同策略(on-policy)的时序差分(TD)控制算法。</p>
 <h3>Q值更新规则</h3>
 $$Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t)\right]$$
-<p>Sarsa使用实际采取的下一个动作 $a_{t+1}$ 的Q值来更新，</p>
-<p>因此学习的就是行为策略本身的价值，是同策略的。</p>
+
+<p>Sarsa使用实际采取的下一个动作 $a_{t+1}$ 的Q值来更新，
+因此学习的就是行为策略本身的价值，是同策略的。</p>
 <h2>Q-Learning vs Sarsa</h2>
 <table>
-<thead><tr>
+<thead>
+<tr>
 <th>特性</th>
 <th>Q-Learning</th>
 <th>Sarsa</th>
-</tr></thead><tbody>
-<tr>
-<td>------</td>
-<td>-----------</td>
-<td>-------</td>
 </tr>
+</thead>
+<tbody>
 <tr>
 <td>策略类型</td>
 <td>异策略(off-policy)</td>
@@ -228,27 +230,28 @@ $$Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma Q(s_{t+1}, 
 <td>收敛到最优Q值</td>
 <td>收敛到行为策略的Q值</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <h2>价值迭代 (Value Iteration)</h2>
 <p>价值迭代是一种动态规划算法，用于求解已知环境模型的MDP。</p>
 <h3>更新规则</h3>
 $$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]$$
-<p>价值迭代直接更新状态价值函数，直到收敛。</p>
-<p>收敛后，最优策略可以通过贪婪选择得到：</p>
+
+<p>价值迭代直接更新状态价值函数，直到收敛。
+收敛后，最优策略可以通过贪婪选择得到：</p>
 $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]$$
+
 <h2>$\varepsilon$-贪心策略</h2>
-$$
-\pi(a|s) = \begin{cases}
+$$\pi(a|s) = \begin{cases}
 1 - \varepsilon + \frac{\varepsilon}{|\mathcal{A}|} & \text{if } a = \arg\max_{a'} Q(s, a') \\
 \frac{\varepsilon}{|\mathcal{A}|} & \text{otherwise}
 \end{cases}$$
 
-或者简化为：
+<p>或者简化为：</p>
 $$a = \begin{cases}
 \arg\max_a Q(s, a) & \text{概率 } 1-\varepsilon \\
 \text{随机动作} & \text{概率 } \varepsilon
 \end{cases}$$
-$$
   </div>
   <div class="code">
     
@@ -268,15 +271,15 @@ $$
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>Q-Learning智能体</h2>
-<p>Q-Learning更新规则：</p>
+<pre><code>Q-Learning更新规则：
 $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') - Q(s, a)\right]$$
-<p>其中：</p>
-<ul>
-<li>$\alpha$：学习率</li>
-<li>$\gamma$：折扣因子</li>
-<li>$r + \gamma \max_{a'} Q(s', a')$：TD目标</li>
-<li>$r + \gamma \max_{a'} Q(s', a') - Q(s, a)$：TD误差 $\delta$</li>
-</ul>
+
+其中：
+- $\alpha$：学习率
+- $\gamma$：折扣因子
+- $r + \gamma \max_{a'} Q(s', a')$：TD目标
+- $r + \gamma \max_{a'} Q(s', a') - Q(s, a)$：TD误差 $\delta$
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">QLearningAgent</span><span class="p">:</span>
@@ -347,10 +350,12 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') - Q(s
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>Sarsa智能体</h2>
-<p>Sarsa更新规则：</p>
+<pre><code>Sarsa更新规则：
 $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') - Q(s, a)\right]$$
-<p>与Q-Learning不同，Sarsa使用实际采取的下一个动作 $a'$ 的Q值，</p>
-<p>因此是同策略(on-policy)算法。</p>
+
+与Q-Learning不同，Sarsa使用实际采取的下一个动作 $a'$ 的Q值，
+因此是同策略(on-policy)算法。
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">SarsaAgent</span><span class="p">:</span>
@@ -412,11 +417,14 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') - Q(s, a)\right
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
     <h2>价值迭代智能体</h2>
-<p>价值迭代是一种动态规划算法，适用于已知环境模型的场景。</p>
-<p>更新规则：</p>
+<pre><code>价值迭代是一种动态规划算法，适用于已知环境模型的场景。
+
+更新规则：
 $$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]$$
-<p>收敛后，最优策略：</p>
+
+收敛后，最优策略：
 $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]$$
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">ValueIterationAgent</span><span class="p">:</span>
@@ -512,9 +520,7 @@ $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\righ
       renderMathInElement(document.body, {
         delimiters: [
           {left: '$$', right: '$$', display: true},
-          {left: '$', right: '$', display: false},
-          {left: '\\[', right: '\\]', display: true},
-          {left: '\\(', right: '\\)', display: false}
+          {left: '$', right: '$', display: false}
         ],
         throwOnError: false
       });

@@ -152,12 +152,12 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
     <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-0">#</a></div>
-    <p>---</p>
-<p>title: 策略梯度 (Policy Gradient) - REINFORCE算法</p>
-<p>summary: ></p>
-<p>基于蘑菇书EasyRL第四章的策略梯度算法的PyTorch实现，</p>
-<p>包含REINFORCE算法、基线技巧、折扣回报等核心公式的逐行注释。</p>
-<p>---</p>
+    <hr />
+<p>title: 策略梯度 (Policy Gradient) - REINFORCE算法
+summary: &gt;
+  基于蘑菇书EasyRL第四章的策略梯度算法的PyTorch实现，
+  包含REINFORCE算法、基线技巧、折扣回报等核心公式的逐行注释。</p>
+<hr />
 <h1>策略梯度 (Policy Gradient) - REINFORCE算法</h1>
 <p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第四章的PyTorch实现。</p>
 <p>策略梯度方法直接优化策略 $\pi_\theta(a|s)$，通过梯度上升最大化期望累积奖励。</p>
@@ -165,35 +165,42 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
 <h3>轨迹概率</h3>
 <p>一条轨迹 $\tau = (s_1, a_1, s_2, a_2, \ldots, s_T, a_T)$ 的概率为：</p>
 $$p_\theta(\tau) = p(s_1) \prod_{t=1}^{T} \pi_\theta(a_t | s_t) p(s_{t+1} | s_t, a_t)$$
+
 <h3>期望奖励</h3>
 $$\bar{R}_\theta = \mathbb{E}_{\tau \sim p_\theta(\tau)}[R(\tau)]$$
+
 <p>其中 $R(\tau) = \sum_{t=1}^{T} r_t$ 是轨迹的总奖励。</p>
 <h3>策略梯度</h3>
 <p>对期望奖励求梯度：</p>
 $$\nabla_\theta \bar{R}_\theta = \mathbb{E}_{\tau \sim p_\theta(\tau)}\left[R(\tau) \nabla_\theta \log p_\theta(\tau)\right]$$
+
 <p>使用log-derivative技巧 $\nabla f(x) = f(x) \nabla \log f(x)$：</p>
-$$
-\begin{align}
-\nabla_\theta \bar{R}_\theta &= \mathbb{E}_{\tau \sim p_\theta(\tau)}\left[R(\tau) \nabla_\theta \log p_\theta(\tau)\right] \\
-&= \mathbb{E}_{\tau \sim p_\theta(\tau)}\left[R(\tau) \sum_{t=1}^{T} \nabla_\theta \log \pi_\theta(a_t | s_t)\right] \\
-&\approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} R(\tau^n) \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)
-\end{align}
-$$
+<p>\begin{align}
+\nabla_\theta \bar{R}<em>\theta &amp;= \mathbb{E}</em>{\tau \sim p_\theta(\tau)}\left[R(\tau) \nabla_\theta \log p_\theta(\tau)\right] \
+&amp;= \mathbb{E}<em>{\tau \sim p</em>\theta(\tau)}\left[R(\tau) \sum_{t=1}^{T} \nabla_\theta \log \pi_\theta(a_t | s_t)\right] \
+&amp;\approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} R(\tau^n) \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)
+\end{align}</p>
 <h2>基线技巧 (Baseline)</h2>
 <p>策略梯度的方差很大。我们可以减去一个基线 $b$ 来降低方差：</p>
 $$\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} (R(\tau^n) - b) \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)$$
+
 <p>基线 $b$ 可以是状态价值函数 $V(s_t)$，此时：</p>
 $$\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} A(s_t^n, a_t^n) \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)$$
+
 <p>其中 $A(s_t, a_t) = R(\tau^n) - V(s_t)$ 是优势函数。</p>
 <h2>折扣回报 (Discounted Return)</h2>
 <p>使用折扣因子 $\gamma$ 来权衡近期和远期奖励：</p>
 $$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma r_{t+2} + \gamma^2 r_{t+3} + \cdots$$
+
 <p>折扣回报满足递归关系：</p>
 $$G_t = r_{t+1} + \gamma G_{t+1}$$
+
 <p>REINFORCE更新规则：</p>
 $$\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)$$
+
 <p>参数更新：</p>
 $$\theta \leftarrow \theta + \eta \nabla_\theta \bar{R}_\theta$$
+
 <p>其中 $\eta$ 是学习率。</p>
   </div>
   <div class="code">
@@ -214,9 +221,12 @@ $$\theta \leftarrow \theta + \eta \nabla_\theta \bar{R}_\theta$$
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>策略网络</h2>
-<p>策略网络 $\pi_\theta(a|s)$ 输出在给定状态下每个动作的概率分布。</p>
+<pre><code>策略网络 $\pi_\theta(a|s)$ 输出在给定状态下每个动作的概率分布。
+
 $$\pi_\theta(a|s) = \frac{e^{f_\theta(s, a)}}{\sum_{a'} e^{f_\theta(s, a')}}$$
-<p>其中 $f_\theta(s, a)$ 是网络的输出（logits）。</p>
+
+其中 $f_\theta(s, a)$ 是网络的输出（logits）。
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">PolicyNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -266,9 +276,12 @@ $$\pi_\theta(a|s) = \frac{e^{f_\theta(s, a)}}{\sum_{a'} e^{f_\theta(s, a')}}$$
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>价值网络</h2>
-<p>价值网络 $V_\phi(s)$ 估计状态的期望累积奖励。</p>
+<pre><code>价值网络 $V_\phi(s)$ 估计状态的期望累积奖励。
+
 $$V_\phi(s) \approx \mathbb{E}_\pi\left[G_t \mid s_t = s\right]$$
-<p>用作策略梯度中的基线 $b = V_\phi(s_t)$。</p>
+
+用作策略梯度中的基线 $b = V_\phi(s_t)$。
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ValueNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -302,17 +315,17 @@ $$V_\phi(s) \approx \mathbb{E}_\pi\left[G_t \mid s_t = s\right]$$
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
     <h2>计算折扣累积回报</h2>
-$$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma G_{t+1}$$
-<p>从后往前递归计算，时间复杂度 $O(T)$。</p>
-<p>参数：</p>
-<ul>
-<li><code>rewards</code>: $[r_1, r_2, \ldots, r_T]$ — 轨迹的奖励序列</li>
-<li><code>gamma</code>: $\gamma$ — 折扣因子</li>
-</ul>
-<p>返回值：</p>
-<ul>
-<li><code>returns</code>: $[G_0, G_1, \ldots, G_{T-1}]$ — 每步的折扣累积回报</li>
-</ul>
+<pre><code>$$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma G_{t+1}$$
+
+从后往前递归计算，时间复杂度 $O(T)$。
+
+参数：
+- `rewards`: $[r_1, r_2, \ldots, r_T]$ — 轨迹的奖励序列
+- `gamma`: $\gamma$ — 折扣因子
+
+返回值：
+- `returns`: $[G_0, G_1, \ldots, G_{T-1}]$ — 每步的折扣累积回报
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">compute_discounted_returns</span><span class="p">(</span><span class="n">rewards</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">list</span><span class="p">:</span>
@@ -333,19 +346,19 @@ $$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma G_{t+1}$$
   <div class="docs">
     <div class="section-link"><a href="#section-5">#</a></div>
     <h2>REINFORCE损失函数</h2>
-<p>REINFORCE更新规则：</p>
+<pre><code>REINFORCE更新规则：
 $$\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)$$
-<p>由于优化器执行最小化，我们取负号：</p>
+
+由于优化器执行最小化，我们取负号：
 $$L(\theta) = -\frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \log \pi_\theta(a_t^n | s_t^n)$$
-<p>参数：</p>
-<ul>
-<li><code>log_probs</code>: $[\log \pi_\theta(a_1|s_1), \ldots, \log \pi_\theta(a_T|s_T)]$ — 每步动作的对数概率</li>
-<li><code>returns</code>: $[G_0, G_1, \ldots, G_{T-1}]$ — 每步的折扣累积回报</li>
-</ul>
-<p>返回值：</p>
-<ul>
-<li>REINFORCE损失（取负号）</li>
-</ul>
+
+参数：
+- `log_probs`: $[\log \pi_\theta(a_1|s_1), \ldots, \log \pi_\theta(a_T|s_T)]$ — 每步动作的对数概率
+- `returns`: $[G_0, G_1, \ldots, G_{T-1}]$ — 每步的折扣累积回报
+
+返回值：
+- REINFORCE损失（取负号）
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">reinforce_loss</span><span class="p">(</span><span class="n">log_probs</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">returns</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
@@ -433,9 +446,7 @@ $$L(\theta) = -\frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \log \pi_\theta
       renderMathInElement(document.body, {
         delimiters: [
           {left: '$$', right: '$$', display: true},
-          {left: '$', right: '$', display: false},
-          {left: '\\[', right: '\\]', display: true},
-          {left: '\\(', right: '\\)', display: false}
+          {left: '$', right: '$', display: false}
         ],
         throwOnError: false
       });

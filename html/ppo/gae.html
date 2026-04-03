@@ -152,25 +152,23 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
     <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-0">#</a></div>
-    <p>---</p>
-<p>title: 广义优势估计 (GAE) - Generalized Advantage Estimation</p>
-<p>summary: 蘑菇书EasyRL中PPO算法使用的广义优势估计(GAE)的PyTorch实现。</p>
-<p>---</p>
+    <hr />
+<p>title: 广义优势估计 (GAE) - Generalized Advantage Estimation
+summary: 蘑菇书EasyRL中PPO算法使用的广义优势估计(GAE)的PyTorch实现。</p>
+<hr />
 <h1>广义优势估计 (GAE) - Generalized Advantage Estimation</h1>
-<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>中PPO算法使用的</p>
-<p>广义优势估计(Generalized Advantage Estimation, GAE)的PyTorch实现。</p>
+<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>中PPO算法使用的
+广义优势估计(Generalized Advantage Estimation, GAE)的PyTorch实现。</p>
 <p>参考论文：<a href="https://arxiv.org/abs/1506.02438">High-Dimensional Continuous Control Using Generalized Advantage Estimation</a></p>
 <h2>优势函数估计的权衡</h2>
 <p>在策略梯度方法中，我们需要估计优势函数 $A(s_t, a_t)$。有多种估计方式：</p>
 <h3>k步估计</h3>
-$$
-\begin{align}
-\hat{A}_t^{(1)} &= r_t + \gamma V(s_{t+1}) - V(s_t) \\
-\hat{A}_t^{(2)} &= r_t + \gamma r_{t+1} + \gamma^2 V(s_{t+2}) - V(s_t) \\
-&\vdots \\
-\hat{A}_t^{(\infty)} &= r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots - V(s_t)
-\end{align}
-$$
+<p>\begin{align}
+\hat{A}<em>t^{(1)} &amp;= r_t + \gamma V(s</em>{t+1}) - V(s_t) \
+\hat{A}<em>t^{(2)} &amp;= r_t + \gamma r</em>{t+1} + \gamma^2 V(s_{t+2}) - V(s_t) \
+&amp;\vdots \
+\hat{A}<em>t^{(\infty)} &amp;= r_t + \gamma r</em>{t+1} + \gamma^2 r_{t+2} + \cdots - V(s_t)
+\end{align}</p>
 <ul>
 <li>$\hat{A}_t^{(1)}$：<strong>高偏差，低方差</strong> — 只使用一步奖励，估计不准确但稳定</li>
 <li>$\hat{A}_t^{(\infty)}$：<strong>无偏差，高方差</strong> — 使用完整回报，准确但不稳定</li>
@@ -178,24 +176,27 @@ $$
 <h3>GAE：加权平均</h3>
 <p>GAE通过对不同k步估计进行加权平均来平衡偏差和方差：</p>
 $$\hat{A}_t^{GAE} = \frac{\sum_{k=1}^{\infty} w_k \hat{A}_t^{(k)}}{\sum_{k=1}^{\infty} w_k}$$
+
 <p>取权重 $w_k = \lambda^{k-1}$，可以得到简洁的递归计算形式。</p>
 <h3>GAE的递归形式</h3>
 <p>定义TD残差：</p>
 $$\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$$
+
 <p>则GAE可以递归计算：</p>
 $$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$$
-<p>其中：</p>
-<ul>
-<li>$\gamma$：折扣因子，控制未来奖励的衰减</li>
-<li>$\lambda$：GAE参数，控制偏差-方差权衡</li>
-<li>$\lambda = 0$：退化为单步TD估计（高偏差，低方差）</li>
-<li>$\lambda = 1$：退化为蒙特卡洛估计（无偏差，高方差）</li>
-</ul>
+
+<p>其中：
+- $\gamma$：折扣因子，控制未来奖励的衰减
+- $\lambda$：GAE参数，控制偏差-方差权衡
+  - $\lambda = 0$：退化为单步TD估计（高偏差，低方差）
+  - $\lambda = 1$：退化为蒙特卡洛估计（无偏差，高方差）</p>
 <h2>蘑菇书中的公式</h2>
 <p>根据蘑菇书第五章，PPO的优势函数估计为：</p>
 $$A_t = G_t - V(s_t)$$
+
 <p>其中 $G_t$ 是折扣累积回报：</p>
 $$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma G_{t+1}$$
+
 <p>在GAE中，我们使用更一般的优势估计：</p>
 $$\hat{A}_t = \sum_{l=0}^{\infty} (\gamma\lambda)^l \delta_{t+l}$$
   </div>
@@ -216,9 +217,11 @@ $$\hat{A}_t = \sum_{l=0}^{\infty} (\gamma\lambda)^l \delta_{t+l}$$
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>广义优势估计计算器</h2>
-<p>实现GAE公式：</p>
+<pre><code>实现GAE公式：
 $$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$$
-<p>其中 $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ 是TD残差。</p>
+
+其中 $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ 是TD残差。
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">GAE</span><span class="p">:</span>
@@ -289,18 +292,18 @@ $$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$$
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>计算折扣累积回报</h2>
-$$G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots = r_t + \gamma G_{t+1}$$
-<p>这是蘑菇书中使用的简单回报计算方式，不使用GAE时的替代方案。</p>
-<p>参数：</p>
-<ul>
-<li><code>rewards</code>: $r_t$ — 每步奖励</li>
-<li><code>gamma</code>: $\gamma$ — 折扣因子</li>
-<li><code>dones</code>: 是否episode结束</li>
-</ul>
-<p>返回值：</p>
-<ul>
-<li><code>returns</code>: $G_t$ — 折扣累积回报</li>
-</ul>
+<pre><code>$$G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots = r_t + \gamma G_{t+1}$$
+
+这是蘑菇书中使用的简单回报计算方式，不使用GAE时的替代方案。
+
+参数：
+- `rewards`: $r_t$ — 每步奖励
+- `gamma`: $\gamma$ — 折扣因子
+- `dones`: 是否episode结束
+
+返回值：
+- `returns`: $G_t$ — 折扣累积回报
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">compute_returns</span><span class="p">(</span><span class="n">rewards</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dones</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">:</span>
@@ -334,9 +337,7 @@ $$G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots = r_t + \gamma G_{t+1}$
       renderMathInElement(document.body, {
         delimiters: [
           {left: '$$', right: '$$', display: true},
-          {left: '$', right: '$', display: false},
-          {left: '\\[', right: '\\]', display: true},
-          {left: '\\(', right: '\\)', display: false}
+          {left: '$', right: '$', display: false}
         ],
         throwOnError: false
       });

@@ -152,37 +152,37 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
     <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-0">#</a></div>
-    <p>---</p>
-<p>title: 演员-评论员算法 (Actor-Critic) - A2C</p>
-<p>summary: ></p>
-<p>基于蘑菇书EasyRL第九章的演员-评论员(Actor-Critic)算法的PyTorch实现，</p>
-<p>包含A2C算法的核心公式逐行注释。</p>
-<p>---</p>
+    <hr />
+<p>title: 演员-评论员算法 (Actor-Critic) - A2C
+summary: &gt;
+  基于蘑菇书EasyRL第九章的演员-评论员(Actor-Critic)算法的PyTorch实现，
+  包含A2C算法的核心公式逐行注释。</p>
+<hr />
 <h1>演员-评论员算法 (Actor-Critic) - A2C</h1>
 <p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第九章的PyTorch实现。</p>
-<p>Actor-Critic算法结合了策略梯度(Actor)和价值函数(Critic)的优点：</p>
-<ul>
-<li><strong>Actor</strong> (演员)：负责学习策略 $\pi_\theta(a|s)$，输出动作</li>
-<li><strong>Critic</strong> (评论员)：负责学习价值函数 $V_\phi(s)$，评估Actor的表现</li>
-</ul>
+<p>Actor-Critic算法结合了策略梯度(Actor)和价值函数(Critic)的优点：
+- <strong>Actor</strong> (演员)：负责学习策略 $\pi_\theta(a|s)$，输出动作
+- <strong>Critic</strong> (评论员)：负责学习价值函数 $V_\phi(s)$，评估Actor的表现</p>
 <h2>优势函数</h2>
 <p>优势函数衡量在状态 $s$ 下采取动作 $a$ 相对于平均水平的优势：</p>
 $$A^\pi(s, a) = Q^\pi(s, a) - V^\pi(s)$$
-<p>其中：</p>
-<ul>
-<li>$Q^\pi(s, a)$ 是动作价值函数</li>
-<li>$V^\pi(s)$ 是状态价值函数</li>
-</ul>
+
+<p>其中：
+- $Q^\pi(s, a)$ 是动作价值函数
+- $V^\pi(s)$ 是状态价值函数</p>
 <p>优势函数可以通过TD残差估计：</p>
 $$A(s_t, a_t) \approx \delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$$
+
 <h2>Actor-Critic目标函数</h2>
 <p>Actor的更新方向由优势函数加权：</p>
 $$\nabla_\theta J \approx \mathbb{E}_t\left[A(s_t, a_t) \nabla_\theta \log \pi_\theta(a_t|s_t)\right]$$
+
 <p>Critic通过最小化TD误差来学习价值函数：</p>
 $$L_{critic} = \mathbb{E}_t\left[(r_t + \gamma V(s_{t+1}) - V(s_t))^2\right]$$
+
 <h2>A2C (Advantage Actor-Critic)</h2>
-<p>A2C是同步的Actor-Critic算法，多个并行环境同时收集经验，</p>
-<p>然后同步更新所有环境的策略和价值函数。</p>
+<p>A2C是同步的Actor-Critic算法，多个并行环境同时收集经验，
+然后同步更新所有环境的策略和价值函数。</p>
 <h3>A2C算法流程</h3>
 <ol>
 <li>每个并行环境运行 $n$ 步，收集 $(s_t, a_t, r_t, s_{t+1})$</li>
@@ -193,22 +193,20 @@ $$L_{critic} = \mathbb{E}_t\left[(r_t + \gamma V(s_{t+1}) - V(s_t))^2\right]$$
 <h3>损失函数</h3>
 <p>总损失由三部分组成：</p>
 $$L = L_{actor} + c_1 L_{critic} - c_2 \mathcal{H}$$
-<p>其中：</p>
-<ul>
-<li>$L_{actor} = -\mathbb{E}_t[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]$ — Actor损失</li>
-<li>$L_{critic} = \mathbb{E}_t[(G_t - V(s_t))^2]$ — Critic损失</li>
-<li>$\mathcal{H} = \mathbb{E}_t[\mathcal{H}(\pi_\theta(\cdot|s_t))]$ — 策略熵（鼓励探索）</li>
-<li>$c_1, c_2$ 是系数</li>
-</ul>
+
+<p>其中：
+- $L_{actor} = -\mathbb{E}_t[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]$ — Actor损失
+- $L_{critic} = \mathbb{E}_t[(G_t - V(s_t))^2]$ — Critic损失
+- $\mathcal{H} = \mathbb{E}_t[\mathcal{H}(\pi_\theta(\cdot|s_t))]$ — 策略熵（鼓励探索）
+- $c_1, c_2$ 是系数</p>
 <h2>蘑菇书中的Actor-Critic</h2>
-<p>根据蘑菇书第九章，Actor-Critic的核心思想是：</p>
-<ul>
-<li>Actor根据策略 $\pi_\theta(a|s)$ 选择动作</li>
-<li>Critic评估当前状态的价值 $V(s)$</li>
-<li>使用Critic的输出作为基线，降低策略梯度的方差</li>
-</ul>
+<p>根据蘑菇书第九章，Actor-Critic的核心思想是：
+- Actor根据策略 $\pi_\theta(a|s)$ 选择动作
+- Critic评估当前状态的价值 $V(s)$
+- 使用Critic的输出作为基线，降低策略梯度的方差</p>
 <p>策略梯度更新：</p>
 $$\theta \leftarrow \theta + \alpha \nabla_\theta \log \pi_\theta(a_t|s_t) A(s_t, a_t)$$
+
 <p>价值函数更新：</p>
 $$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
   </div>
@@ -230,12 +228,11 @@ $$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>Actor-Critic共享网络</h2>
-<p>共享特征提取器的Actor-Critic网络：</p>
-<ul>
-<li>共享层：提取状态特征</li>
-<li>Actor头：输出策略分布 $\pi_\theta(a|s)$</li>
-<li>Critic头：输出状态价值 $V_\phi(s)$</li>
-</ul>
+<pre><code>共享特征提取器的Actor-Critic网络：
+- 共享层：提取状态特征
+- Actor头：输出策略分布 $\pi_\theta(a|s)$
+- Critic头：输出状态价值 $V_\phi(s)$
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ActorCriticNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -316,16 +313,18 @@ $$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>A2C损失函数</h2>
-<p>A2C的总损失由三部分组成：</p>
+<pre><code>A2C的总损失由三部分组成：
+
 $$L = L_{actor} + c_1 L_{critic} - c_2 \mathcal{H}$$
-<p>其中：</p>
-<ul>
-<li>$L_{actor} = -\mathbb{E}[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]$</li>
-<li>$L_{critic} = \mathbb{E}[(G_t - V(s_t))^2]$</li>
-<li>$\mathcal{H} = \mathbb{E}[\mathcal{H}(\pi_\theta(\cdot|s_t))]$</li>
-</ul>
-<p>优势函数通过TD残差或GAE估计：</p>
+
+其中：
+- $L_{actor} = -\mathbb{E}[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]$
+- $L_{critic} = \mathbb{E}[(G_t - V(s_t))^2]$
+- $\mathcal{H} = \mathbb{E}[\mathcal{H}(\pi_\theta(\cdot|s_t))]$
+
+优势函数通过TD残差或GAE估计：
 $$A(s_t, a_t) = G_t - V(s_t)$$
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">A2CLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -465,9 +464,7 @@ $$A(s_t, a_t) = G_t - V(s_t)$$
       renderMathInElement(document.body, {
         delimiters: [
           {left: '$$', right: '$$', display: true},
-          {left: '$', right: '$', display: false},
-          {left: '\\[', right: '\\]', display: true},
-          {left: '\\(', right: '\\)', display: false}
+          {left: '$', right: '$', display: false}
         ],
         throwOnError: false
       });

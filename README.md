@@ -4,19 +4,6 @@
 采用[labmlai annotated deep learning paper implementations](https://github.com/labmlai/annotated_deep_learning_paper_implementations)
 风格的侧边对照注释排版。
 
-## 📖 在线阅读
-
-| 算法 | 在线预览 |
-|------|---------|
-| 🏠 **导航首页** | [打开](https://pillow-1.github.io/annotated-easy-rl/) |
-| 📊 **表格型方法** (Q-Learning / Sarsa / VI) | [打开](https://pillow-1.github.io/annotated-easy-rl/tabular/) |
-| 🎯 **策略梯度** (REINFORCE) | [打开](https://pillow-1.github.io/annotated-easy-rl/pg/) |
-| 🚀 **PPO** (近端策略优化) | [打开](https://pillow-1.github.io/annotated-easy-rl/ppo/) |
-| 📈 **GAE** (广义优势估计) | [打开](https://pillow-1.github.io/annotated-easy-rl/ppo/gae.html) |
-| 🧠 **DQN** (深度Q网络) | [打开](https://pillow-1.github.io/annotated-easy-rl/dqn/) |
-| 🎭 **A2C** (优势演员-评论员) | [打开](https://pillow-1.github.io/annotated-easy-rl/a2c/) |
-| 🔄 **DDPG** (深度确定性策略梯度) | [打开](https://pillow-1.github.io/annotated-easy-rl/ddpg/) |
-
 ## 概述
 
 本项目将蘑菇书中的强化学习理论公式与Python/PyTorch代码实现进行逐行对照注释，
@@ -53,20 +40,20 @@ annotated-rl/
 
 ## 算法覆盖
 
-| 章节 | 算法 | Python源码 | 在线预览 |
-|------|------|-----------|---------|
-| 第3章 | Q-Learning | `rl/tabular/__init__.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/tabular/) |
-| 第3章 | Sarsa | `rl/tabular/__init__.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/tabular/) |
-| 第3章 | Value Iteration | `rl/tabular/__init__.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/tabular/) |
-| 第4章 | REINFORCE (策略梯度) | `rl/pg/__init__.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/pg/) |
-| 第5章 | PPO-Clip (PPO2) | `rl/ppo/__init__.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/ppo/) |
-| 第5章 | PPO-Penalty (PPO1) | `rl/ppo/__init__.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/ppo/) |
-| 第5章 | GAE (广义优势估计) | `rl/ppo/gae.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/ppo/gae.html) |
-| 第6章 | DQN | `rl/dqn/__init__.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/dqn/) |
-| 第6章 | Double DQN | `rl/dqn/__init__.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/dqn/) |
-| 第6章 | Dueling DQN | `rl/dqn/__init__.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/dqn/) |
-| 第9章 | A2C (优势演员-评论员) | `rl/a2c/__init__.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/a2c/) |
-| 第12章 | DDPG | `rl/ddpg/__init__.py` | [查看](https://pillow-1.github.io/annotated-easy-rl/ddpg/) |
+| 章节 | 算法 | Python源码 |
+|------|------|-----------|
+| 第3章 | Q-Learning | `rl/tabular/__init__.py` |
+| 第3章 | Sarsa | `rl/tabular/__init__.py` |
+| 第3章 | Value Iteration | `rl/tabular/__init__.py` |
+| 第4章 | REINFORCE (策略梯度) | `rl/pg/__init__.py` |
+| 第5章 | PPO-Clip (PPO2) | `rl/ppo/__init__.py` |
+| 第5章 | PPO-Penalty (PPO1) | `rl/ppo/__init__.py` |
+| 第5章 | GAE (广义优势估计) | `rl/ppo/gae.py` |
+| 第6章 | DQN | `rl/dqn/__init__.py` |
+| 第6章 | Double DQN | `rl/dqn/__init__.py` |
+| 第6章 | Dueling DQN | `rl/dqn/__init__.py` |
+| 第9章 | A2C (优势演员-评论员) | `rl/a2c/__init__.py` |
+| 第12章 | DDPG | `rl/ddpg/__init__.py` |
 
 ## 注释风格
 

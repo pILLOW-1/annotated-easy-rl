@@ -8,6 +8,7 @@ Right column: code implementation
 import re
 import os
 import html as html_mod
+import markdown
 
 KATEX_CSS = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
 KATEX_JS = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
@@ -152,7 +153,6 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
 
 
 def highlight_python(code: str) -> str:
-    """Simple Python syntax highlighting (Dracula theme)."""
     code = html_mod.escape(code)
     keywords = {'import', 'from', 'class', 'def', 'return', 'if', 'else', 'elif',
                 'for', 'while', 'in', 'not', 'and', 'or', 'is', 'with', 'as',
@@ -242,107 +242,52 @@ def highlight_python(code: str) -> str:
     return ''.join(result)
 
 
+# ── Math placeholder system ────────────────────────────────────────
+# Replace $...$ and $$...$$ with placeholders before markdown processing,
+# then restore them after. This prevents markdown from mangling the delimiters.
+_math_placeholders = {}
+_math_counter = 0
+
+def _protect_math(text):
+    """Replace all $...$ and $$...$$ with unique placeholders."""
+    global _math_counter
+    _math_placeholders.clear()
+    _math_counter = 0
+
+    # First protect $$...$$ (display math, possibly multiline)
+    def replace_display(m):
+        global _math_counter
+        key = f'<!--MATH{_math_counter}-->'
+        _math_placeholders[key] = m.group(0)
+        _math_counter += 1
+        return key
+
+    text = re.sub(r'\$\$([\s\S]*?)\$\$', replace_display, text)
+
+    # Then protect $...$ (inline math, single line)
+    def replace_inline(m):
+        global _math_counter
+        key = f'<!--MATH{_math_counter}-->'
+        _math_placeholders[key] = m.group(0)
+        _math_counter += 1
+        return key
+
+    text = re.sub(r'\$([^\$\n]+?)\$', replace_inline, text)
+    return text
+
+def _restore_math(html_text):
+    """Replace placeholders back with original math delimiters."""
+    for key, value in _math_placeholders.items():
+        html_text = html_text.replace(key, value)
+        html_text = html_text.replace(html_mod.escape(key), value)
+    return html_text
+
+
 def render_markdown_to_html(md_text: str) -> str:
-    """Simple markdown to HTML converter with KaTeX support."""
-    lines = md_text.split('\n')
-    html_parts = []
-    in_list = False
-    in_ol = False
-    in_table = False
-    table_rows = []
-    in_math_block = False
-    math_block_content = []
-
-    def close_list():
-        nonlocal in_list, in_ol
-        if in_list:
-            html_parts.append('</ul>')
-            in_list = False
-        if in_ol:
-            html_parts.append('</ol>')
-            in_ol = False
-
-    def close_table():
-        nonlocal in_table, table_rows
-        if in_table and table_rows:
-            html_parts.append('<table>')
-            for idx, row in enumerate(table_rows):
-                cells = [c.strip() for c in row.split('|') if c.strip()]
-                if idx == 0:
-                    html_parts.append('<thead><tr>')
-                    for cell in cells:
-                        html_parts.append(f'<th>{cell}</th>')
-                    html_parts.append('</tr></thead><tbody>')
-                elif idx == 1 and all(c.strip() == '-' for c in cells):
-                    continue
-                else:
-                    html_parts.append('<tr>')
-                    for cell in cells:
-                        html_parts.append(f'<td>{cell}</td>')
-                    html_parts.append('</tr>')
-            html_parts.append('</tbody></table>')
-            table_rows = []
-            in_table = False
-
-    def close_math_block():
-        nonlocal in_math_block, math_block_content
-        if in_math_block:
-            content = '\n'.join(math_block_content)
-            html_parts.append(f'$$\n{content}\n$$')
-            math_block_content = []
-            in_math_block = False
-
-    def process_inline(text: str) -> str:
-        text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
-        text = re.sub(r'\*(.+?)\*', r'<em>\1</em>', text)
-        text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
-        text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', text)
-        return text
-
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith('\\begin{align}'):
-            close_list(); close_table()
-            in_math_block = True; math_block_content = [stripped]; continue
-        elif stripped.startswith('\\end{align}'):
-            math_block_content.append(stripped); close_math_block(); continue
-        elif in_math_block:
-            math_block_content.append(stripped); continue
-        if stripped.startswith('$$') and stripped.endswith('$$') and len(stripped) > 4:
-            close_list(); close_table()
-            html_parts.append(stripped); continue
-        elif stripped.startswith('$$'):
-            close_list(); close_table()
-            in_math_block = True; math_block_content = [stripped[2:].strip()]; continue
-        elif stripped.endswith('$$'):
-            math_block_content.append(stripped[:-2].strip()); close_math_block(); continue
-        if '|' in stripped and stripped.startswith('|') and stripped.endswith('|'):
-            if not in_table: in_table = True; table_rows = []
-            table_rows.append(stripped); continue
-        close_table()
-        if stripped.startswith('#### '):
-            close_list(); html_parts.append(f'<h4>{process_inline(stripped[5:])}</h4>')
-        elif stripped.startswith('### '):
-            close_list(); html_parts.append(f'<h3>{process_inline(stripped[4:])}</h3>')
-        elif stripped.startswith('## '):
-            close_list(); html_parts.append(f'<h2>{process_inline(stripped[3:])}</h2>')
-        elif stripped.startswith('# '):
-            close_list(); html_parts.append(f'<h1>{process_inline(stripped[2:])}</h1>')
-        elif stripped.startswith('- ') or stripped.startswith('* '):
-            close_table()
-            if not in_list: html_parts.append('<ul>'); in_list = True
-            html_parts.append(f'<li>{process_inline(stripped[2:])}</li>')
-        elif re.match(r'^\d+\. ', stripped):
-            close_table()
-            if not in_ol: html_parts.append('<ol>'); in_ol = True
-            html_parts.append(f'<li>{process_inline(re.sub(r"^\d+\. ", "", stripped))}</li>')
-        elif stripped == '':
-            close_list(); close_table()
-        else:
-            close_list(); close_table()
-            html_parts.append(f'<p>{process_inline(stripped)}</p>')
-    close_list(); close_table(); close_math_block()
-    return '\n'.join(html_parts)
+    """Convert markdown to HTML, preserving KaTeX delimiters."""
+    protected = _protect_math(md_text)
+    html_text = markdown.markdown(protected, extensions=['tables', 'fenced_code'])
+    return _restore_math(html_text)
 
 
 def extract_docstring_from_code_block(code_lines: list) -> tuple:
@@ -429,14 +374,10 @@ def parse_annotated_python(filepath: str) -> list:
     return sections
 
 
-# ── GitHub Pages base URL ──────────────────────────────────────────
-# When served via GitHub Pages, all pages live at the repo root.
-# Pages are deployed from docs/ directory.
 BASE_URL = ""
 
 
 def generate_html_page(title, sections, parent_path="..", parent_title="强化学习", subtitle=""):
-    """Generate a complete HTML page with side-by-side layout."""
     nav_html = f'<div class="nav-bar">\n  <a class="parent" href="{BASE_URL}/">{parent_title}</a>\n  <h1>{title}</h1>'
     if subtitle:
         nav_html += f'<p>{subtitle}</p>'
@@ -500,9 +441,7 @@ def generate_html_page(title, sections, parent_path="..", parent_title="强化�
       renderMathInElement(document.body, {{
         delimiters: [
           {{left: '$$', right: '$$', display: true}},
-          {{left: '$', right: '$', display: false}},
-          {{left: '\\\\[', right: '\\\\]', display: true}},
-          {{left: '\\\\(', right: '\\\\)', display: false}}
+          {{left: '$', right: '$', display: false}}
         ],
         throwOnError: false
       }});
@@ -513,7 +452,6 @@ def generate_html_page(title, sections, parent_path="..", parent_title="强化�
 
 
 def generate_index_page(html_dir):
-    """Generate the main index page."""
     pages = [
         ("表格型方法 (Tabular)", "第三章", f"{BASE_URL}/tabular/", "Q-Learning, Sarsa, Value Iteration"),
         ("策略梯度 (Policy Gradient)", "第四章", f"{BASE_URL}/pg/", "REINFORCE, 基线技巧, 折扣回报"),
@@ -575,9 +513,7 @@ def generate_index_page(html_dir):
       renderMathInElement(document.body, {{
         delimiters: [
           {{left: '$$', right: '$$', display: true}},
-          {{left: '$', right: '$', display: false}},
-          {{left: '\\\\[', right: '\\\\]', display: true}},
-          {{left: '\\\\(', right: '\\\\)', display: false}}
+          {{left: '$', right: '$', display: false}}
         ],
         throwOnError: false
       }});

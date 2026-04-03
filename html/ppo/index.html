@@ -152,53 +152,60 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
     <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-0">#</a></div>
-    <p>---</p>
-<p>title: 近端策略优化 (PPO) - Proximal Policy Optimization</p>
-<p>summary: ></p>
-<p>基于蘑菇书EasyRL第五章的近端策略优化(PPO)算法的PyTorch实现，</p>
-<p>包含重要性采样、PPO-Penalty(PPO1)、PPO-Clip(PPO2)等核心公式的逐行注释。</p>
-<p>---</p>
+    <hr />
+<p>title: 近端策略优化 (PPO) - Proximal Policy Optimization
+summary: &gt;
+  基于蘑菇书EasyRL第五章的近端策略优化(PPO)算法的PyTorch实现，
+  包含重要性采样、PPO-Penalty(PPO1)、PPO-Clip(PPO2)等核心公式的逐行注释。</p>
+<hr />
 <h1>近端策略优化 (PPO) - Proximal Policy Optimization</h1>
-<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第五章的PyTorch实现，</p>
-<p>参考论文<a href="https://arxiv.org/abs/1707.06347">Proximal Policy Optimization Algorithms</a>。</p>
-<p>PPO是一种基于策略梯度的强化学习算法。简单的策略梯度方法每个样本只做一次梯度更新，</p>
-<p>如果对同一个样本做多次梯度更新会导致策略偏离过大，产生糟糕的策略。</p>
-<p>PPO通过限制新旧策略之间的差异，使得我们可以对同一批样本做多次梯度更新。</p>
-<p>它通过裁剪梯度流来实现这一目标，如果更新后的策略与采样时的策略差异过大，就会裁剪梯度。</p>
+<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第五章的PyTorch实现，
+参考论文<a href="https://arxiv.org/abs/1707.06347">Proximal Policy Optimization Algorithms</a>。</p>
+<p>PPO是一种基于策略梯度的强化学习算法。简单的策略梯度方法每个样本只做一次梯度更新，
+如果对同一个样本做多次梯度更新会导致策略偏离过大，产生糟糕的策略。
+PPO通过限制新旧策略之间的差异，使得我们可以对同一批样本做多次梯度更新。
+它通过裁剪梯度流来实现这一目标，如果更新后的策略与采样时的策略差异过大，就会裁剪梯度。</p>
 <h2>策略梯度基础</h2>
 <p>在策略梯度方法中，我们希望最大化策略的期望累积奖励：</p>
 $$\max_\theta J(\pi_\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{\infty} \gamma^t r_t\right]$$
-<p>其中：</p>
-<ul>
-<li>$r_t$ 是时刻 $t$ 的奖励</li>
-<li>$\pi_\theta$ 是参数为 $\theta$ 的策略</li>
-<li>$\tau = (s_0, a_0, s_1, a_1, \ldots)$ 是从策略中采样的一条轨迹</li>
-<li>$\gamma \in [0, 1]$ 是折扣因子</li>
-</ul>
+
+<p>其中：
+- $r_t$ 是时刻 $t$ 的奖励
+- $\pi_\theta$ 是参数为 $\theta$ 的策略
+- $\tau = (s_0, a_0, s_1, a_1, \ldots)$ 是从策略中采样的一条轨迹
+- $\gamma \in [0, 1]$ 是折扣因子</p>
 <p>轨迹的概率为：</p>
 $$p_\theta(\tau) = p(s_1) \prod_{t=1}^{T} \pi_\theta(a_t | s_t) p(s_{t+1} | s_t, a_t)$$
+
 <p>根据log-derivative技巧 $\nabla f(x) = f(x) \nabla \log f(x)$，策略梯度可以写为：</p>
 $$\nabla_\theta J(\pi_\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{\infty} \gamma^t A^{\pi_\theta}(s_t, a_t) \nabla_\theta \log \pi_\theta(a_t | s_t)\right]$$
+
 <p>其中 $A^{\pi}(s, a) = Q^{\pi}(s, a) - V^{\pi}(s)$ 是优势函数。</p>
 <h2>重要性采样与异策略学习</h2>
 <p>我们可以使用重要性采样将期望从 $\pi_\theta$ 转移到另一个策略 $\pi_{\theta'}$：</p>
 $$\mathbb{E}_{x \sim p}[f(x)] = \mathbb{E}_{x \sim q}\left[f(x) \frac{p(x)}{q(x)}\right]$$
+
 <p>应用重要性采样，策略梯度可以改写为：</p>
 $$\nabla_\theta J(\pi_\theta) = \mathbb{E}_{(s_t, a_t) \sim \pi_{\theta'}}\left[\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta'}(a_t | s_t)} A^{\theta'}(s_t, a_t) \nabla_\theta \log \pi_\theta(a_t | s_t)\right]$$
+
 <p>这让我们可以使用旧策略 $\pi_{\theta'}$ 采集的数据来更新新策略 $\pi_\theta$。</p>
 <h2>PPO目标函数</h2>
 <h3>PPO1 (带KL惩罚)</h3>
 <p>PPO1在目标函数中添加KL散度惩罚项：</p>
 $$J_{\text{PPO}}^{\theta^k}(\theta) = J^{\theta^k}(\theta) - \beta \text{KL}(\theta, \theta^k)$$
+
 <p>其中：</p>
 $$J^{\theta^k}(\theta) \approx \sum_{(s_t, a_t)} \frac{\pi_\theta(a_t | s_t)}{\pi_{\theta^k}(a_t | s_t)} A^{\theta^k}(s_t, a_t)$$
-<p>$\beta$ 是自适应调整的参数。</p>
+
+$\beta$
+<p>是自适应调整的参数。</p>
 <h3>PPO2 (裁剪版本)</h3>
 <p>PPO2使用裁剪的目标函数：</p>
 $$J_{\text{PPO2}}^{\theta^k}(\theta) \approx \sum_{(s_t, a_t)} \min\left(\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta^k}(a_t | s_t)} A^{\theta^k}(s_t, a_t), \text{clip}\left(\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta^k}(a_t | s_t)}, 1-\varepsilon, 1+\varepsilon\right) A^{\theta^k}(s_t, a_t)\right)$$
+
 <p>其中 $\varepsilon$ 是超参数（通常取0.1~0.2）。</p>
-<p>裁剪操作确保新旧策略的比率 $r_t(\theta) = \frac{\pi_\theta(a_t | s_t)}{\pi_{\theta^k}(a_t | s_t)}$</p>
-<p>不会偏离1太多，从而限制了策略更新的幅度。</p>
+<p>裁剪操作确保新旧策略的比率 $r_t(\theta) = \frac{\pi_\theta(a_t | s_t)}{\pi_{\theta^k}(a_t | s_t)}$
+不会偏离1太多，从而限制了策略更新的幅度。</p>
 <h2>优势函数估计</h2>
 <p>优势函数 $A(s_t, a_t)$ 可以通过多种方式估计：</p>
 <ol>
@@ -226,26 +233,28 @@ $$J_{\text{PPO2}}^{\theta^k}(\theta) \approx \sum_{(s_t, a_t)} \min\left(\frac{\
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>PPO裁剪损失</h2>
-<p>PPO2的核心：裁剪策略比率以限制策略更新幅度。</p>
-<p>目标函数：</p>
+<pre><code>PPO2的核心：裁剪策略比率以限制策略更新幅度。
+
+目标函数：
 $$J_{\text{PPO2}}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\varepsilon, 1+\varepsilon)\hat{A}_t\right)\right]$$
-<p>其中：</p>
-<ul>
-<li>$r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}$ 是策略比率</li>
-<li>$\hat{A}_t$ 是优势函数的估计</li>
-<li>$\varepsilon$ 是裁剪参数</li>
-</ul>
-<p>推导过程：</p>
-$$
+
+其中：
+- $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}$ 是策略比率
+- $\hat{A}_t$ 是优势函数的估计
+- $\varepsilon$ 是裁剪参数
+
+推导过程：
+
 \begin{align}
 J(\pi_\theta) - J(\pi_{\theta_{old}})
-&= \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{\infty} \gamma^t A^{\pi_{old}}(s_t, a_t)\right] \\
-&= \frac{1}{1-\gamma} \mathbb{E}_{s \sim d^{\pi_\theta}, a \sim \pi_\theta}\left[A^{\pi_{old}}(s, a)\right] \\
-&= \frac{1}{1-\gamma} \mathbb{E}_{s \sim d^{\pi_{\theta_{old}}}, a \sim \pi_{\theta_{old}}}\left[\frac{\pi_\theta(a|s)}{\pi_{\theta_{old}}(a|s)} A^{\pi_{old}}(s, a)\right] \\
-&\approx \frac{1}{1-\gamma} \mathcal{L}^{CPI}
+&amp;= \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{\infty} \gamma^t A^{\pi_{old}}(s_t, a_t)\right] \\
+&amp;= \frac{1}{1-\gamma} \mathbb{E}_{s \sim d^{\pi_\theta}, a \sim \pi_\theta}\left[A^{\pi_{old}}(s, a)\right] \\
+&amp;= \frac{1}{1-\gamma} \mathbb{E}_{s \sim d^{\pi_{\theta_{old}}}, a \sim \pi_{\theta_{old}}}\left[\frac{\pi_\theta(a|s)}{\pi_{\theta_{old}}(a|s)} A^{\pi_{old}}(s, a)\right] \\
+&amp;\approx \frac{1}{1-\gamma} \mathcal{L}^{CPI}
 \end{align}
-$$
-<p>其中 $\mathcal{L}^{CPI}$ 是CPI (Conservative Policy Iteration) 的目标函数。</p>
+
+其中 $\mathcal{L}^{CPI}$ 是CPI (Conservative Policy Iteration) 的目标函数。
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ClippedPPOLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -301,10 +310,14 @@ $$
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>裁剪的价值函数损失</h2>
-<p>类似于策略的裁剪，价值函数的更新也需要裁剪以防止过大变化。</p>
+<pre><code>类似于策略的裁剪，价值函数的更新也需要裁剪以防止过大变化。
+
 $$V_{CLIP}^{\pi_\theta}(s_t) = V^{\pi_{\theta_{old}}}(s_t) + \text{clip}\left(V^{\pi_\theta}(s_t) - V^{\pi_{\theta_{old}}}(s_t), -\varepsilon, +\varepsilon\right)$$
+
 $$\mathcal{L}^{VF}(\theta) = \frac{1}{2} \mathbb{E}_t\left[\max\left((V^{\pi_\theta}(s_t) - R_t)^2, (V_{CLIP}^{\pi_\theta}(s_t) - R_t)^2\right)\right]$$
-<p>裁剪确保价值函数 $V_\theta$ 不会显著偏离 $V_{\theta_{old}}$。</p>
+
+裁剪确保价值函数 $V_\theta$ 不会显著偏离 $V_{\theta_{old}}$。
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ClippedValueFunctionLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -341,15 +354,16 @@ $$\mathcal{L}^{VF}(\theta) = \frac{1}{2} \mathbb{E}_t\left[\max\left((V^{\pi_\th
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
     <h2>PPO网络</h2>
-<p>共享特征提取器的Actor-Critic网络结构。</p>
-<p>Actor输出策略 $\pi_\theta(a|s)$，Critic输出价值 $V_\theta(s)$。</p>
-<p>网络结构：</p>
+<pre><code>共享特征提取器的Actor-Critic网络结构。
+Actor输出策略 $\pi_\theta(a|s)$，Critic输出价值 $V_\theta(s)$。
+
+网络结构：
 $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\right)$$
-<p>但PPO通常使用独立的Actor和Critic头：</p>
-<ul>
-<li>Actor: 特征 → 策略分布 $\pi_\theta(\cdot|s)$</li>
-<li>Critic: 特征 → 价值估计 $V_\theta(s)$</li>
-</ul>
+
+但PPO通常使用独立的Actor和Critic头：
+- Actor: 特征 → 策略分布 $\pi_\theta(\cdot|s)$
+- Critic: 特征 → 价值估计 $V_\theta(s)$
+</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">PPONetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -420,9 +434,7 @@ $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\rig
       renderMathInElement(document.body, {
         delimiters: [
           {left: '$$', right: '$$', display: true},
-          {left: '$', right: '$', display: false},
-          {left: '\\[', right: '\\]', display: true},
-          {left: '\\(', right: '\\)', display: false}
+          {left: '$', right: '$', display: false}
         ],
         throwOnError: false
       });
