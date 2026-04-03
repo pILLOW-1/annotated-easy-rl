@@ -10,18 +10,24 @@ summary: >
 
 本文件是[蘑菇书EasyRL](https://github.com/datawhalechina/easy-rl/)第三章的Python实现。
 
-表格型方法使用表格来存储状态-动作价值函数或状态价值函数。
+表格型方法使用表格来存储状态-动作价值函数 $Q(s, a)$ 或状态价值函数 $V(s)$。
 适用于状态空间和动作空间都是离散且较小的场景。
 
 ## 贝尔曼方程
 
 ### 状态价值函数
 
-贝尔曼期望方程描述了状态价值的递归关系。
+$$V^\pi(s) = \mathbb{E}_\pi\left[G_t \mid s_t = s\right] = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s\right]$$
+
+贝尔曼期望方程：
+$$V^\pi(s) = \sum_a \pi(a|s) \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^\pi(s')\right]$$
 
 ### 动作价值函数
 
-贝尔曼最优方程描述了最优动作价值的递归关系。
+$$Q^\pi(s, a) = \mathbb{E}_\pi\left[G_t \mid s_t = s, a_t = a\right] = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s, a_t = a\right]$$
+
+贝尔曼最优方程：
+$$Q^*(s, a) = \sum_{s', r} p(s', r|s, a) \left[r + \gamma \max_{a'} Q^*(s', a')\right]$$
 
 ## Q-Learning (异策略)
 
@@ -29,15 +35,17 @@ Q-Learning是异策略(off-policy)的时序差分(TD)控制算法。
 
 ### Q值更新规则
 
-其中：
-- alpha 是学习率
-- gamma 是折扣因子
-- r + gamma * max Q(s', a) 是TD目标
-- r + gamma * max Q(s', a) - Q(s, a) 是TD误差
+$$Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t)\right]$$
 
-Q-Learning使用 max Q(s', a) 来估计下一状态的价值，
-这对应于贪婪策略，
-但行为策略可以是 epsilon-贪心策略，因此是异策略的。
+其中：
+- $\alpha$ 是学习率
+- $\gamma$ 是折扣因子
+- $r_{t+1} + \gamma \max_a Q(s_{t+1}, a)$ 是TD目标
+- $r_{t+1} + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t)$ 是TD误差
+
+Q-Learning使用 $\max_a Q(s_{t+1}, a)$ 来估计下一状态的价值，
+这对应于贪婪策略 $\pi(s) = \arg\max_a Q(s, a)$，
+但行为策略可以是 $\varepsilon$-贪心策略，因此是异策略的。
 
 ## Sarsa (同策略)
 
@@ -45,7 +53,9 @@ Sarsa是同策略(on-policy)的时序差分(TD)控制算法。
 
 ### Q值更新规则
 
-Sarsa使用实际采取的下一个动作的Q值来更新，
+$$Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t)\right]$$
+
+Sarsa使用实际采取的下一个动作 $a_{t+1}$ 的Q值来更新，
 因此学习的就是行为策略本身的价值，是同策略的。
 
 ## Q-Learning vs Sarsa
@@ -53,9 +63,9 @@ Sarsa使用实际采取的下一个动作的Q值来更新，
 | 特性 | Q-Learning | Sarsa |
 |------|-----------|-------|
 | 策略类型 | 异策略(off-policy) | 同策略(on-policy) |
-| TD目标 | r + gamma * max Q(s', a) | r + gamma * Q(s', a') |
-| 行为策略 | epsilon-贪心 | epsilon-贪心 |
-| 目标策略 | 贪婪 | epsilon-贪心 |
+| TD目标 | $r + \gamma \max_a Q(s', a)$ | $r + \gamma Q(s', a')$ |
+| 行为策略 | $\varepsilon$-贪心 | $\varepsilon$-贪心 |
+| 目标策略 | 贪婪 | $\varepsilon$-贪心 |
 | 收敛性 | 收敛到最优Q值 | 收敛到行为策略的Q值 |
 
 ## 价值迭代 (Value Iteration)
@@ -64,12 +74,25 @@ Sarsa使用实际采取的下一个动作的Q值来更新，
 
 ### 更新规则
 
+$$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]$$
+
 价值迭代直接更新状态价值函数，直到收敛。
-收敛后，最优策略可以通过贪婪选择得到。
+收敛后，最优策略可以通过贪婪选择得到：
 
-## epsilon-贪心策略
+$$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]$$
 
-以 1-epsilon 的概率选择最优动作，以 epsilon 的概率随机选择动作。
+## $\varepsilon$-贪心策略
+
+$$\pi(a|s) = \begin{cases}
+1 - \varepsilon + \frac{\varepsilon}{|\mathcal{A}|} & \text{if } a = \arg\max_{a'} Q(s, a') \\
+\frac{\varepsilon}{|\mathcal{A}|} & \text{otherwise}
+\end{cases}$$
+
+或者简化为：
+$$a = \begin{cases}
+\arg\max_a Q(s, a) & \text{概率 } 1-\varepsilon \\
+\text{随机动作} & \text{概率 } \varepsilon
+\end{cases}$$
 """
 
 import numpy as np
@@ -81,13 +104,13 @@ class QLearningAgent:
     ## Q-Learning智能体
 
     Q-Learning更新规则：
-    Q(s, a) <- Q(s, a) + alpha * [r + gamma * max Q(s', a') - Q(s, a)]
+    $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') - Q(s, a)\right]$$
 
     其中：
-    - alpha：学习率
-    - gamma：折扣因子
-    - r + gamma * max Q(s', a')：TD目标
-    - r + gamma * max Q(s', a') - Q(s, a)：TD误差
+    - $\alpha$：学习率
+    - $\gamma$：折扣因子
+    - $r + \gamma \max_{a'} Q(s', a')$：TD目标
+    - $r + \gamma \max_{a'} Q(s', a') - Q(s, a)$：TD误差 $\delta$
     """
 
     def __init__(
@@ -100,17 +123,20 @@ class QLearningAgent:
     ):
         self.state_dim = state_dim
         self.action_dim = action_dim
-        self.lr = learning_rate
-        self.gamma = gamma
-        self.epsilon = epsilon
-        # Q表
+        self.lr = learning_rate  # $\alpha$
+        self.gamma = gamma  # $\gamma$
+        self.epsilon = epsilon  # $\varepsilon$
+        # Q表：$Q(s, a)$
         self.q_table = np.zeros((state_dim, action_dim), dtype=np.float32)
 
     def select_action(self, state: int) -> int:
         """
-        使用epsilon-贪心策略选择动作。
+        使用$\varepsilon$-贪心策略选择动作。
 
-        以 1-epsilon 的概率选择最优动作，以 epsilon 的概率随机选择动作。
+        $$a = \begin{cases}
+        \arg\max_a Q(s, a) & \text{概率 } 1-\varepsilon \\
+        \text{随机动作} & \text{概率 } \varepsilon
+        \end{cases}$$
         """
         if np.random.random() < self.epsilon:
             # 探索：随机动作
@@ -125,25 +151,25 @@ class QLearningAgent:
         """
         更新Q值。
 
-        Q(s, a) <- Q(s, a) + alpha * [r + gamma * max Q(s', a') * (1 - done) - Q(s, a)]
+        $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') \times (1 - \text{done}) - Q(s, a)\right]$$
 
         参数：
-        - `state`: 当前状态
-        - `action`: 当前动作
-        - `reward`: 奖励
-        - `next_state`: 下一状态
+        - `state`: $s_t$ — 当前状态
+        - `action`: $a_t$ — 当前动作
+        - `reward`: $r_{t+1}$ — 奖励
+        - `next_state`: $s_{t+1}$ — 下一状态
         - `done`: 是否episode结束
         """
-        # TD目标
+        # TD目标：$r + \gamma \max_{a'} Q(s', a') \times (1 - \text{done})$
         if done:
             td_target = reward
         else:
             td_target = reward + self.gamma * np.max(self.q_table[next_state])
 
-        # TD误差
+        # TD误差：$\delta = \text{TD目标} - Q(s, a)$
         td_error = td_target - self.q_table[state, action]
 
-        # 更新Q值
+        # 更新Q值：$Q(s, a) \leftarrow Q(s, a) + \alpha \delta$
         self.q_table[state, action] += self.lr * td_error
 
 
@@ -152,9 +178,9 @@ class SarsaAgent:
     ## Sarsa智能体
 
     Sarsa更新规则：
-    Q(s, a) <- Q(s, a) + alpha * [r + gamma * Q(s', a') - Q(s, a)]
+    $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') - Q(s, a)\right]$$
 
-    与Q-Learning不同，Sarsa使用实际采取的下一个动作的Q值，
+    与Q-Learning不同，Sarsa使用实际采取的下一个动作 $a'$ 的Q值，
     因此是同策略(on-policy)算法。
     """
 
@@ -174,7 +200,7 @@ class SarsaAgent:
         self.q_table = np.zeros((state_dim, action_dim), dtype=np.float32)
 
     def select_action(self, state: int) -> int:
-        """epsilon-贪心策略选择动作。"""
+        """$\varepsilon$-贪心策略选择动作。"""
         if np.random.random() < self.epsilon:
             return np.random.randint(self.action_dim)
         else:
@@ -192,11 +218,11 @@ class SarsaAgent:
         """
         更新Q值。
 
-        Q(s, a) <- Q(s, a) + alpha * [r + gamma * Q(s', a') * (1 - done) - Q(s, a)]
+        $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') \times (1 - \text{done}) - Q(s, a)\right]$$
 
-        注意：Sarsa需要下一个动作来更新，这是同策略的关键。
+        注意：Sarsa需要下一个动作 $a'$ 来更新，这是同策略的关键。
         """
-        # TD目标
+        # TD目标：$r + \gamma Q(s', a') \times (1 - \text{done})$
         if done:
             td_target = reward
         else:
@@ -216,9 +242,10 @@ class ValueIterationAgent:
     价值迭代是一种动态规划算法，适用于已知环境模型的场景。
 
     更新规则：
-    V(s) = max_a sum_{s', r} p(s', r|s, a) * [r + gamma * V(s')]
+    $$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]$$
 
-    收敛后，最优策略可以通过贪婪选择得到。
+    收敛后，最优策略：
+    $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]$$
     """
 
     def __init__(self, state_dim: int, action_dim: int, gamma: float = 0.99, theta: float = 1e-6):
@@ -246,6 +273,8 @@ class ValueIterationAgent:
         """
         执行一次价值迭代。
 
+        $$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]$$
+
         返回值：
         - 价值函数的最大变化量
         """
@@ -256,10 +285,10 @@ class ValueIterationAgent:
             action_values = np.zeros(self.action_dim)
             for a in range(self.action_dim):
                 for prob, next_state, reward, done in self.P[s][a]:
-                    # 期望价值
+                    # 期望价值：$\sum_{s', r} p(s', r|s, a) [r + \gamma V(s')]$
                     action_values[a] += prob * (reward + self.gamma * self.value_table[next_state] * (1 - done))
 
-            # 选择最大价值
+            # 选择最大价值：$V_{k+1}(s) = \max_a Q(s, a)$
             self.value_table[s] = np.max(action_values)
             delta = max(delta, abs(v - self.value_table[s]))
 
@@ -282,6 +311,8 @@ class ValueIterationAgent:
     def extract_policy(self):
         """
         从最优价值函数提取最优策略。
+
+        $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]$$
         """
         for s in range(self.state_dim):
             action_values = np.zeros(self.action_dim)

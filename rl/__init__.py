@@ -55,7 +55,7 @@ summary: >
 
 本实现采用labmlai的侧边对照注释风格：
 
-1. **模块级文档字符串**：每个文件开头包含完整的理论推导
+1. **模块级文档字符串**：每个文件开头包含完整的理论推导，使用LaTeX公式
 2. **类/方法级文档字符串**：每个组件都有详细的公式说明
 3. **代码行注释**：每行关键代码前都有对应的数学公式
 4. **参数映射**：函数参数与公式变量一一对应
@@ -63,14 +63,14 @@ summary: >
 ### 公式与代码对照示例
 
 ```python
-# TD目标
+# TD目标：$y = r + \gamma \max_{a'} Q(s', a'; \theta^-)$
 with torch.no_grad():
     target_q = reward + self.gamma * target_q.max(dim=-1)[0] * (1 - done)
 
-# TD误差
+# TD误差：$\delta = Q(s, a; \theta) - y$
 td_error = q_value - target_q
 
-# 损失
+# 损失：$L(\theta) = \mathbb{E}[\delta^2]$
 loss = td_error.pow(2).mean()
 ```
 
