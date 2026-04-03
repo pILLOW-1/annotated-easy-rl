@@ -9,10 +9,11 @@ import re
 import os
 import html as html_mod
 import markdown
+import latex2mathml.converter
 
-KATEX_CSS = "https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css"
-KATEX_JS = "https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"
-AUTORENDER_JS = "https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"
+KATEX_CSS = ""
+KATEX_JS = ""
+AUTORENDER_JS = ""
 
 PYGMENTS_CSS = """
 .highlight .c { color: #6272a4; }
@@ -122,6 +123,18 @@ div.section div.docs th, div.section div.docs td {
   border: 1px solid #484a56; padding: 8px 12px; text-align: left;
 }
 div.section div.docs th { background: #282a36; color: #fff; }
+
+div.section div.docs .math-display {
+  display: block; text-align: center; margin: 12px 0;
+  overflow-x: auto; overflow-y: hidden; padding: 8px 0;
+}
+div.section div.docs .math-inline math {
+  vertical-align: middle;
+}
+math {
+  color: #ccc;
+  font-size: 1.1em;
+}
 
 div.section div.code {
   padding: 14px 8px 16px 15px; vertical-align: top;
@@ -252,16 +265,25 @@ def highlight_python(code: str) -> str:
     return html_out
 
 
-# Math placeholder system for doc text
-_math_placeholders = {}
+# Math rendering: convert LaTeX to MathML server-side
+_math_store = {}
 _math_counter = 0
 
-def _protect_math(text):
-    """Replace all $...$ and $$...$$ with unique placeholders."""
-    global _math_counter
-    _math_placeholders.clear()
-    _math_counter = 0
+def _render_latex(latex: str, display: bool = False) -> str:
+    """Convert LaTeX to MathML HTML."""
+    try:
+        mathml = latex2mathml.converter.convert(latex)
+        if display:
+            return f'<div class="math-display">{mathml}</div>'
+        else:
+            return f'<span class="math-inline">{mathml}</span>'
+    except Exception:
+        # Fallback: return raw LaTeX
+        delim = '$$' if display else '$'
+        return f'{delim}{latex}{delim}'
 
+def _process_math(text):
+    """Replace all $...$ and $$...$$ with rendered MathML."""
     # Convert \begin{align}...\end{align} to $$...$$
     text = re.sub(
         r'(?:^|\n)\s*\\begin\{align\}([\s\S]*?)\\end\{align\}',
@@ -269,40 +291,25 @@ def _protect_math(text):
         text
     )
 
-    # First protect $$...$$ (display math, possibly multiline)
+    # Process display math $$...$$ first
     def replace_display(m):
-        global _math_counter
-        key = f'<!--MATH{_math_counter}-->'
-        _math_placeholders[key] = m.group(0)
-        _math_counter += 1
-        return key
+        return _render_latex(m.group(1).strip(), display=True)
 
     text = re.sub(r'\$\$([\s\S]*?)\$\$', replace_display, text)
 
-    # Then protect $...$ (inline math, single line)
+    # Then process inline math $...$
     def replace_inline(m):
-        global _math_counter
-        key = f'<!--MATH{_math_counter}-->'
-        _math_placeholders[key] = m.group(0)
-        _math_counter += 1
-        return key
+        return _render_latex(m.group(1).strip(), display=False)
 
     text = re.sub(r'\$([^\$\n]+?)\$', replace_inline, text)
     return text
 
-def _restore_math(html_text):
-    """Replace placeholders back with original math delimiters."""
-    for key, value in _math_placeholders.items():
-        html_text = html_text.replace(key, value)
-        html_text = html_text.replace(html_mod.escape(key), value)
-    return html_text
-
 
 def render_markdown_to_html(md_text: str) -> str:
-    """Convert markdown to HTML, preserving KaTeX delimiters."""
-    protected = _protect_math(md_text)
-    html_text = markdown.markdown(protected, extensions=['tables', 'fenced_code'])
-    return _restore_math(html_text)
+    """Convert markdown to HTML, rendering math to MathML."""
+    processed = _process_math(md_text)
+    html_text = markdown.markdown(processed, extensions=['tables', 'fenced_code'])
+    return html_text
 
 
 def _dedent(text: str) -> str:
@@ -479,71 +486,6 @@ def generate_html_page(title, sections, parent_path="..", parent_title="强化�
       </p>
     </div>
   </div>
-  <script src="{KATEX_JS}"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {{
-      var container = document.getElementById('container');
-      if (typeof katex === 'undefined') {{
-        console.error('KaTeX not loaded');
-        return;
-      }}
-      function renderMath(node) {{
-        if (node.nodeType === 3) {{
-          var text = node.nodeValue;
-          if (text.indexOf('$') === -1) return;
-          var parts = [];
-          var remaining = text;
-          var lastEnd = 0;
-          var regex = /(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g;
-          var match;
-          while ((match = regex.exec(remaining)) !== null) {{
-            if (match.index > lastEnd) {{
-              parts.push(remaining.substring(lastEnd, match.index));
-            }}
-            var math = match[0];
-            var isDisplay = math.startsWith('$$');
-            var latex = isDisplay ? math.slice(2, -2) : math.slice(1, -1);
-            try {{
-              var html = katex.renderToString(latex, {{
-                displayMode: isDisplay,
-                throwOnError: false
-              }});
-              parts.push(html);
-            }} catch (e) {{
-              parts.push(math);
-            }}
-            lastEnd = match.index + match[0].length;
-          }}
-          if (parts.length > 0) {{
-            if (lastEnd < remaining.length) {{
-              parts.push(remaining.substring(lastEnd));
-            }}
-            var frag = document.createDocumentFragment();
-            for (var i = 0; i < parts.length; i++) {{
-              var p = parts[i];
-              if (i % 2 === 0 && p.indexOf('<span') === -1 && p.indexOf('katex') === -1) {{
-                frag.appendChild(document.createTextNode(p));
-              }} else {{
-                var wrapper = document.createElement('span');
-                wrapper.innerHTML = p;
-                while (wrapper.firstChild) {{
-                  frag.appendChild(wrapper.firstChild);
-                }}
-              }}
-            }}
-            node.parentNode.replaceChild(frag, node);
-          }}
-        }} else if (node.nodeType === 1) {{
-          var tag = node.tagName.toLowerCase();
-          if (tag === 'pre' || tag === 'code' || tag === 'script' || tag === 'style') return;
-          for (var i = 0; i < node.childNodes.length; i++) {{
-            renderMath(node.childNodes[i]);
-          }}
-        }}
-      }}
-      renderMath(container);
-    }});
-  </script>
 </body>
 </html>"""
 
@@ -604,72 +546,6 @@ def generate_index_page(html_dir):
       </p>
     </div>
   </div>
-  <script src="{KATEX_JS}"></script>
-  <script src="{AUTORENDER_JS}"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {{
-      var container = document.getElementById('container');
-      if (typeof katex === 'undefined') {{
-        console.error('KaTeX not loaded');
-        return;
-      }}
-      function renderMath(node) {{
-        if (node.nodeType === 3) {{
-          var text = node.nodeValue;
-          if (text.indexOf('$') === -1) return;
-          var parts = [];
-          var remaining = text;
-          var lastEnd = 0;
-          var regex = /(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g;
-          var match;
-          while ((match = regex.exec(remaining)) !== null) {{
-            if (match.index > lastEnd) {{
-              parts.push(remaining.substring(lastEnd, match.index));
-            }}
-            var math = match[0];
-            var isDisplay = math.startsWith('$$');
-            var latex = isDisplay ? math.slice(2, -2) : math.slice(1, -1);
-            try {{
-              var html = katex.renderToString(latex, {{
-                displayMode: isDisplay,
-                throwOnError: false
-              }});
-              parts.push(html);
-            }} catch (e) {{
-              parts.push(math);
-            }}
-            lastEnd = match.index + match[0].length;
-          }}
-          if (parts.length > 0) {{
-            if (lastEnd < remaining.length) {{
-              parts.push(remaining.substring(lastEnd));
-            }}
-            var frag = document.createDocumentFragment();
-            for (var i = 0; i < parts.length; i++) {{
-              var p = parts[i];
-              if (i % 2 === 0 && p.indexOf('<span') === -1 && p.indexOf('katex') === -1) {{
-                frag.appendChild(document.createTextNode(p));
-              }} else {{
-                var wrapper = document.createElement('span');
-                wrapper.innerHTML = p;
-                while (wrapper.firstChild) {{
-                  frag.appendChild(wrapper.firstChild);
-                }}
-              }}
-            }}
-            node.parentNode.replaceChild(frag, node);
-          }}
-        }} else if (node.nodeType === 1) {{
-          var tag = node.tagName.toLowerCase();
-          if (tag === 'pre' || tag === 'code' || tag === 'script' || tag === 'style') return;
-          for (var i = 0; i < node.childNodes.length; i++) {{
-            renderMath(node.childNodes[i]);
-          }}
-        }}
-      }}
-      renderMath(container);
-    }});
-  </script>
 </body>
 </html>"""
 

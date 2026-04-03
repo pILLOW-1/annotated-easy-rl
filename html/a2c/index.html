@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>优势演员-评论员 (A2C) - Annotated Easy-RL</title>
-  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <link rel="stylesheet" href="">
   <style>
 
 html { font-size: 62.5%; }
@@ -84,6 +84,18 @@ div.section div.docs th, div.section div.docs td {
 }
 div.section div.docs th { background: #282a36; color: #fff; }
 
+div.section div.docs .math-display {
+  display: block; text-align: center; margin: 12px 0;
+  overflow-x: auto; overflow-y: hidden; padding: 8px 0;
+}
+div.section div.docs .math-inline math {
+  vertical-align: middle;
+}
+math {
+  color: #ccc;
+  font-size: 1.1em;
+}
+
 div.section div.code {
   padding: 14px 8px 16px 15px; vertical-align: top;
   background: #282a36;
@@ -161,54 +173,54 @@ summary: &gt;
 <h1>演员-评论员算法 (Actor-Critic) - A2C</h1>
 <p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第九章的PyTorch实现。</p>
 <p>Actor-Critic算法结合了策略梯度(Actor)和价值函数(Critic)的优点：
-- <strong>Actor</strong> (演员)：负责学习策略 $\pi_\theta(a|s)$，输出动作
-- <strong>Critic</strong> (评论员)：负责学习价值函数 $V_\phi(s)$，评估Actor的表现</p>
+- <strong>Actor</strong> (演员)：负责学习策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>，输出动作
+- <strong>Critic</strong> (评论员)：负责学习价值函数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>，评估Actor的表现</p>
 <h2>优势函数</h2>
-<p>优势函数衡量在状态 $s$ 下采取动作 $a$ 相对于平均水平的优势：</p>
-$$A^\pi(s, a) = Q^\pi(s, a) - V^\pi(s)$$
+<p>优势函数衡量在状态 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> 下采取动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> 相对于平均水平的优势：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>A</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msup><mi>Q</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
 <p>其中：
-- $Q^\pi(s, a)$ 是动作价值函数
-- $V^\pi(s)$ 是状态价值函数</p>
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>Q</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是动作价值函数
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是状态价值函数</p>
 <p>优势函数可以通过TD残差估计：</p>
-$$A(s_t, a_t) \approx \delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02248;</mo><msub><mi>&#x003B4;</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
 <h2>Actor-Critic目标函数</h2>
 <p>Actor的更新方向由优势函数加权：</p>
-$$\nabla_\theta J \approx \mathbb{E}_t\left[A(s_t, a_t) \nabla_\theta \log \pi_\theta(a_t|s_t)\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>J</mi><mo>&#x02248;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>Critic通过最小化TD误差来学习价值函数：</p>
-$$L_{critic} = \mathbb{E}_t\left[(r_t + \gamma V(s_{t+1}) - V(s_t))^2\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <h2>A2C (Advantage Actor-Critic)</h2>
 <p>A2C是同步的Actor-Critic算法，多个并行环境同时收集经验，
 然后同步更新所有环境的策略和价值函数。</p>
 <h3>A2C算法流程</h3>
 <ol>
-<li>每个并行环境运行 $n$ 步，收集 $(s_t, a_t, r_t, s_{t+1})$</li>
+<li>每个并行环境运行 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>n</mi></mrow></math></span> 步，收集 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span></li>
 <li>计算优势函数（使用GAE或TD残差）</li>
 <li>计算Actor损失和Critic损失</li>
 <li>同步更新所有环境的网络参数</li>
 </ol>
 <h3>损失函数</h3>
 <p>总损失由三部分组成：</p>
-$$L = L_{actor} + c_1 L_{critic} - c_2 \mathcal{H}$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo>&#x0003D;</mo><msub><mi>L</mi><mrow><mi>a</mi><mi>c</mi><mi>t</mi><mi>o</mi><mi>r</mi></mrow></msub><mo>&#x0002B;</mo><msub><mi>c</mi><mn>1</mn></msub><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x02212;</mo><msub><mi>c</mi><mn>2</mn></msub><mi>&#x0210B;</mi></mrow></math></div>
 
 <p>其中：
-- $L_{actor} = -\mathbb{E}_t[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]$ — Actor损失
-- $L_{critic} = \mathbb{E}_t[(G_t - V(s_t))^2]$ — Critic损失
-- $\mathcal{H} = \mathbb{E}_t[\mathcal{H}(\pi_\theta(\cdot|s_t))]$ — 策略熵（鼓励探索）
-- $c_1, c_2$ 是系数</p>
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>a</mi><mi>c</mi><mi>t</mi><mi>o</mi><mi>r</mi></mrow></msub><mo>&#x0003D;</mo><mo>&#x02212;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mo stretchy="false">[</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span> — Actor损失
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mo stretchy="false">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="false">]</mo></mrow></math></span> — Critic损失
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x0210B;</mi><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mo stretchy="false">[</mo><mi>&#x0210B;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span> — 策略熵（鼓励探索）
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>c</mi><mn>1</mn></msub><mo>&#x0002C;</mo><msub><mi>c</mi><mn>2</mn></msub></mrow></math></span> 是系数</p>
 <h2>蘑菇书中的Actor-Critic</h2>
 <p>根据蘑菇书第九章，Actor-Critic的核心思想是：
-- Actor根据策略 $\pi_\theta(a|s)$ 选择动作
-- Critic评估当前状态的价值 $V(s)$
+- Actor根据策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 选择动作
+- Critic评估当前状态的价值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>
 - 使用Critic的输出作为基线，降低策略梯度的方差</p>
 <p>策略梯度更新：</p>
-$$\theta \leftarrow \theta + \alpha \nabla_\theta \log \pi_\theta(a_t|s_t) A(s_t, a_t)$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi><mo>&#x02190;</mo><mi>&#x003B8;</mi><mo>&#x0002B;</mo><mi>&#x003B1;</mi><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
 <p>价值函数更新：</p>
-$$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003D5;</mi><mo>&#x02190;</mo><mi>&#x003D5;</mi><mo>&#x02212;</mo><mi>&#x003B2;</mi><msub><mo>&#x02207;</mo><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup></mrow></math></div>
   </div>
   <div class="code">
     
@@ -230,23 +242,23 @@ $$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
     <h2>Actor-Critic共享网络</h2>
 <p>共享特征提取器的Actor-Critic网络：
 - 共享层：提取状态特征
-- Actor头：输出策略分布 $\pi_\theta(a|s)$
-- Critic头：输出状态价值 $V_\phi(s)$</p>
+- Actor头：输出策略分布 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>
+- Critic头：输出状态价值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></p>
 <p>前向传播。</p>
 <p>参数：
-- <code>state</code>: $s$ — 状态</p>
+- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> — 状态</p>
 <p>返回值：
-- <code>action_probs</code>: $\pi_\theta(a|s)$ — 动作概率分布
-- <code>state_value</code>: $V_\phi(s)$ — 状态价值</p>
+- <code>action_probs</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 动作概率分布
+- <code>state_value</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 状态价值</p>
 <p>评估给定状态-动作对。</p>
-<p>用于计算 $\log \pi_\theta(a_t|s_t)$ 和策略熵。</p>
+<p>用于计算 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> 和策略熵。</p>
 <p>参数：
-- <code>state</code>: $s$ — 状态
-- <code>action</code>: $a$ — 动作</p>
+- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> — 状态
+- <code>action</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> — 动作</p>
 <p>返回值：
-- <code>log_prob</code>: $\log \pi_\theta(a|s)$ — 动作的对数概率
-- <code>state_value</code>: $V_\phi(s)$ — 状态价值
-- <code>entropy</code>: $\mathcal{H}(\pi_\theta(\cdot|s))$ — 策略熵</p>
+- <code>log_prob</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 动作的对数概率
+- <code>state_value</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 状态价值
+- <code>entropy</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x0210B;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 策略熵</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ActorCriticNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -304,21 +316,21 @@ $$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>A2C损失函数</h2>
 <p>A2C的总损失由三部分组成：</p>
-$$L = L_{actor} + c_1 L_{critic} - c_2 \mathcal{H}$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo>&#x0003D;</mo><msub><mi>L</mi><mrow><mi>a</mi><mi>c</mi><mi>t</mi><mi>o</mi><mi>r</mi></mrow></msub><mo>&#x0002B;</mo><msub><mi>c</mi><mn>1</mn></msub><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x02212;</mo><msub><mi>c</mi><mn>2</mn></msub><mi>&#x0210B;</mi></mrow></math></div>
 
 <p>其中：
-- $L_{actor} = -\mathbb{E}[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]$
-- $L_{critic} = \mathbb{E}[(G_t - V(s_t))^2]$
-- $\mathcal{H} = \mathbb{E}[\mathcal{H}(\pi_\theta(\cdot|s_t))]$</p>
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>a</mi><mi>c</mi><mi>t</mi><mi>o</mi><mi>r</mi></mrow></msub><mo>&#x0003D;</mo><mo>&#x02212;</mo><mi>&#x1D53C;</mi><mo stretchy="false">[</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span>
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x0003D;</mo><mi>&#x1D53C;</mi><mo stretchy="false">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="false">]</mo></mrow></math></span>
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x0210B;</mi><mo>&#x0003D;</mo><mi>&#x1D53C;</mi><mo stretchy="false">[</mo><mi>&#x0210B;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span></p>
 <p>优势函数通过TD残差或GAE估计：</p>
-$$A(s_t, a_t) = G_t - V(s_t)$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
 <p>计算A2C损失。</p>
 <p>参数映射：
-- <code>log_probs</code>: $\log \pi_\theta(a_t|s_t)$ — 动作的对数概率
-- <code>state_values</code>: $V_\phi(s_t)$ — 状态价值
-- <code>returns</code>: $G_t$ — 折扣累积回报
-- <code>entropy</code>: $\mathcal{H}(\pi_\theta(\cdot|s_t))$ — 策略熵</p>
+- <code>log_probs</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 动作的对数概率
+- <code>state_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 状态价值
+- <code>returns</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub></mrow></math></span> — 折扣累积回报
+- <code>entropy</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x0210B;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 策略熵</p>
 <p>返回值：
 - Actor损失
 - Critic损失
@@ -366,17 +378,17 @@ $$A(s_t, a_t) = G_t - V(s_t)$$
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
     <h2>计算TD目标值</h2>
-$$G_t = r_t + \gamma V(s_{t+1}) \times (1 - \text{done})$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mtext>done</mtext><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
-<p>如果episode结束（done=True），则 $G_t = r_t$。</p>
+<p>如果episode结束（done=True），则 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mi>t</mi></msub></mrow></math></span>。</p>
 <p>参数：
-- <code>rewards</code>: $r_t$ — 每步奖励
-- <code>values</code>: $V(s_t)$ — 当前状态价值
-- <code>next_values</code>: $V(s_{t+1})$ — 下一状态价值
+- <code>rewards</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mi>t</mi></msub></mrow></math></span> — 每步奖励
+- <code>values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 当前状态价值
+- <code>next_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 下一状态价值
 - <code>dones</code>: 是否episode结束
-- <code>gamma</code>: $\gamma$ — 折扣因子</p>
+- <code>gamma</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi></mrow></math></span> — 折扣因子</p>
 <p>返回值：
-- TD目标值 $G_t$</p>
+- TD目标值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub></mrow></math></span></p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">compute_td_targets</span><span class="p">(</span>
@@ -396,16 +408,16 @@ $$G_t = r_t + \gamma V(s_{t+1}) \times (1 - \text{done})$$
   <div class="docs">
     <div class="section-link"><a href="#section-5">#</a></div>
     <h2>计算优势函数（单步TD）</h2>
-$$A(s_t, a_t) = r_t + \gamma V(s_{t+1}) - V(s_t)$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
 <p>参数：
-- <code>rewards</code>: $r_t$ — 每步奖励
-- <code>values</code>: $V(s_t)$ — 当前状态价值
-- <code>next_values</code>: $V(s_{t+1})$ — 下一状态价值
+- <code>rewards</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mi>t</mi></msub></mrow></math></span> — 每步奖励
+- <code>values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 当前状态价值
+- <code>next_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 下一状态价值
 - <code>dones</code>: 是否episode结束
-- <code>gamma</code>: $\gamma$ — 折扣因子</p>
+- <code>gamma</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi></mrow></math></span> — 折扣因子</p>
 <p>返回值：
-- 优势函数估计 $A(s_t, a_t)$</p>
+- 优势函数估计 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span></p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">compute_advantages</span><span class="p">(</span>
@@ -430,71 +442,5 @@ $$A(s_t, a_t) = r_t + \gamma V(s_{t+1}) - V(s_t)$$
       </p>
     </div>
   </div>
-  <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      var container = document.getElementById('container');
-      if (typeof katex === 'undefined') {
-        console.error('KaTeX not loaded');
-        return;
-      }
-      function renderMath(node) {
-        if (node.nodeType === 3) {
-          var text = node.nodeValue;
-          if (text.indexOf('$') === -1) return;
-          var parts = [];
-          var remaining = text;
-          var lastEnd = 0;
-          var regex = /(\$\$[\s\S]*?\$\$|\$[^\$
-]+?\$)/g;
-          var match;
-          while ((match = regex.exec(remaining)) !== null) {
-            if (match.index > lastEnd) {
-              parts.push(remaining.substring(lastEnd, match.index));
-            }
-            var math = match[0];
-            var isDisplay = math.startsWith('$$');
-            var latex = isDisplay ? math.slice(2, -2) : math.slice(1, -1);
-            try {
-              var html = katex.renderToString(latex, {
-                displayMode: isDisplay,
-                throwOnError: false
-              });
-              parts.push(html);
-            } catch (e) {
-              parts.push(math);
-            }
-            lastEnd = match.index + match[0].length;
-          }
-          if (parts.length > 0) {
-            if (lastEnd < remaining.length) {
-              parts.push(remaining.substring(lastEnd));
-            }
-            var frag = document.createDocumentFragment();
-            for (var i = 0; i < parts.length; i++) {
-              var p = parts[i];
-              if (i % 2 === 0 && p.indexOf('<span') === -1 && p.indexOf('katex') === -1) {
-                frag.appendChild(document.createTextNode(p));
-              } else {
-                var wrapper = document.createElement('span');
-                wrapper.innerHTML = p;
-                while (wrapper.firstChild) {
-                  frag.appendChild(wrapper.firstChild);
-                }
-              }
-            }
-            node.parentNode.replaceChild(frag, node);
-          }
-        } else if (node.nodeType === 1) {
-          var tag = node.tagName.toLowerCase();
-          if (tag === 'pre' || tag === 'code' || tag === 'script' || tag === 'style') return;
-          for (var i = 0; i < node.childNodes.length; i++) {
-            renderMath(node.childNodes[i]);
-          }
-        }
-      }
-      renderMath(container);
-    });
-  </script>
 </body>
 </html>

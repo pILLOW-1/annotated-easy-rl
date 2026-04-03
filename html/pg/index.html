@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>策略梯度 (Policy Gradient) - Annotated Easy-RL</title>
-  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <link rel="stylesheet" href="">
   <style>
 
 html { font-size: 62.5%; }
@@ -84,6 +84,18 @@ div.section div.docs th, div.section div.docs td {
 }
 div.section div.docs th { background: #282a36; color: #fff; }
 
+div.section div.docs .math-display {
+  display: block; text-align: center; margin: 12px 0;
+  overflow-x: auto; overflow-y: hidden; padding: 8px 0;
+}
+div.section div.docs .math-inline math {
+  vertical-align: middle;
+}
+math {
+  color: #ccc;
+  font-size: 1.1em;
+}
+
 div.section div.code {
   padding: 14px 8px 16px 15px; vertical-align: top;
   background: #282a36;
@@ -160,49 +172,45 @@ summary: &gt;
 <hr />
 <h1>策略梯度 (Policy Gradient) - REINFORCE算法</h1>
 <p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第四章的PyTorch实现。</p>
-<p>策略梯度方法直接优化策略 $\pi_\theta(a|s)$，通过梯度上升最大化期望累积奖励。</p>
+<p>策略梯度方法直接优化策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>，通过梯度上升最大化期望累积奖励。</p>
 <h2>策略梯度定理</h2>
 <h3>轨迹概率</h3>
-<p>一条轨迹 $\tau = (s_1, a_1, s_2, a_2, \ldots, s_T, a_T)$ 的概率为：</p>
-$$p_\theta(\tau) = p(s_1) \prod_{t=1}^{T} \pi_\theta(a_t | s_t) p(s_{t+1} | s_t, a_t)$$
+<p>一条轨迹 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C4;</mi><mo>&#x0003D;</mo><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mn>1</mn></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mn>1</mn></msub><mo>&#x0002C;</mo><msub><mi>s</mi><mn>2</mn></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mn>2</mn></msub><mo>&#x0002C;</mo><mi>&#x02026;</mi><mo>&#x0002C;</mo><msub><mi>s</mi><mi>T</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>T</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> 的概率为：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>p</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>p</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mn>1</mn></msub><mo stretchy="false">&#x00029;</mo><msubsup><mo>&#x0220F;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>T</mi></mrow></msubsup><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>p</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
 <h3>期望奖励</h3>
-$$\bar{R}_\theta = \mathbb{E}_{\tau \sim p_\theta(\tau)}[R(\tau)]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mover><mrow><mi>R</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>&#x003B8;</mi></msub><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>&#x003C4;</mi><mi>&#x0007E;</mi><msub><mi>p</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><mo stretchy="false">[</mo><mi>R</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></div>
 
-<p>其中 $R(\tau) = \sum_{t=1}^{T} r_t$ 是轨迹的总奖励。</p>
+<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>R</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msubsup><mo>&#x02211;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>T</mi></mrow></msubsup><msub><mi>r</mi><mi>t</mi></msub></mrow></math></span> 是轨迹的总奖励。</p>
 <h3>策略梯度</h3>
 <p>对期望奖励求梯度：</p>
-$$\nabla_\theta \bar{R}_\theta = \mathbb{E}_{\tau \sim p_\theta(\tau)}\left[R(\tau) \nabla_\theta \log p_\theta(\tau)\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><msub><mover><mrow><mi>R</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>&#x003B8;</mi></msub><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>&#x003C4;</mi><mi>&#x0007E;</mi><msub><mi>p</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>R</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>p</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
-<p>使用log-derivative技巧 $\nabla f(x) = f(x) \nabla \log f(x)$：</p>
-$$\begin{align}
-\nabla_\theta \bar{R}_\theta &= \mathbb{E}_{\tau \sim p_\theta(\tau)}\left[R(\tau) \nabla_\theta \log p_\theta(\tau)\right] \\
-&= \mathbb{E}_{\tau \sim p_\theta(\tau)}\left[R(\tau) \sum_{t=1}^{T} \nabla_\theta \log \pi_\theta(a_t | s_t)\right] \\
-&\approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} R(\tau^n) \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)
-\end{align}$$
+<p>使用log-derivative技巧 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x02207;</mo><mi>f</mi><mo stretchy="false">&#x00028;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>f</mi><mo stretchy="false">&#x00028;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02207;</mo><mi>log</mi><mi>f</mi><mo stretchy="false">&#x00028;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><msub><mover><mrow><mi>R</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>&#x003B8;</mi></msub><mi>&</mi><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>&#x003C4;</mi><mi>&#x0007E;</mi><msub><mi>p</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>R</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>p</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mspace linebreak="newline" /><mi>&</mi><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>&#x003C4;</mi><mi>&#x0007E;</mi><msub><mi>p</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>R</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><msubsup><mo>&#x02211;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>T</mi></mrow></msubsup><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mspace linebreak="newline" /><mi>&</mi><mo>&#x02248;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mi>N</mi></mrow></mfrac><msubsup><mo>&#x02211;</mo><mrow><mi>n</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>N</mi></mrow></msubsup><msubsup><mo>&#x02211;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><msub><mi>T</mi><mi>n</mi></msub></mrow></msubsup><mi>R</mi><mo stretchy="false">&#x00028;</mo><msup><mi>&#x003C4;</mi><mi>n</mi></msup><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msubsup><mi>a</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x0007C;</mo><msubsup><mi>s</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x00029;</mo></mrow></mrow></math></div>
 
 <h2>基线技巧 (Baseline)</h2>
-<p>策略梯度的方差很大。我们可以减去一个基线 $b$ 来降低方差：</p>
-$$\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} (R(\tau^n) - b) \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)$$
+<p>策略梯度的方差很大。我们可以减去一个基线 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>b</mi></mrow></math></span> 来降低方差：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><msub><mover><mrow><mi>R</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>&#x003B8;</mi></msub><mo>&#x02248;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mi>N</mi></mrow></mfrac><msubsup><mo>&#x02211;</mo><mrow><mi>n</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>N</mi></mrow></msubsup><msubsup><mo>&#x02211;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><msub><mi>T</mi><mi>n</mi></msub></mrow></msubsup><mo stretchy="false">&#x00028;</mo><mi>R</mi><mo stretchy="false">&#x00028;</mo><msup><mi>&#x003C4;</mi><mi>n</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>b</mi><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msubsup><mi>a</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x0007C;</mo><msubsup><mi>s</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
-<p>基线 $b$ 可以是状态价值函数 $V(s_t)$，此时：</p>
-$$\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} A(s_t^n, a_t^n) \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)$$
+<p>基线 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>b</mi></mrow></math></span> 可以是状态价值函数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span>，此时：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><msub><mover><mrow><mi>R</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>&#x003B8;</mi></msub><mo>&#x02248;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mi>N</mi></mrow></mfrac><msubsup><mo>&#x02211;</mo><mrow><mi>n</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>N</mi></mrow></msubsup><msubsup><mo>&#x02211;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><msub><mi>T</mi><mi>n</mi></msub></mrow></msubsup><mi>A</mi><mo stretchy="false">&#x00028;</mo><msubsup><mi>s</mi><mi>t</mi><mi>n</mi></msubsup><mo>&#x0002C;</mo><msubsup><mi>a</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msubsup><mi>a</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x0007C;</mo><msubsup><mi>s</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
-<p>其中 $A(s_t, a_t) = R(\tau^n) - V(s_t)$ 是优势函数。</p>
+<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>R</mi><mo stretchy="false">&#x00028;</mo><msup><mi>&#x003C4;</mi><mi>n</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是优势函数。</p>
 <h2>折扣回报 (Discounted Return)</h2>
-<p>使用折扣因子 $\gamma$ 来权衡近期和远期奖励：</p>
-$$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma r_{t+2} + \gamma^2 r_{t+3} + \cdots$$
+<p>使用折扣因子 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi></mrow></math></span> 来权衡近期和远期奖励：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msubsup><mo>&#x02211;</mo><mrow><mi>k</mi><mo>&#x0003D;</mo><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow><mrow><mi>T</mi></mrow></msubsup><msup><mi>&#x003B3;</mi><mrow><mi>k</mi><mo>&#x02212;</mo><mi>t</mi><mo>&#x02212;</mo><mn>1</mn></mrow></msup><msub><mi>r</mi><mi>k</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>2</mn></mrow></msub><mo>&#x0002B;</mo><msup><mi>&#x003B3;</mi><mn>2</mn></msup><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>3</mn></mrow></msub><mo>&#x0002B;</mo><mo>&#x022EF;</mo></mrow></math></div>
 
 <p>折扣回报满足递归关系：</p>
-$$G_t = r_{t+1} + \gamma G_{t+1}$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>G</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub></mrow></math></div>
 
 <p>REINFORCE更新规则：</p>
-$$\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><msub><mover><mrow><mi>R</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>&#x003B8;</mi></msub><mo>&#x02248;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mi>N</mi></mrow></mfrac><msubsup><mo>&#x02211;</mo><mrow><mi>n</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>N</mi></mrow></msubsup><msubsup><mo>&#x02211;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><msub><mi>T</mi><mi>n</mi></msub></mrow></msubsup><msubsup><mi>G</mi><mi>t</mi><mi>n</mi></msubsup><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msubsup><mi>a</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x0007C;</mo><msubsup><mi>s</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
 <p>参数更新：</p>
-$$\theta \leftarrow \theta + \eta \nabla_\theta \bar{R}_\theta$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi><mo>&#x02190;</mo><mi>&#x003B8;</mi><mo>&#x0002B;</mo><mi>&#x003B7;</mi><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><msub><mover><mrow><mi>R</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>&#x003B8;</mi></msub></mrow></math></div>
 
-<p>其中 $\eta$ 是学习率。</p>
+<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B7;</mi></mrow></math></span> 是学习率。</p>
   </div>
   <div class="code">
     
@@ -222,19 +230,19 @@ $$\theta \leftarrow \theta + \eta \nabla_\theta \bar{R}_\theta$$
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>策略网络</h2>
-<p>策略网络 $\pi_\theta(a|s)$ 输出在给定状态下每个动作的概率分布。</p>
-$$\pi_\theta(a|s) = \frac{e^{f_\theta(s, a)}}{\sum_{a'} e^{f_\theta(s, a')}}$$
+<p>策略网络 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 输出在给定状态下每个动作的概率分布。</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><msup><mi>e</mi><mrow><msub><mi>f</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></msup></mrow><mrow><msub><mo>&#x02211;</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><msup><mi>e</mi><mrow><msub><mi>f</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo></mrow></msup></mrow></mfrac></mrow></math></div>
 
-<p>其中 $f_\theta(s, a)$ 是网络的输出（logits）。</p>
-<p>输出策略分布 $\pi_\theta(\cdot|s)$。</p>
+<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>f</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是网络的输出（logits）。</p>
+<p>输出策略分布 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>。</p>
 <p>参数：
-- <code>state</code>: $s$ — 状态</p>
+- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> — 状态</p>
 <p>返回值：
-- 动作概率分布 $\pi_\theta(a|s)$</p>
-<p>根据策略 $\pi_\theta(a|s)$ 采样动作。</p>
+- 动作概率分布 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></p>
+<p>根据策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 采样动作。</p>
 <p>返回值：
-- 采样的动作 $a \sim \pi_\theta(\cdot|s)$
-- 动作的对数概率 $\log \pi_\theta(a|s)$</p>
+- 采样的动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mi>&#x0007E;</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>
+- 动作的对数概率 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">PolicyNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -268,15 +276,15 @@ $$\pi_\theta(a|s) = \frac{e^{f_\theta(s, a)}}{\sum_{a'} e^{f_\theta(s, a')}}$$
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>价值网络</h2>
-<p>价值网络 $V_\phi(s)$ 估计状态的期望累积奖励。</p>
-$$V_\phi(s) \approx \mathbb{E}_\pi\left[G_t \mid s_t = s\right]$$
+<p>价值网络 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 估计状态的期望累积奖励。</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02248;</mo><msub><mi>&#x1D53C;</mi><mi>&#x003C0;</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02223;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>s</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
-<p>用作策略梯度中的基线 $b = V_\phi(s_t)$。</p>
-<p>输出状态价值 $V_\phi(s)$。</p>
+<p>用作策略梯度中的基线 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>b</mi><mo>&#x0003D;</mo><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span>。</p>
+<p>输出状态价值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>。</p>
 <p>参数：
-- <code>state</code>: $s$ — 状态</p>
+- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> — 状态</p>
 <p>返回值：
-- 状态价值 $V_\phi(s)$</p>
+- 状态价值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ValueNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -301,14 +309,14 @@ $$V_\phi(s) \approx \mathbb{E}_\pi\left[G_t \mid s_t = s\right]$$
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
     <h2>计算折扣累积回报</h2>
-$$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma G_{t+1}$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msubsup><mo>&#x02211;</mo><mrow><mi>k</mi><mo>&#x0003D;</mo><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow><mrow><mi>T</mi></mrow></msubsup><msup><mi>&#x003B3;</mi><mrow><mi>k</mi><mo>&#x02212;</mo><mi>t</mi><mo>&#x02212;</mo><mn>1</mn></mrow></msup><msub><mi>r</mi><mi>k</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>G</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub></mrow></math></div>
 
-<p>从后往前递归计算，时间复杂度 $O(T)$。</p>
+<p>从后往前递归计算，时间复杂度 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>O</mi><mo stretchy="false">&#x00028;</mo><mi>T</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>。</p>
 <p>参数：
-- <code>rewards</code>: $[r_1, r_2, \ldots, r_T]$ — 轨迹的奖励序列
-- <code>gamma</code>: $\gamma$ — 折扣因子</p>
+- <code>rewards</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">[</mo><msub><mi>r</mi><mn>1</mn></msub><mo>&#x0002C;</mo><msub><mi>r</mi><mn>2</mn></msub><mo>&#x0002C;</mo><mi>&#x02026;</mi><mo>&#x0002C;</mo><msub><mi>r</mi><mi>T</mi></msub><mo stretchy="false">]</mo></mrow></math></span> — 轨迹的奖励序列
+- <code>gamma</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi></mrow></math></span> — 折扣因子</p>
 <p>返回值：
-- <code>returns</code>: $[G_0, G_1, \ldots, G_{T-1}]$ — 每步的折扣累积回报</p>
+- <code>returns</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">[</mo><msub><mi>G</mi><mn>0</mn></msub><mo>&#x0002C;</mo><msub><mi>G</mi><mn>1</mn></msub><mo>&#x0002C;</mo><mi>&#x02026;</mi><mo>&#x0002C;</mo><msub><mi>G</mi><mrow><mi>T</mi><mo>&#x02212;</mo><mn>1</mn></mrow></msub><mo stretchy="false">]</mo></mrow></math></span> — 每步的折扣累积回报</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">compute_discounted_returns</span><span class="p">(</span><span class="n">rewards</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">list</span><span class="p">:</span>
@@ -330,14 +338,14 @@ $$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma G_{t+1}$$
     <div class="section-link"><a href="#section-5">#</a></div>
     <h2>REINFORCE损失函数</h2>
 <p>REINFORCE更新规则：</p>
-$$\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><msub><mover><mrow><mi>R</mi></mrow><mo stretchy="true">&#x000AF;</mo></mover><mi>&#x003B8;</mi></msub><mo>&#x02248;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mi>N</mi></mrow></mfrac><msubsup><mo>&#x02211;</mo><mrow><mi>n</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>N</mi></mrow></msubsup><msubsup><mo>&#x02211;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><msub><mi>T</mi><mi>n</mi></msub></mrow></msubsup><msubsup><mi>G</mi><mi>t</mi><mi>n</mi></msubsup><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msubsup><mi>a</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x0007C;</mo><msubsup><mi>s</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
 <p>由于优化器执行最小化，我们取负号：</p>
-$$L(\theta) = -\frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \log \pi_\theta(a_t^n | s_t^n)$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mo>&#x02212;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mi>N</mi></mrow></mfrac><msubsup><mo>&#x02211;</mo><mrow><mi>n</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>N</mi></mrow></msubsup><msubsup><mo>&#x02211;</mo><mrow><mi>t</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><msub><mi>T</mi><mi>n</mi></msub></mrow></msubsup><msubsup><mi>G</mi><mi>t</mi><mi>n</mi></msubsup><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msubsup><mi>a</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x0007C;</mo><msubsup><mi>s</mi><mi>t</mi><mi>n</mi></msubsup><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
 <p>参数：
-- <code>log_probs</code>: $[\log \pi_\theta(a_1|s_1), \ldots, \log \pi_\theta(a_T|s_T)]$ — 每步动作的对数概率
-- <code>returns</code>: $[G_0, G_1, \ldots, G_{T-1}]$ — 每步的折扣累积回报</p>
+- <code>log_probs</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">[</mo><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mn>1</mn></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mn>1</mn></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mi>&#x02026;</mi><mo>&#x0002C;</mo><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>T</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>T</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span> — 每步动作的对数概率
+- <code>returns</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">[</mo><msub><mi>G</mi><mn>0</mn></msub><mo>&#x0002C;</mo><msub><mi>G</mi><mn>1</mn></msub><mo>&#x0002C;</mo><mi>&#x02026;</mi><mo>&#x0002C;</mo><msub><mi>G</mi><mrow><mi>T</mi><mo>&#x02212;</mo><mn>1</mn></mrow></msub><mo stretchy="false">]</mo></mrow></math></span> — 每步的折扣累积回报</p>
 <p>返回值：
 - REINFORCE损失（取负号）</p>
   </div>
@@ -355,23 +363,23 @@ $$L(\theta) = -\frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \log \pi_\theta
     <div class="section-link"><a href="#section-6">#</a></div>
     <h2>Actor-Critic损失函数</h2>
 <p>Actor-Critic结合策略梯度和价值函数：</p>
-$$\nabla_\theta J \approx \mathbb{E}_t\left[A(s_t, a_t) \nabla_\theta \log \pi_\theta(a_t|s_t)\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>J</mi><mo>&#x02248;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
-<p>其中优势函数 $A(s_t, a_t) = G_t - V(s_t)$。</p>
+<p>其中优势函数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span>。</p>
 <p>Critic学习价值函数：</p>
-$$L_{critic} = \mathbb{E}_t\left[(G_t - V(s_t))^2\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>可选的熵正则化项鼓励探索：</p>
-$$L_{entropy} = -\mathbb{E}_t\left[\mathcal{H}(\pi_\theta(\cdot|s_t))\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>e</mi><mi>n</mi><mi>t</mi><mi>r</mi><mi>o</mi><mi>p</mi><mi>y</mi></mrow></msub><mo>&#x0003D;</mo><mo>&#x02212;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>&#x0210B;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>总损失：</p>
-$$L = L_{actor} + c_1 L_{critic} + c_2 L_{entropy}$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo>&#x0003D;</mo><msub><mi>L</mi><mrow><mi>a</mi><mi>c</mi><mi>t</mi><mi>o</mi><mi>r</mi></mrow></msub><mo>&#x0002B;</mo><msub><mi>c</mi><mn>1</mn></msub><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x0002B;</mo><msub><mi>c</mi><mn>2</mn></msub><msub><mi>L</mi><mrow><mi>e</mi><mi>n</mi><mi>t</mi><mi>r</mi><mi>o</mi><mi>p</mi><mi>y</mi></mrow></msub></mrow></math></div>
 
 <p>参数：
-- <code>log_probs</code>: $\log \pi_\theta(a_t|s_t)$ — 动作的对数概率
-- <code>values</code>: $V(s_t)$ — 状态价值估计
-- <code>returns</code>: $G_t$ — 折扣累积回报
-- <code>entropy</code>: $\mathcal{H}(\pi_\theta(\cdot|s_t))$ — 策略熵（可选）
+- <code>log_probs</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 动作的对数概率
+- <code>values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 状态价值估计
+- <code>returns</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub></mrow></math></span> — 折扣累积回报
+- <code>entropy</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x0210B;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 策略熵（可选）
 - <code>entropy_coef</code>: 熵正则化系数</p>
 <p>返回值：
 - Actor损失
@@ -414,71 +422,5 @@ $$L = L_{actor} + c_1 L_{critic} + c_2 L_{entropy}$$
       </p>
     </div>
   </div>
-  <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      var container = document.getElementById('container');
-      if (typeof katex === 'undefined') {
-        console.error('KaTeX not loaded');
-        return;
-      }
-      function renderMath(node) {
-        if (node.nodeType === 3) {
-          var text = node.nodeValue;
-          if (text.indexOf('$') === -1) return;
-          var parts = [];
-          var remaining = text;
-          var lastEnd = 0;
-          var regex = /(\$\$[\s\S]*?\$\$|\$[^\$
-]+?\$)/g;
-          var match;
-          while ((match = regex.exec(remaining)) !== null) {
-            if (match.index > lastEnd) {
-              parts.push(remaining.substring(lastEnd, match.index));
-            }
-            var math = match[0];
-            var isDisplay = math.startsWith('$$');
-            var latex = isDisplay ? math.slice(2, -2) : math.slice(1, -1);
-            try {
-              var html = katex.renderToString(latex, {
-                displayMode: isDisplay,
-                throwOnError: false
-              });
-              parts.push(html);
-            } catch (e) {
-              parts.push(math);
-            }
-            lastEnd = match.index + match[0].length;
-          }
-          if (parts.length > 0) {
-            if (lastEnd < remaining.length) {
-              parts.push(remaining.substring(lastEnd));
-            }
-            var frag = document.createDocumentFragment();
-            for (var i = 0; i < parts.length; i++) {
-              var p = parts[i];
-              if (i % 2 === 0 && p.indexOf('<span') === -1 && p.indexOf('katex') === -1) {
-                frag.appendChild(document.createTextNode(p));
-              } else {
-                var wrapper = document.createElement('span');
-                wrapper.innerHTML = p;
-                while (wrapper.firstChild) {
-                  frag.appendChild(wrapper.firstChild);
-                }
-              }
-            }
-            node.parentNode.replaceChild(frag, node);
-          }
-        } else if (node.nodeType === 1) {
-          var tag = node.tagName.toLowerCase();
-          if (tag === 'pre' || tag === 'code' || tag === 'script' || tag === 'style') return;
-          for (var i = 0; i < node.childNodes.length; i++) {
-            renderMath(node.childNodes[i]);
-          }
-        }
-      }
-      renderMath(container);
-    });
-  </script>
 </body>
 </html>

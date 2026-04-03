@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>表格型方法 (Tabular Methods) - Annotated Easy-RL</title>
-  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <link rel="stylesheet" href="">
   <style>
 
 html { font-size: 62.5%; }
@@ -84,6 +84,18 @@ div.section div.docs th, div.section div.docs td {
 }
 div.section div.docs th { background: #282a36; color: #fff; }
 
+div.section div.docs .math-display {
+  display: block; text-align: center; margin: 12px 0;
+  overflow-x: auto; overflow-y: hidden; padding: 8px 0;
+}
+div.section div.docs .math-inline math {
+  vertical-align: middle;
+}
+math {
+  color: #ccc;
+  font-size: 1.1em;
+}
+
 div.section div.code {
   padding: 14px 8px 16px 15px; vertical-align: top;
   background: #282a36;
@@ -160,40 +172,40 @@ summary: &gt;
 <hr />
 <h1>表格型方法 (Tabular Methods) - Q-Learning &amp; Sarsa</h1>
 <p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第三章的Python实现。</p>
-<p>表格型方法使用表格来存储状态-动作价值函数 $Q(s, a)$ 或状态价值函数 $V(s)$。
+<p>表格型方法使用表格来存储状态-动作价值函数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 或状态价值函数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>。
 适用于状态空间和动作空间都是离散且较小的场景。</p>
 <h2>贝尔曼方程</h2>
 <h3>状态价值函数</h3>
-$$V^\pi(s) = \mathbb{E}_\pi\left[G_t \mid s_t = s\right] = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>&#x003C0;</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02223;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>s</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>&#x003C0;</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msubsup><mo>&#x02211;</mo><mrow><mi>k</mi><mo>&#x0003D;</mo><mn>0</mn></mrow><mrow><mo>&#x0221E;</mo></mrow></msubsup><msup><mi>&#x003B3;</mi><mi>k</mi></msup><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mi>k</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x02223;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>s</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>贝尔曼期望方程：</p>
-$$V^\pi(s) = \sum_a \pi(a|s) \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^\pi(s')\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>&#x02211;</mo><mi>a</mi></msub><mi>&#x003C0;</mi><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <h3>动作价值函数</h3>
-$$Q^\pi(s, a) = \mathbb{E}_\pi\left[G_t \mid s_t = s, a_t = a\right] = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s, a_t = a\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>Q</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>&#x003C0;</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02223;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>a</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>&#x003C0;</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msubsup><mo>&#x02211;</mo><mrow><mi>k</mi><mo>&#x0003D;</mo><mn>0</mn></mrow><mrow><mo>&#x0221E;</mo></mrow></msubsup><msup><mi>&#x003B3;</mi><mi>k</mi></msup><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mi>k</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x02223;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>a</mi><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>贝尔曼最优方程：</p>
-$$Q^*(s, a) = \sum_{s', r} p(s', r|s, a) \left[r + \gamma \max_{a'} Q^*(s', a')\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>Q</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><msup><mi>Q</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <h2>Q-Learning (异策略)</h2>
 <p>Q-Learning是异策略(off-policy)的时序差分(TD)控制算法。</p>
 <h3>Q值更新规则</h3>
-$$Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t)\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>其中：
-- $\alpha$ 是学习率
-- $\gamma$ 是折扣因子
-- $r_{t+1} + \gamma \max_a Q(s_{t+1}, a)$ 是TD目标
-- $r_{t+1} + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t)$ 是TD误差</p>
-<p>Q-Learning使用 $\max_a Q(s_{t+1}, a)$ 来估计下一状态的价值，
-这对应于贪婪策略 $\pi(s) = \arg\max_a Q(s, a)$，
-但行为策略可以是 $\varepsilon$-贪心策略，因此是异策略的。</p>
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B1;</mi></mrow></math></span> 是学习率
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi></mrow></math></span> 是折扣因子
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是TD目标
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是TD误差</p>
+<p>Q-Learning使用 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 来估计下一状态的价值，
+这对应于贪婪策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C0;</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>，
+但行为策略可以是 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心策略，因此是异策略的。</p>
 <h2>Sarsa (同策略)</h2>
 <p>Sarsa是同策略(on-policy)的时序差分(TD)控制算法。</p>
 <h3>Q值更新规则</h3>
-$$Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t)\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
-<p>Sarsa使用实际采取的下一个动作 $a_{t+1}$ 的Q值来更新，
+<p>Sarsa使用实际采取的下一个动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>a</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub></mrow></math></span> 的Q值来更新，
 因此学习的就是行为策略本身的价值，是同策略的。</p>
 <h2>Q-Learning vs Sarsa</h2>
 <table>
@@ -212,18 +224,18 @@ $$Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma Q(s_{t+1}, 
 </tr>
 <tr>
 <td>TD目标</td>
-<td>$r + \gamma \max_a Q(s', a)$</td>
-<td>$r + \gamma Q(s', a')$</td>
+<td><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></td>
+<td><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo></mrow></math></span></td>
 </tr>
 <tr>
 <td>行为策略</td>
-<td>$\varepsilon$-贪心</td>
-<td>$\varepsilon$-贪心</td>
+<td><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心</td>
+<td><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心</td>
 </tr>
 <tr>
 <td>目标策略</td>
 <td>贪婪</td>
-<td>$\varepsilon$-贪心</td>
+<td><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心</td>
 </tr>
 <tr>
 <td>收敛性</td>
@@ -235,23 +247,17 @@ $$Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[r_{t+1} + \gamma Q(s_{t+1}, 
 <h2>价值迭代 (Value Iteration)</h2>
 <p>价值迭代是一种动态规划算法，用于求解已知环境模型的MDP。</p>
 <h3>更新规则</h3>
-$$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mrow><mi>k</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>V</mi><mi>k</mi></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>价值迭代直接更新状态价值函数，直到收敛。
 收敛后，最优策略可以通过贪婪选择得到：</p>
-$$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003C0;</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msup><mi>V</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
-<h2>$\varepsilon$-贪心策略</h2>
-$$\pi(a|s) = \begin{cases}
-1 - \varepsilon + \frac{\varepsilon}{|\mathcal{A}|} & \text{if } a = \arg\max_{a'} Q(s, a') \\
-\frac{\varepsilon}{|\mathcal{A}|} & \text{otherwise}
-\end{cases}$$
+<h2><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心策略</h2>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C0;</mi><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mtable><mtr><mtd columnalign="left"><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi><mo>&#x0002B;</mo><mfrac><mrow><mi>&#x003B5;</mi></mrow><mrow><mo stretchy="false">&#x0007C;</mo><mi>&#x1D49C;</mi><mo stretchy="false">&#x0007C;</mo></mrow></mfrac></mtd><mtd columnalign="left"><mtext>if&#x000A0;</mtext><mi>a</mi><mo>&#x0003D;</mo><mi>\arg</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo></mtd></mtr><mtr><mtd columnalign="left"><mfrac><mrow><mi>&#x003B5;</mi></mrow><mrow><mo stretchy="false">&#x0007C;</mo><mi>&#x1D49C;</mi><mo stretchy="false">&#x0007C;</mo></mrow></mfrac></mtd><mtd columnalign="left"><mtext>otherwise</mtext></mtd></mtr></mtable></mrow></mrow></math></div>
 
 <p>或者简化为：</p>
-$$a = \begin{cases}
-\arg\max_a Q(s, a) & \text{概率 } 1-\varepsilon \\
-\text{随机动作} & \text{概率 } \varepsilon
-\end{cases}$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mtable><mtr><mtd columnalign="left"><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi></mtd></mtr><mtr><mtd columnalign="left"><mtext>随机动作</mtext></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mi>&#x003B5;</mi></mtd></mtr></mtable></mrow></mrow></math></div>
   </div>
   <div class="code">
     
@@ -272,27 +278,24 @@ $$a = \begin{cases}
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>Q-Learning智能体</h2>
 <p>Q-Learning更新规则：</p>
-$$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') - Q(s, a)\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>其中：
-- $\alpha$：学习率
-- $\gamma$：折扣因子
-- $r + \gamma \max_{a'} Q(s', a')$：TD目标
-- $r + \gamma \max_{a'} Q(s', a') - Q(s, a)$：TD误差 $\delta$</p>
-<p>使用$\varepsilon$-贪心策略选择动作。</p>
-$$a = \begin{cases}
-\arg\max_a Q(s, a) & \text{概率 } 1-\varepsilon \\
-\text{随机动作} & \text{概率 } \varepsilon
-\end{cases}$$
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B1;</mi></mrow></math></span>：学习率
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi></mrow></math></span>：折扣因子
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo></mrow></math></span>：TD目标
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>：TD误差 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B4;</mi></mrow></math></span></p>
+<p>使用<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心策略选择动作。</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><mrow><mo stretchy="true" fence="true" form="prefix">&#x0007B;</mo><mtable><mtr><mtd columnalign="left"><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B5;</mi></mtd></mtr><mtr><mtd columnalign="left"><mtext>随机动作</mtext></mtd><mtd columnalign="left"><mtext>概率&#x000A0;</mtext><mi>&#x003B5;</mi></mtd></mtr></mtable></mrow></mrow></math></div>
 
 <p>更新Q值。</p>
-$$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') \times (1 - \text{done}) - Q(s, a)\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mo>max</mo><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mtext>done</mtext><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>参数：
-- <code>state</code>: $s_t$ — 当前状态
-- <code>action</code>: $a_t$ — 当前动作
-- <code>reward</code>: $r_{t+1}$ — 奖励
-- <code>next_state</code>: $s_{t+1}$ — 下一状态
+- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>s</mi><mi>t</mi></msub></mrow></math></span> — 当前状态
+- <code>action</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>a</mi><mi>t</mi></msub></mrow></math></span> — 当前动作
+- <code>reward</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub></mrow></math></span> — 奖励
+- <code>next_state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub></mrow></math></span> — 下一状态
 - <code>done</code>: 是否episode结束</p>
   </div>
   <div class="code">
@@ -345,16 +348,15 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') \time
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>Sarsa智能体</h2>
 <p>Sarsa更新规则：</p>
-$$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') - Q(s, a)\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
-<p>与Q-Learning不同，Sarsa使用实际采取的下一个动作 $a'$ 的Q值，
+<p>与Q-Learning不同，Sarsa使用实际采取的下一个动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></math></span> 的Q值，
 因此是同策略(on-policy)算法。</p>
-$\varepsilon$
-<p>-贪心策略选择动作。</p>
+<p><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B5;</mi></mrow></math></span>-贪心策略选择动作。</p>
 <p>更新Q值。</p>
-$$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') \times (1 - \text{done}) - Q(s, a)\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02190;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003B1;</mi><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>Q</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msup><mi>a</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mtext>done</mtext><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
-<p>注意：Sarsa需要下一个动作 $a'$ 来更新，这是同策略的关键。</p>
+<p>注意：Sarsa需要下一个动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>a</mi><mi>&#x02032;</mi></msup></mrow></math></span> 来更新，这是同策略的关键。</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">SarsaAgent</span><span class="p">:</span>
@@ -410,10 +412,10 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') \times (1 - \te
     <h2>价值迭代智能体</h2>
 <p>价值迭代是一种动态规划算法，适用于已知环境模型的场景。</p>
 <p>更新规则：</p>
-$$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mrow><mi>k</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>V</mi><mi>k</mi></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>收敛后，最优策略：</p>
-$$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003C0;</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msup><mi>V</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>设置环境模型。</p>
 <p>参数：
@@ -421,14 +423,14 @@ $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\righ
   P[s][a] = [(prob, next_state, reward, done), ...]
   其中prob是转移到next_state的概率</p>
 <p>执行一次价值迭代。</p>
-$$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mrow><mi>k</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>V</mi><mi>k</mi></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
 
 <p>返回值：
 - 价值函数的最大变化量</p>
 <p>求解最优价值函数和策略。</p>
 <p>迭代直到价值函数收敛（变化小于theta）或达到最大迭代次数。</p>
 <p>从最优价值函数提取最优策略。</p>
-$$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]$$
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003C0;</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>\arg</mi><msub><mo>max</mo><mi>a</mi></msub><msub><mo>&#x02211;</mo><mrow><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi></mrow></msub><mi>p</mi><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>r</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msup><mi>V</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">ValueIterationAgent</span><span class="p">:</span>
@@ -491,71 +493,5 @@ $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\righ
       </p>
     </div>
   </div>
-  <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      var container = document.getElementById('container');
-      if (typeof katex === 'undefined') {
-        console.error('KaTeX not loaded');
-        return;
-      }
-      function renderMath(node) {
-        if (node.nodeType === 3) {
-          var text = node.nodeValue;
-          if (text.indexOf('$') === -1) return;
-          var parts = [];
-          var remaining = text;
-          var lastEnd = 0;
-          var regex = /(\$\$[\s\S]*?\$\$|\$[^\$
-]+?\$)/g;
-          var match;
-          while ((match = regex.exec(remaining)) !== null) {
-            if (match.index > lastEnd) {
-              parts.push(remaining.substring(lastEnd, match.index));
-            }
-            var math = match[0];
-            var isDisplay = math.startsWith('$$');
-            var latex = isDisplay ? math.slice(2, -2) : math.slice(1, -1);
-            try {
-              var html = katex.renderToString(latex, {
-                displayMode: isDisplay,
-                throwOnError: false
-              });
-              parts.push(html);
-            } catch (e) {
-              parts.push(math);
-            }
-            lastEnd = match.index + match[0].length;
-          }
-          if (parts.length > 0) {
-            if (lastEnd < remaining.length) {
-              parts.push(remaining.substring(lastEnd));
-            }
-            var frag = document.createDocumentFragment();
-            for (var i = 0; i < parts.length; i++) {
-              var p = parts[i];
-              if (i % 2 === 0 && p.indexOf('<span') === -1 && p.indexOf('katex') === -1) {
-                frag.appendChild(document.createTextNode(p));
-              } else {
-                var wrapper = document.createElement('span');
-                wrapper.innerHTML = p;
-                while (wrapper.firstChild) {
-                  frag.appendChild(wrapper.firstChild);
-                }
-              }
-            }
-            node.parentNode.replaceChild(frag, node);
-          }
-        } else if (node.nodeType === 1) {
-          var tag = node.tagName.toLowerCase();
-          if (tag === 'pre' || tag === 'code' || tag === 'script' || tag === 'style') return;
-          for (var i = 0; i < node.childNodes.length; i++) {
-            renderMath(node.childNodes[i]);
-          }
-        }
-      }
-      renderMath(container);
-    });
-  </script>
 </body>
 </html>
