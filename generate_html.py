@@ -347,27 +347,37 @@ def _extract_all_docstrings(code_lines: list) -> tuple:
     i = 0
     while i < len(code_lines_out):
         stripped = code_lines_out[i].strip()
-        if stripped.startswith('"""') or stripped.startswith("'''"):
+        # Handle both """ and r""" (raw strings)
+        is_raw = False
+        if stripped.startswith('r"""') or stripped.startswith("r'''"):
+            is_raw = True
+            quote = stripped[1:4]
+            prefix_len = 4
+        elif stripped.startswith('"""') or stripped.startswith("'''"):
             quote = stripped[:3]
-            if stripped.count(quote) >= 2 and len(stripped) > 6:
-                doc_text = stripped[3:stripped.rfind(quote)]
-                docs.append(doc_text)
-                code_lines_out.pop(i)
-                continue
-            else:
-                doc_lines = [stripped[3:]]
-                end_j = i + 1
-                for j in range(i + 1, len(code_lines_out)):
-                    if quote in code_lines_out[j]:
-                        end_pos = code_lines_out[j].find(quote)
-                        doc_lines.append(code_lines_out[j][:end_pos])
-                        end_j = j + 1
-                        break
-                    doc_lines.append(code_lines_out[j])
-                docs.append('\n'.join(doc_lines))
-                del code_lines_out[i:end_j]
-                continue
-        i += 1
+            prefix_len = 3
+        else:
+            i += 1
+            continue
+
+        if stripped.count(quote) >= 2 and len(stripped) > prefix_len + 3:
+            doc_text = stripped[prefix_len:stripped.rfind(quote)]
+            docs.append(doc_text)
+            code_lines_out.pop(i)
+            continue
+        else:
+            doc_lines = [stripped[prefix_len:]]
+            end_idx = i + 1
+            for j in range(i + 1, len(code_lines_out)):
+                if quote in code_lines_out[j]:
+                    end_pos = code_lines_out[j].find(quote)
+                    doc_lines.append(code_lines_out[j][:end_pos])
+                    end_idx = j + 1
+                    break
+                doc_lines.append(code_lines_out[j])
+            docs.append('\n'.join(doc_lines))
+            del code_lines_out[i:end_idx]
+            continue
 
     combined = '\n\n'.join(_dedent(d).strip() for d in docs if d.strip())
     return combined, '\n'.join(code_lines_out)
@@ -380,11 +390,12 @@ def parse_annotated_python(filepath: str) -> list:
 
     sections = []
     module_doc = ''
-    doc_match = re.match(r'^("""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\')', content)
+    doc_match = re.match(r'^(r?"""[\s\S]*?"""|r?\'\'\'[\s\S]*?\'\'\')', content)
     if doc_match:
         raw_doc = doc_match.group(1)
-        module_doc = re.sub(r'^("""|\'\'\')', '', raw_doc)
-        module_doc = re.sub(r'("""|\'\'\')$', '', module_doc)
+        # Remove r""" or """ prefix and suffix
+        module_doc = re.sub(r'^(r?"""|r?\'\'\')', '', raw_doc)
+        module_doc = re.sub(r'(r?"""|r?\'\'\')$', '', module_doc)
         module_doc = re.sub(r'^---\n[\s\S]*?\n---\n?', '', module_doc)
         module_doc = module_doc.strip()
         content = content[doc_match.end():].lstrip()
