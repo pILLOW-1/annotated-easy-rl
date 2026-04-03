@@ -248,6 +248,11 @@ $$a = \mu_\theta(s)$$
 
 <p>输出通常使用tanh激活函数，将动作限制在 $[-1, 1]$ 范围内，
 然后缩放到实际的动作空间。</p>
+<p>输出确定性动作 $a = \mu_\theta(s)$。</p>
+<p>参数：
+- <code>state</code>: $s$ — 状态</p>
+<p>返回值：
+- <code>action</code>: $a = \mu_\theta(s) \times \text{scale}$ — 缩放后的动作</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">Actor</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -265,19 +270,10 @@ $$a = \mu_\theta(s)$$
 <span class="lineno">13</span>        <span class="p">)</span>
 <span class="lineno">14</span>
 <span class="lineno">15</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">16</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">17</span>        <span class="n">输出确定性动作</span> <span class="n">$a = \mu_\theta(s)$</span>。
+<span class="lineno">16</span>        <span class="n">action</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">network</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="lineno">17</span>        <span class="k">return</span> <span class="n">action</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">action_scale</span>
 <span class="lineno">18</span>
-<span class="lineno">19</span>        <span class="n">参数</span>：
-<span class="lineno">20</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> <span class="n">$s$</span> — <span class="n">状态</span>
-<span class="lineno">21</span>
-<span class="lineno">22</span>        <span class="n">返回值</span>：
-<span class="lineno">23</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> <span class="n">$a = \mu_\theta(s) \times \text{scale}$</span> — <span class="n">缩放后的动作</span>
-<span class="lineno">24</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">25</span>        <span class="n">action</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">network</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
-<span class="lineno">26</span>        <span class="k">return</span> <span class="n">action</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">action_scale</span>
-<span class="lineno">27</span>
-<span class="lineno">28</span></pre>
+<span class="lineno">19</span></pre>
   </div>
 </div>
 <div class="section">
@@ -288,6 +284,12 @@ $$a = \mu_\theta(s)$$
 $$Q_\phi(s, a) \approx Q^\mu(s, a)$$
 
 <p>输入状态 $s$ 和动作 $a$，输出标量Q值。</p>
+<p>输出动作价值 $Q_\phi(s, a)$。</p>
+<p>参数：
+- <code>state</code>: $s$ — 状态
+- <code>action</code>: $a$ — 动作</p>
+<p>返回值：
+- <code>q_value</code>: $Q_\phi(s, a)$ — 动作价值</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">Critic</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -304,21 +306,11 @@ $$Q_\phi(s, a) \approx Q^\mu(s, a)$$
 <span class="lineno">12</span>        <span class="p">)</span>
 <span class="lineno">13</span>
 <span class="lineno">14</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">15</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">16</span>        <span class="n">输出动作价值</span> <span class="n">$Q_\phi(s, a)$</span>。
-<span class="lineno">17</span>
-<span class="lineno">18</span>        <span class="n">参数</span>：
-<span class="lineno">19</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> <span class="n">$s$</span> — <span class="n">状态</span>
-<span class="lineno">20</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> <span class="n">$a$</span> — <span class="n">动作</span>
-<span class="lineno">21</span>
-<span class="lineno">22</span>        <span class="n">返回值</span>：
-<span class="lineno">23</span>        <span class="o">-</span> `<span class="n">q_value</span>`<span class="p">:</span> <span class="n">$Q_\phi(s, a)$</span> — <span class="n">动作价值</span>
-<span class="lineno">24</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">25</span>        <span class="c"># 拼接状态和动作：$[s, a]$</span>
-<span class="lineno">26</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">cat</span><span class="p">(</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">27</span>        <span class="k">return</span> <span class="nb">self</span><span class="p">.</span><span class="nf">network</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">28</span>
-<span class="lineno">29</span></pre>
+<span class="lineno">15</span>        <span class="c"># 拼接状态和动作：$[s, a]$</span>
+<span class="lineno">16</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">cat</span><span class="p">(</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">17</span>        <span class="k">return</span> <span class="nb">self</span><span class="p">.</span><span class="nf">network</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">18</span>
+<span class="lineno">19</span></pre>
   </div>
 </div>
 <div class="section">
@@ -337,6 +329,20 @@ $$J(\theta) = \mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]$$
 
 <p>由于优化器执行最小化，Actor损失为：</p>
 $$L(\theta) = -\mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]$$
+
+<p>计算Critic损失。</p>
+<p>参数映射：
+- <code>q_values</code>: $Q_\phi(s, a)$ — 当前状态-动作对的Q值
+- <code>next_q_values</code>: $Q_{\phi'}(s', \mu_{\theta'}(s'))$ — 目标网络对下一状态的Q值
+- <code>rewards</code>: $r$ — 奖励
+- <code>dones</code>: 是否episode结束</p>
+<p>返回值：
+- Critic损失</p>
+<p>计算Actor损失。</p>
+<p>参数：
+- <code>q_values</code>: $Q_\phi(s, \mu_\theta(s))$ — Critic对Actor输出动作的Q值</p>
+<p>返回值：
+- Actor损失（取负号）</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">DDPGLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -352,43 +358,22 @@ $$L(\theta) = -\mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]$$
 <span class="lineno">11</span>        <span class="n">rewards</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">12</span>        <span class="n">dones</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">13</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">14</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">15</span>        <span class="n">计算Critic损失</span>。
-<span class="lineno">16</span>
-<span class="lineno">17</span>        <span class="n">参数映射</span>：
-<span class="lineno">18</span>        <span class="o">-</span> `<span class="n">q_values</span>`<span class="p">:</span> <span class="n">$Q_\phi(s, a)$</span> — <span class="n">当前状态</span><span class="o">-</span><span class="n">动作对的Q值</span>
-<span class="lineno">19</span>        <span class="o">-</span> `<span class="n">next_q_values</span>`<span class="p">:</span> <span class="n">$Q_{\phi&#x27;}(s&#x27;, \mu_{\theta&#x27;}(s&#x27;))$</span> — <span class="n">目标网络对下一状态的Q值</span>
-<span class="lineno">20</span>        <span class="o">-</span> `<span class="n">rewards</span>`<span class="p">:</span> <span class="n">$r$</span> — <span class="n">奖励</span>
-<span class="lineno">21</span>        <span class="o">-</span> `<span class="n">dones</span>`<span class="p">:</span> <span class="n">是否episode结束</span>
+<span class="lineno">14</span>        <span class="c"># 目标值：$y = r + \gamma Q_{\phi&#x27;}(s&#x27;, \mu_{\theta&#x27;}(s&#x27;)) \times (1 - \text{done})$</span>
+<span class="lineno">15</span>        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">16</span>            <span class="n">target_q</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">next_q_values</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">dones</span><span class="p">)</span>
+<span class="lineno">17</span>
+<span class="lineno">18</span>        <span class="c"># MSE损失：$L(\phi) = \mathbb{E}[(Q_\phi(s, a) - y)^2]$</span>
+<span class="lineno">19</span>        <span class="n">critic_loss</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">MSELoss</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="n">target_q</span><span class="p">)</span>
+<span class="lineno">20</span>
+<span class="lineno">21</span>        <span class="k">return</span> <span class="n">critic_loss</span>
 <span class="lineno">22</span>
-<span class="lineno">23</span>        <span class="n">返回值</span>：
-<span class="lineno">24</span>        <span class="o">-</span> <span class="nc">Critic损失</span>
-<span class="lineno">25</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">26</span>        <span class="c"># 目标值：$y = r + \gamma Q_{\phi&#x27;}(s&#x27;, \mu_{\theta&#x27;}(s&#x27;)) \times (1 - \text{done})$</span>
-<span class="lineno">27</span>        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">28</span>            <span class="n">target_q</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">next_q_values</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">dones</span><span class="p">)</span>
-<span class="lineno">29</span>
-<span class="lineno">30</span>        <span class="c"># MSE损失：$L(\phi) = \mathbb{E}[(Q_\phi(s, a) - y)^2]$</span>
-<span class="lineno">31</span>        <span class="n">critic_loss</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">MSELoss</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="n">target_q</span><span class="p">)</span>
-<span class="lineno">32</span>
-<span class="lineno">33</span>        <span class="k">return</span> <span class="n">critic_loss</span>
-<span class="lineno">34</span>
-<span class="lineno">35</span>    <span class="k">def</span> <span class="nf">compute_actor_loss</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">36</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">37</span>        <span class="n">计算Actor损失</span>。
-<span class="lineno">38</span>
-<span class="lineno">39</span>        <span class="n">参数</span>：
-<span class="lineno">40</span>        <span class="o">-</span> `<span class="n">q_values</span>`<span class="p">:</span> <span class="n">$Q_\phi(s, \mu_\theta(s))$</span> — <span class="nc">Critic对Actor输出动作的Q值</span>
-<span class="lineno">41</span>
-<span class="lineno">42</span>        <span class="n">返回值</span>：
-<span class="lineno">43</span>        <span class="o">-</span> <span class="nc">Actor损失</span>（<span class="n">取负号</span>）
-<span class="lineno">44</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">45</span>        <span class="c"># 最大化Q值等价于最小化负Q值</span>
-<span class="lineno">46</span>        <span class="c"># $L(\theta) = -\mathbb{E}[Q_\phi(s, \mu_\theta(s))]$</span>
-<span class="lineno">47</span>        <span class="n">actor_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">q_values</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">48</span>        <span class="k">return</span> <span class="n">actor_loss</span>
-<span class="lineno">49</span>
-<span class="lineno">50</span></pre>
+<span class="lineno">23</span>    <span class="k">def</span> <span class="nf">compute_actor_loss</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
+<span class="lineno">24</span>        <span class="c"># 最大化Q值等价于最小化负Q值</span>
+<span class="lineno">25</span>        <span class="c"># $L(\theta) = -\mathbb{E}[Q_\phi(s, \mu_\theta(s))]$</span>
+<span class="lineno">26</span>        <span class="n">actor_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">q_values</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">27</span>        <span class="k">return</span> <span class="n">actor_loss</span>
+<span class="lineno">28</span>
+<span class="lineno">29</span></pre>
   </div>
 </div>
 <div class="section">
@@ -407,6 +392,12 @@ $$dx_t = \theta(\mu - x_t)dt + \sigma dW_t$$
 1. 均值回归：噪声会趋向于均值 $\mu$
 2. 时间相关性：连续时间步的噪声相关
 3. 适合连续控制：噪声变化平滑</p>
+<p>重置噪声状态。</p>
+<p>采样OU噪声。</p>
+$$dx = \theta(\mu - x) + \sigma \mathcal{N}(0, 1)$$
+
+<p>返回值：
+- OU噪声样本</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">OUNoise</span><span class="p">:</span>
@@ -425,24 +416,15 @@ $$dx_t = \theta(\mu - x_t)dt + \sigma dW_t$$
 <span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">ones</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">mu</span>
 <span class="lineno">15</span>
 <span class="lineno">16</span>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">17</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="n">重置噪声状态</span>。<span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">18</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">ones</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">mu</span>
-<span class="lineno">19</span>
-<span class="lineno">20</span>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="lineno">21</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">22</span>        <span class="n">采样OU噪声</span>。
-<span class="lineno">23</span>
-<span class="lineno">24</span>        <span class="n">$$dx = \theta(\mu - x) + \sigma \mathcal{N}(0, 1)$$</span>
-<span class="lineno">25</span>
-<span class="lineno">26</span>        <span class="n">返回值</span>：
-<span class="lineno">27</span>        <span class="o">-</span> <span class="nc">OU噪声样本</span>
-<span class="lineno">28</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">29</span>        <span class="n">x</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">state</span>
-<span class="lineno">30</span>        <span class="n">dx</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">theta</span> <span class="o">*</span> <span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">mu</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="p">)</span>
-<span class="lineno">31</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dx</span>
-<span class="lineno">32</span>        <span class="k">return</span> <span class="nb">self</span><span class="p">.</span><span class="n">state</span>
-<span class="lineno">33</span>
-<span class="lineno">34</span></pre>
+<span class="lineno">17</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">ones</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">mu</span>
+<span class="lineno">18</span>
+<span class="lineno">19</span>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="lineno">20</span>        <span class="n">x</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">state</span>
+<span class="lineno">21</span>        <span class="n">dx</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">theta</span> <span class="o">*</span> <span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">mu</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="p">)</span>
+<span class="lineno">22</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dx</span>
+<span class="lineno">23</span>        <span class="k">return</span> <span class="nb">self</span><span class="p">.</span><span class="n">state</span>
+<span class="lineno">24</span>
+<span class="lineno">25</span></pre>
   </div>
 </div>
 <div class="section">

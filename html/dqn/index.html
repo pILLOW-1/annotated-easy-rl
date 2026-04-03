@@ -282,6 +282,19 @@ $$\begin{align}
 \mathcal{L}(\theta) = \mathbb{E}\Bigg[\bigg(&r + \gamma \textcolor{orange}{Q}\Big(s', \underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big) \\
 &- Q(s,a;\theta)\bigg)^2\Bigg]
 \end{align}$$
+
+<p>计算DQN损失。</p>
+<p>参数映射：
+- <code>q</code>: $Q(s,a;\theta)$ — 主网络输出的Q值
+- <code>action</code>: $a$ — 采取的动作
+- <code>double_q</code>: $\textcolor{cyan}{Q}(s';\textcolor{cyan}{\theta})$ — 主网络对下一状态的Q值
+- <code>target_q</code>: $\textcolor{orange}{Q}(s';\textcolor{orange}{\theta^-})$ — 目标网络对下一状态的Q值
+- <code>done</code>: 是否episode结束
+- <code>reward</code>: $r$ — 奖励
+- <code>weights</code>: 优先级经验回放的权重</p>
+<p>返回值：
+- TD误差（用于优先级回放）
+- 损失值</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">QFuncLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -301,56 +314,40 @@ $$\begin{align}
 <span class="lineno">15</span>        <span class="n">reward</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">16</span>        <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span> <span class="o">=</span> <span class="nb">None</span><span class="p">,</span>
 <span class="lineno">17</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nc">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">]</span><span class="p">:</span>
-<span class="lineno">18</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">19</span>        <span class="n">计算DQN损失</span>。
+<span class="lineno">18</span>        <span class="c"># $Q(s,a;\theta)$ — 选择当前状态-动作对的Q值</span>
+<span class="lineno">19</span>        <span class="n">q_sampled_action</span> <span class="o">=</span> <span class="n">q</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">action</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="n">long</span><span class="p">)</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">20</span>
-<span class="lineno">21</span>        <span class="n">参数映射</span>：
-<span class="lineno">22</span>        <span class="o">-</span> `<span class="n">q</span>`<span class="p">:</span> <span class="n">$Q(s,a;\theta)$</span> — <span class="n">主网络输出的Q值</span>
-<span class="lineno">23</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> <span class="n">$a$</span> — <span class="n">采取的动作</span>
-<span class="lineno">24</span>        <span class="o">-</span> `<span class="n">double_q</span>`<span class="p">:</span> <span class="n">$\textcolor{cyan}{Q}(s&#x27;;\textcolor{cyan}{\theta})$</span> — <span class="n">主网络对下一状态的Q值</span>
-<span class="lineno">25</span>        <span class="o">-</span> `<span class="n">target_q</span>`<span class="p">:</span> <span class="n">$\textcolor{orange}{Q}(s&#x27;;\textcolor{orange}{\theta^-})$</span> — <span class="n">目标网络对下一状态的Q值</span>
-<span class="lineno">26</span>        <span class="o">-</span> `<span class="n">done</span>`<span class="p">:</span> <span class="n">是否episode结束</span>
-<span class="lineno">27</span>        <span class="o">-</span> `<span class="n">reward</span>`<span class="p">:</span> <span class="n">$r$</span> — <span class="n">奖励</span>
-<span class="lineno">28</span>        <span class="o">-</span> `<span class="n">weights</span>`<span class="p">:</span> <span class="n">优先级经验回放的权重</span>
-<span class="lineno">29</span>
-<span class="lineno">30</span>        <span class="n">返回值</span>：
-<span class="lineno">31</span>        <span class="o">-</span> <span class="nc">TD误差</span>（<span class="n">用于优先级回放</span>）
-<span class="lineno">32</span>        <span class="o">-</span> <span class="n">损失值</span>
-<span class="lineno">33</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">34</span>        <span class="c"># $Q(s,a;\theta)$ — 选择当前状态-动作对的Q值</span>
-<span class="lineno">35</span>        <span class="n">q_sampled_action</span> <span class="o">=</span> <span class="n">q</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">action</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="n">long</span><span class="p">)</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">21</span>        <span class="c"># 不传播梯度到目标网络</span>
+<span class="lineno">22</span>        <span class="c"># $$r + \gamma \textcolor{orange}{Q}\Big(s&#x27;, \underset{a&#x27;}{\arg\max} \textcolor{cyan}{Q}(s&#x27;, a&#x27;; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big)$$</span>
+<span class="lineno">23</span>        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">24</span>            <span class="c"># 使用主网络选择最佳动作</span>
+<span class="lineno">25</span>            <span class="c"># $$\underset{a&#x27;}{\arg\max} \textcolor{cyan}{Q}(s&#x27;, a&#x27;; \textcolor{cyan}{\theta})$$</span>
+<span class="lineno">26</span>            <span class="n">best_next_action</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">double_q</span><span class="p">,</span> <span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">27</span>
+<span class="lineno">28</span>            <span class="c"># 使用目标网络评估最佳动作的价值</span>
+<span class="lineno">29</span>            <span class="c"># $$\textcolor{orange}{Q}\Big(s&#x27;, \underset{a&#x27;}{\arg\max} \textcolor{cyan}{Q}(s&#x27;, a&#x27;; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big)$$</span>
+<span class="lineno">30</span>            <span class="n">best_next_q_value</span> <span class="o">=</span> <span class="n">target_q</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">best_next_action</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">31</span>
+<span class="lineno">32</span>            <span class="c"># 计算目标Q值</span>
+<span class="lineno">33</span>            <span class="c"># 乘以 `(1 - done)` 确保episode结束时不加上下一状态的价值</span>
+<span class="lineno">34</span>            <span class="c"># $$r + \gamma \textcolor{orange}{Q}\Big(s&#x27;, \text{best\_action}; \textcolor{orange}{\theta^-}\Big)$$</span>
+<span class="lineno">35</span>            <span class="n">q_update</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">best_next_q_value</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">done</span><span class="p">)</span>
 <span class="lineno">36</span>
-<span class="lineno">37</span>        <span class="c"># 不传播梯度到目标网络</span>
-<span class="lineno">38</span>        <span class="c"># $$r + \gamma \textcolor{orange}{Q}\Big(s&#x27;, \underset{a&#x27;}{\arg\max} \textcolor{cyan}{Q}(s&#x27;, a&#x27;; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big)$$</span>
-<span class="lineno">39</span>        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">40</span>            <span class="c"># 使用主网络选择最佳动作</span>
-<span class="lineno">41</span>            <span class="c"># $$\underset{a&#x27;}{\arg\max} \textcolor{cyan}{Q}(s&#x27;, a&#x27;; \textcolor{cyan}{\theta})$$</span>
-<span class="lineno">42</span>            <span class="n">best_next_action</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">double_q</span><span class="p">,</span> <span class="o">-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">43</span>
-<span class="lineno">44</span>            <span class="c"># 使用目标网络评估最佳动作的价值</span>
-<span class="lineno">45</span>            <span class="c"># $$\textcolor{orange}{Q}\Big(s&#x27;, \underset{a&#x27;}{\arg\max} \textcolor{cyan}{Q}(s&#x27;, a&#x27;; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big)$$</span>
-<span class="lineno">46</span>            <span class="n">best_next_q_value</span> <span class="o">=</span> <span class="n">target_q</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">best_next_action</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">47</span>
-<span class="lineno">48</span>            <span class="c"># 计算目标Q值</span>
-<span class="lineno">49</span>            <span class="c"># 乘以 `(1 - done)` 确保episode结束时不加上下一状态的价值</span>
-<span class="lineno">50</span>            <span class="c"># $$r + \gamma \textcolor{orange}{Q}\Big(s&#x27;, \text{best\_action}; \textcolor{orange}{\theta^-}\Big)$$</span>
-<span class="lineno">51</span>            <span class="n">q_update</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">best_next_q_value</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">done</span><span class="p">)</span>
-<span class="lineno">52</span>
-<span class="lineno">53</span>            <span class="c"># TD误差 $\delta = Q(s,a;\theta) - y$</span>
-<span class="lineno">54</span>            <span class="n">td_error</span> <span class="o">=</span> <span class="n">q_sampled_action</span> <span class="o">-</span> <span class="n">q_update</span>
-<span class="lineno">55</span>
-<span class="lineno">56</span>        <span class="c"># 使用Huber损失代替MSE，对异常值更不敏感</span>
-<span class="lineno">57</span>        <span class="n">losses</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">huber_loss</span><span class="p">(</span><span class="n">q_sampled_action</span><span class="p">,</span> <span class="n">q_update</span><span class="p">)</span>
-<span class="lineno">58</span>
-<span class="lineno">59</span>        <span class="k">if</span> <span class="n">weights</span> <span class="k">is</span> <span class="k">not</span> <span class="nb">None</span><span class="p">:</span>
-<span class="lineno">60</span>            <span class="c"># 优先级经验回放的加权损失</span>
-<span class="lineno">61</span>            <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">weights</span> <span class="o">*</span> <span class="n">losses</span><span class="p">)</span>
-<span class="lineno">62</span>        <span class="k">else</span><span class="p">:</span>
-<span class="lineno">63</span>            <span class="n">loss</span> <span class="o">=</span> <span class="n">losses</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">64</span>
-<span class="lineno">65</span>        <span class="k">return</span> <span class="n">td_error</span><span class="p">,</span> <span class="n">loss</span>
-<span class="lineno">66</span>
-<span class="lineno">67</span></pre>
+<span class="lineno">37</span>            <span class="c"># TD误差 $\delta = Q(s,a;\theta) - y$</span>
+<span class="lineno">38</span>            <span class="n">td_error</span> <span class="o">=</span> <span class="n">q_sampled_action</span> <span class="o">-</span> <span class="n">q_update</span>
+<span class="lineno">39</span>
+<span class="lineno">40</span>        <span class="c"># 使用Huber损失代替MSE，对异常值更不敏感</span>
+<span class="lineno">41</span>        <span class="n">losses</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">huber_loss</span><span class="p">(</span><span class="n">q_sampled_action</span><span class="p">,</span> <span class="n">q_update</span><span class="p">)</span>
+<span class="lineno">42</span>
+<span class="lineno">43</span>        <span class="k">if</span> <span class="n">weights</span> <span class="k">is</span> <span class="k">not</span> <span class="nb">None</span><span class="p">:</span>
+<span class="lineno">44</span>            <span class="c"># 优先级经验回放的加权损失</span>
+<span class="lineno">45</span>            <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">weights</span> <span class="o">*</span> <span class="n">losses</span><span class="p">)</span>
+<span class="lineno">46</span>        <span class="k">else</span><span class="p">:</span>
+<span class="lineno">47</span>            <span class="n">loss</span> <span class="o">=</span> <span class="n">losses</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">48</span>
+<span class="lineno">49</span>        <span class="k">return</span> <span class="n">td_error</span><span class="p">,</span> <span class="n">loss</span>
+<span class="lineno">50</span>
+<span class="lineno">51</span></pre>
   </div>
 </div>
 <div class="section">
@@ -434,6 +431,12 @@ $$a = \begin{cases}
 $\varepsilon$
 <p>随时间衰减：</p>
 $$\varepsilon_t = \varepsilon_{end} + (\varepsilon_{start} - \varepsilon_{end}) \times e^{-t/\text{decay}}$$
+
+<p>根据$\varepsilon$-贪心策略选择动作。</p>
+<p>参数：
+- <code>q_values</code>: $Q(s, a;\theta)$ — 当前状态的Q值</p>
+<p>返回值：
+- 选择的动作</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">EpsilonGreedy</span><span class="p">:</span>
@@ -453,29 +456,20 @@ $$\varepsilon_t = \varepsilon_{end} + (\varepsilon_{start} - \varepsilon_{end}) 
 <span class="lineno">15</span>        <span class="nb">self</span><span class="p">.</span><span class="n">count</span> <span class="o">=</span> <span class="m">0</span>
 <span class="lineno">16</span>
 <span class="lineno">17</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="lineno">18</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">19</span>        <span class="n">根据$\varepsilon$</span><span class="o">-</span><span class="n">贪心策略选择动作</span>。
-<span class="lineno">20</span>
-<span class="lineno">21</span>        <span class="n">参数</span>：
-<span class="lineno">22</span>        <span class="o">-</span> `<span class="n">q_values</span>`<span class="p">:</span> <span class="n">$Q(s, a;\theta)$</span> — <span class="n">当前状态的Q值</span>
-<span class="lineno">23</span>
-<span class="lineno">24</span>        <span class="n">返回值</span>：
-<span class="lineno">25</span>        <span class="o">-</span> <span class="n">选择的动作</span>
-<span class="lineno">26</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">27</span>        <span class="nb">self</span><span class="p">.</span><span class="n">count</span> <span class="o">+=</span> <span class="m">1</span>
-<span class="lineno">28</span>        <span class="c"># 衰减$\varepsilon$</span>
-<span class="lineno">29</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span> <span class="o">+</span> <span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">epsilon_start</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
-<span class="lineno">30</span>            <span class="o">-</span><span class="nb">self</span><span class="p">.</span><span class="n">count</span> <span class="o">/</span> <span class="nb">self</span><span class="p">.</span><span class="n">decay</span>
-<span class="lineno">31</span>        <span class="p">)</span>
-<span class="lineno">32</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">,</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span><span class="p">)</span>
-<span class="lineno">33</span>
-<span class="lineno">34</span>        <span class="k">if</span> <span class="n">torch</span><span class="p">.</span><span class="nf">rand</span><span class="p">(</span><span class="m">1</span><span class="p">)</span><span class="p">.</span><span class="nf">item</span><span class="p">(</span><span class="p">)</span> <span class="o">&</span><span class="n">lt</span><span class="p">;</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">:</span>
-<span class="lineno">35</span>            <span class="c"># 探索：随机动作</span>
-<span class="lineno">36</span>            <span class="k">return</span> <span class="n">torch</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">,</span> <span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">item</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">37</span>        <span class="k">else</span><span class="p">:</span>
-<span class="lineno">38</span>            <span class="c"># 利用：选择Q值最大的动作</span>
-<span class="lineno">39</span>            <span class="k">return</span> <span class="n">torch</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">q_values</span><span class="p">)</span><span class="p">.</span><span class="nf">item</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">40</span></pre>
+<span class="lineno">18</span>        <span class="nb">self</span><span class="p">.</span><span class="n">count</span> <span class="o">+=</span> <span class="m">1</span>
+<span class="lineno">19</span>        <span class="c"># 衰减$\varepsilon$</span>
+<span class="lineno">20</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span> <span class="o">+</span> <span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">epsilon_start</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+<span class="lineno">21</span>            <span class="o">-</span><span class="nb">self</span><span class="p">.</span><span class="n">count</span> <span class="o">/</span> <span class="nb">self</span><span class="p">.</span><span class="n">decay</span>
+<span class="lineno">22</span>        <span class="p">)</span>
+<span class="lineno">23</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">,</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon_end</span><span class="p">)</span>
+<span class="lineno">24</span>
+<span class="lineno">25</span>        <span class="k">if</span> <span class="n">torch</span><span class="p">.</span><span class="nf">rand</span><span class="p">(</span><span class="m">1</span><span class="p">)</span><span class="p">.</span><span class="nf">item</span><span class="p">(</span><span class="p">)</span> <span class="o">&</span><span class="n">lt</span><span class="p">;</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">:</span>
+<span class="lineno">26</span>            <span class="c"># 探索：随机动作</span>
+<span class="lineno">27</span>            <span class="k">return</span> <span class="n">torch</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">,</span> <span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">item</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">28</span>        <span class="k">else</span><span class="p">:</span>
+<span class="lineno">29</span>            <span class="c"># 利用：选择Q值最大的动作</span>
+<span class="lineno">30</span>            <span class="k">return</span> <span class="n">torch</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">q_values</span><span class="p">)</span><span class="p">.</span><span class="nf">item</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">31</span></pre>
   </div>
 </div>
 

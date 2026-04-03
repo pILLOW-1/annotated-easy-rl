@@ -327,38 +327,53 @@ def _dedent(text: str) -> str:
     return '\n'.join(line[indent:] if line.strip() else line for line in lines)
 
 
-def extract_docstring_from_code_block(code_lines: list) -> tuple:
-    """Extract docstring from a code block. Returns (docstring_text, code_without_docstring)."""
-    if not code_lines:
-        return '', ''
-    first_content_idx = 0
-    for i, line in enumerate(code_lines):
-        if line.strip():
-            first_content_idx = i
-            break
-    else:
-        return '', '\n'.join(code_lines)
+def _find_docstring_end(lines: list, start_idx: int) -> int:
+    """Find the end line index of a docstring starting at start_idx. Returns -1 if not found."""
+    for i in range(start_idx, len(lines)):
+        line = lines[i].strip()
+        if line.startswith('"""') or line.startswith("'''"):
+            quote = line[:3]
+            if line.count(quote) >= 2 and len(line) > 6:
+                return i
+            for j in range(i + 1, len(lines)):
+                if quote in lines[j]:
+                    return j
+    return -1
 
-    first_line = code_lines[first_content_idx].strip()
-    if first_line.startswith('"""') or first_line.startswith("'''"):
-        quote = first_line[:3]
-        if first_line.count(quote) >= 2 and len(first_line) > 6:
-            doc_text = first_line[3:first_line.rfind(quote)]
-            remaining = code_lines[:first_content_idx] + code_lines[first_content_idx+1:]
-            return _dedent(doc_text).strip(), '\n'.join(remaining)
-        else:
-            doc_lines = [first_line[3:]]
-            end_idx = first_content_idx + 1
-            for j in range(first_content_idx + 1, len(code_lines)):
-                if quote in code_lines[j]:
-                    end_pos = code_lines[j].find(quote)
-                    doc_lines.append(code_lines[j][:end_pos])
-                    end_idx = j + 1
-                    break
-                doc_lines.append(code_lines[j])
-            remaining = code_lines[:first_content_idx] + code_lines[end_idx:]
-            return _dedent('\n'.join(doc_lines)).strip(), '\n'.join(remaining)
-    return '', '\n'.join(code_lines)
+
+def _extract_all_docstrings(code_lines: list) -> tuple:
+    """Extract ALL docstrings from a code block (class-level + method-level).
+    Returns (combined_docs_text, code_without_any_docstrings)."""
+    docs = []
+    code_lines_out = list(code_lines)
+
+    i = 0
+    while i < len(code_lines_out):
+        stripped = code_lines_out[i].strip()
+        if stripped.startswith('"""') or stripped.startswith("'''"):
+            quote = stripped[:3]
+            if stripped.count(quote) >= 2 and len(stripped) > 6:
+                doc_text = stripped[3:stripped.rfind(quote)]
+                docs.append(doc_text)
+                code_lines_out.pop(i)
+                continue
+            else:
+                doc_lines = [stripped[3:]]
+                end_j = i + 1
+                for j in range(i + 1, len(code_lines_out)):
+                    if quote in code_lines_out[j]:
+                        end_pos = code_lines_out[j].find(quote)
+                        doc_lines.append(code_lines_out[j][:end_pos])
+                        end_j = j + 1
+                        break
+                    doc_lines.append(code_lines_out[j])
+                docs.append('\n'.join(doc_lines))
+                del code_lines_out[i:end_j]
+                continue
+        i += 1
+
+    combined = '\n\n'.join(_dedent(d).strip() for d in docs if d.strip())
+    return combined, '\n'.join(code_lines_out)
 
 
 def parse_annotated_python(filepath: str) -> list:
@@ -381,29 +396,35 @@ def parse_annotated_python(filepath: str) -> list:
         sections.append((module_doc, ''))
 
     lines = content.split('\n')
-    section_starts = []
+
+    # Find all definition starts (class/def at indent 0, and def at any indent)
+    def_starts = []
     for i, line in enumerate(lines):
         if re.match(r'^(class |def )', line):
-            section_starts.append(i)
+            def_starts.append(i)
 
-    if not section_starts:
+    if not def_starts:
         if content.strip():
             sections.append(('', content))
         return sections
 
-    if section_starts[0] > 0:
-        preamble = '\n'.join(lines[:section_starts[0]]).strip()
+    # Add preamble before first definition
+    if def_starts[0] > 0:
+        preamble = '\n'.join(lines[:def_starts[0]]).strip()
         if preamble:
             sections.append(('', preamble))
 
-    for idx, start in enumerate(section_starts):
-        end = section_starts[idx + 1] if idx + 1 < len(section_starts) else len(lines)
+    for idx, start in enumerate(def_starts):
+        end = def_starts[idx + 1] if idx + 1 < len(def_starts) else len(lines)
         block_lines = lines[start:end]
         sig_line = block_lines[0]
         body_lines = block_lines[1:]
-        doc_text, code_without_doc = extract_docstring_from_code_block(body_lines)
-        if code_without_doc:
-            code_text = sig_line + '\n' + code_without_doc
+
+        # Extract ALL docstrings from this block (class docstring + method docstrings)
+        doc_text, code_without_docs = _extract_all_docstrings(body_lines)
+
+        if code_without_docs.strip():
+            code_text = sig_line + '\n' + code_without_docs
         else:
             code_text = sig_line
         sections.append((doc_text, code_text))

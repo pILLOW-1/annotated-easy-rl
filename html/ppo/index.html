@@ -251,6 +251,14 @@ J(\pi_\theta) - J(\pi_{\theta_{old}})
 \end{align}$$
 
 <p>其中 $\mathcal{L}^{CPI}$ 是CPI (Conservative Policy Iteration) 的目标函数。</p>
+<p>计算PPO裁剪损失。</p>
+<p>参数映射：
+- <code>log_pi</code>: $\log \pi_\theta(a_t|s_t)$ — 当前策略的对数概率
+- <code>sampled_log_pi</code>: $\log \pi_{\theta_{old}}(a_t|s_t)$ — 旧策略的对数概率
+- <code>advantage</code>: $\hat{A}_t$ — 优势函数估计
+- <code>clip</code>: $\varepsilon$ — 裁剪参数</p>
+<p>返回值：
+- PPO损失（取负号，因为优化器执行最小化）</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ClippedPPOLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -262,44 +270,32 @@ J(\pi_\theta) - J(\pi_{\theta_{old}})
 <span class="lineno">7</span>        <span class="n">advantage</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">8</span>        <span class="n">clip</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="lineno">9</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">10</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">11</span>        <span class="n">计算PPO裁剪损失</span>。
-<span class="lineno">12</span>
-<span class="lineno">13</span>        <span class="n">参数映射</span>：
-<span class="lineno">14</span>        <span class="o">-</span> `<span class="n">log_pi</span>`<span class="p">:</span> <span class="n">$\log \pi_\theta(a_t|s_t)$</span> — <span class="n">当前策略的对数概率</span>
-<span class="lineno">15</span>        <span class="o">-</span> `<span class="n">sampled_log_pi</span>`<span class="p">:</span> <span class="n">$\log \pi_{\theta_{old}}(a_t|s_t)$</span> — <span class="n">旧策略的对数概率</span>
-<span class="lineno">16</span>        <span class="o">-</span> `<span class="n">advantage</span>`<span class="p">:</span> <span class="n">$\hat{A}_t$</span> — <span class="n">优势函数估计</span>
-<span class="lineno">17</span>        <span class="o">-</span> `<span class="n">clip</span>`<span class="p">:</span> <span class="n">$\varepsilon$</span> — <span class="n">裁剪参数</span>
-<span class="lineno">18</span>
-<span class="lineno">19</span>        <span class="n">返回值</span>：
-<span class="lineno">20</span>        <span class="o">-</span> <span class="nc">PPO损失</span>（<span class="n">取负号</span>，<span class="n">因为优化器执行最小化</span>）
-<span class="lineno">21</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">22</span>        <span class="c"># 策略比率 $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)} = \exp(\log \pi_\theta - \log \pi_{\theta_{old}})$</span>
-<span class="lineno">23</span>        <span class="c"># 注意：这里的 ratio 不同于奖励 $r_t$</span>
-<span class="lineno">24</span>        <span class="n">ratio</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="n">log_pi</span> <span class="o">-</span> <span class="n">sampled_log_pi</span><span class="p">)</span>
-<span class="lineno">25</span>
-<span class="lineno">26</span>        <span class="c"># ### 裁剪策略比率</span>
-<span class="lineno">27</span>        <span class="c">#</span>
-<span class="lineno">28</span>        <span class="c"># $$\mathcal{L}^{CLIP}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\varepsilon, 1+\varepsilon)\hat{A}_t\right)\right]$$</span>
-<span class="lineno">29</span>        <span class="c">#</span>
-<span class="lineno">30</span>        <span class="c"># 策略比率被裁剪到 $[1-\varepsilon, 1+\varepsilon]$ 范围内。</span>
-<span class="lineno">31</span>        <span class="c"># 取最小值确保：</span>
-<span class="lineno">32</span>        <span class="c"># - 当 $\hat{A}_t &gt; 0$ 时，$r_t(\theta)$ 不会超过 $1+\varepsilon$</span>
-<span class="lineno">33</span>        <span class="c"># - 当 $\hat{A}_t &lt; 0$ 时，$r_t(\theta)$ 不会低于 $1-\varepsilon$</span>
-<span class="lineno">34</span>        <span class="c">#</span>
-<span class="lineno">35</span>        <span class="c"># 这样限制了新旧策略之间的KL散度，防止策略更新过大导致性能崩溃。</span>
-<span class="lineno">36</span>        <span class="c"># 使用归一化的优势函数 $\bar{A}_t = \frac{\hat{A}_t - \mu(\hat{A}_t)}{\sigma(\hat{A}_t)}$</span>
-<span class="lineno">37</span>        <span class="c"># 虽然引入了偏差，但大幅降低了方差。</span>
-<span class="lineno">38</span>        <span class="n">clipped_ratio</span> <span class="o">=</span> <span class="n">ratio</span><span class="p">.</span><span class="nf">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="m">1.0</span> <span class="o">-</span> <span class="n">clip</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="m">1.0</span> <span class="o">+</span> <span class="n">clip</span><span class="p">)</span>
-<span class="lineno">39</span>        <span class="n">policy_reward</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nb">min</span><span class="p">(</span><span class="n">ratio</span> <span class="o">*</span> <span class="n">advantage</span><span class="p">,</span> <span class="n">clipped_ratio</span> <span class="o">*</span> <span class="n">advantage</span><span class="p">)</span>
-<span class="lineno">40</span>
-<span class="lineno">41</span>        <span class="c"># 记录裁剪比例，用于监控</span>
-<span class="lineno">42</span>        <span class="nb">self</span><span class="p">.</span><span class="n">clip_fraction</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nb">abs</span><span class="p">(</span><span class="n">ratio</span> <span class="o">-</span> <span class="m">1.0</span><span class="p">)</span> <span class="o">&</span><span class="n">gt</span><span class="p">;</span> <span class="n">clip</span><span class="p">)</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nb">float</span><span class="p">)</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">43</span>
-<span class="lineno">44</span>        <span class="c"># 取负号因为优化器执行最小化</span>
-<span class="lineno">45</span>        <span class="k">return</span> <span class="o">-</span><span class="n">policy_reward</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">46</span>
-<span class="lineno">47</span></pre>
+<span class="lineno">10</span>        <span class="c"># 策略比率 $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)} = \exp(\log \pi_\theta - \log \pi_{\theta_{old}})$</span>
+<span class="lineno">11</span>        <span class="c"># 注意：这里的 ratio 不同于奖励 $r_t$</span>
+<span class="lineno">12</span>        <span class="n">ratio</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="n">log_pi</span> <span class="o">-</span> <span class="n">sampled_log_pi</span><span class="p">)</span>
+<span class="lineno">13</span>
+<span class="lineno">14</span>        <span class="c"># ### 裁剪策略比率</span>
+<span class="lineno">15</span>        <span class="c">#</span>
+<span class="lineno">16</span>        <span class="c"># $$\mathcal{L}^{CLIP}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\varepsilon, 1+\varepsilon)\hat{A}_t\right)\right]$$</span>
+<span class="lineno">17</span>        <span class="c">#</span>
+<span class="lineno">18</span>        <span class="c"># 策略比率被裁剪到 $[1-\varepsilon, 1+\varepsilon]$ 范围内。</span>
+<span class="lineno">19</span>        <span class="c"># 取最小值确保：</span>
+<span class="lineno">20</span>        <span class="c"># - 当 $\hat{A}_t &gt; 0$ 时，$r_t(\theta)$ 不会超过 $1+\varepsilon$</span>
+<span class="lineno">21</span>        <span class="c"># - 当 $\hat{A}_t &lt; 0$ 时，$r_t(\theta)$ 不会低于 $1-\varepsilon$</span>
+<span class="lineno">22</span>        <span class="c">#</span>
+<span class="lineno">23</span>        <span class="c"># 这样限制了新旧策略之间的KL散度，防止策略更新过大导致性能崩溃。</span>
+<span class="lineno">24</span>        <span class="c"># 使用归一化的优势函数 $\bar{A}_t = \frac{\hat{A}_t - \mu(\hat{A}_t)}{\sigma(\hat{A}_t)}$</span>
+<span class="lineno">25</span>        <span class="c"># 虽然引入了偏差，但大幅降低了方差。</span>
+<span class="lineno">26</span>        <span class="n">clipped_ratio</span> <span class="o">=</span> <span class="n">ratio</span><span class="p">.</span><span class="nf">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="m">1.0</span> <span class="o">-</span> <span class="n">clip</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="m">1.0</span> <span class="o">+</span> <span class="n">clip</span><span class="p">)</span>
+<span class="lineno">27</span>        <span class="n">policy_reward</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nb">min</span><span class="p">(</span><span class="n">ratio</span> <span class="o">*</span> <span class="n">advantage</span><span class="p">,</span> <span class="n">clipped_ratio</span> <span class="o">*</span> <span class="n">advantage</span><span class="p">)</span>
+<span class="lineno">28</span>
+<span class="lineno">29</span>        <span class="c"># 记录裁剪比例，用于监控</span>
+<span class="lineno">30</span>        <span class="nb">self</span><span class="p">.</span><span class="n">clip_fraction</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nb">abs</span><span class="p">(</span><span class="n">ratio</span> <span class="o">-</span> <span class="m">1.0</span><span class="p">)</span> <span class="o">&</span><span class="n">gt</span><span class="p">;</span> <span class="n">clip</span><span class="p">)</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nb">float</span><span class="p">)</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">31</span>
+<span class="lineno">32</span>        <span class="c"># 取负号因为优化器执行最小化</span>
+<span class="lineno">33</span>        <span class="k">return</span> <span class="o">-</span><span class="n">policy_reward</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">34</span>
+<span class="lineno">35</span></pre>
   </div>
 </div>
 <div class="section">
@@ -312,6 +308,12 @@ $$V_{CLIP}^{\pi_\theta}(s_t) = V^{\pi_{\theta_{old}}}(s_t) + \text{clip}\left(V^
 $$\mathcal{L}^{VF}(\theta) = \frac{1}{2} \mathbb{E}_t\left[\max\left((V^{\pi_\theta}(s_t) - R_t)^2, (V_{CLIP}^{\pi_\theta}(s_t) - R_t)^2\right)\right]$$
 
 <p>裁剪确保价值函数 $V_\theta$ 不会显著偏离 $V_{\theta_{old}}$。</p>
+<p>计算裁剪的价值函数损失。</p>
+<p>参数映射：
+- <code>value</code>: $V^{\pi_\theta}(s_t)$ — 当前价值函数估计
+- <code>sampled_value</code>: $V^{\pi_{\theta_{old}}}(s_t)$ — 旧价值函数估计
+- <code>sampled_return</code>: $R_t$ — 蒙特卡洛回报
+- <code>clip</code>: $\varepsilon$ — 裁剪参数</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ClippedValueFunctionLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -323,25 +325,16 @@ $$\mathcal{L}^{VF}(\theta) = \frac{1}{2} \mathbb{E}_t\left[\max\left((V^{\pi_\th
 <span class="lineno">7</span>        <span class="n">sampled_return</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">8</span>        <span class="n">clip</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="lineno">9</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">10</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">11</span>        <span class="n">计算裁剪的价值函数损失</span>。
+<span class="lineno">10</span>        <span class="c"># 裁剪的价值函数：$V_{CLIP} = V_{old} + \text{clip}(V - V_{old}, -\varepsilon, \varepsilon)$</span>
+<span class="lineno">11</span>        <span class="n">clipped_value</span> <span class="o">=</span> <span class="n">sampled_value</span> <span class="o">+</span> <span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">sampled_value</span><span class="p">)</span><span class="p">.</span><span class="nf">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=-</span><span class="n">clip</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">clip</span><span class="p">)</span>
 <span class="lineno">12</span>
-<span class="lineno">13</span>        <span class="n">参数映射</span>：
-<span class="lineno">14</span>        <span class="o">-</span> `<span class="n">value</span>`<span class="p">:</span> <span class="n">$V^{\pi_\theta}(s_t)$</span> — <span class="n">当前价值函数估计</span>
-<span class="lineno">15</span>        <span class="o">-</span> `<span class="n">sampled_value</span>`<span class="p">:</span> <span class="n">$V^{\pi_{\theta_{old}}}(s_t)$</span> — <span class="n">旧价值函数估计</span>
-<span class="lineno">16</span>        <span class="o">-</span> `<span class="n">sampled_return</span>`<span class="p">:</span> <span class="n">$R_t$</span> — <span class="n">蒙特卡洛回报</span>
-<span class="lineno">17</span>        <span class="o">-</span> `<span class="n">clip</span>`<span class="p">:</span> <span class="n">$\varepsilon$</span> — <span class="n">裁剪参数</span>
-<span class="lineno">18</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">19</span>        <span class="c"># 裁剪的价值函数：$V_{CLIP} = V_{old} + \text{clip}(V - V_{old}, -\varepsilon, \varepsilon)$</span>
-<span class="lineno">20</span>        <span class="n">clipped_value</span> <span class="o">=</span> <span class="n">sampled_value</span> <span class="o">+</span> <span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">sampled_value</span><span class="p">)</span><span class="p">.</span><span class="nf">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=-</span><span class="n">clip</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">clip</span><span class="p">)</span>
-<span class="lineno">21</span>
-<span class="lineno">22</span>        <span class="c"># 取两个损失的最大值：未裁剪的和裁剪的</span>
-<span class="lineno">23</span>        <span class="n">vf_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nb">max</span><span class="p">(</span><span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">sampled_return</span><span class="p">)</span> <span class="o">**</span> <span class="m">2</span><span class="p">,</span> <span class="p">(</span><span class="n">clipped_value</span> <span class="o">-</span> <span class="n">sampled_return</span><span class="p">)</span> <span class="o">**</span> <span class="m">2</span><span class="p">)</span>
-<span class="lineno">24</span>
-<span class="lineno">25</span>        <span class="c"># 乘以1/2是为了与MSE损失保持一致</span>
-<span class="lineno">26</span>        <span class="k">return</span> <span class="m">0.5</span> <span class="o">*</span> <span class="n">vf_loss</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
-<span class="lineno">27</span>
-<span class="lineno">28</span></pre>
+<span class="lineno">13</span>        <span class="c"># 取两个损失的最大值：未裁剪的和裁剪的</span>
+<span class="lineno">14</span>        <span class="n">vf_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nb">max</span><span class="p">(</span><span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">sampled_return</span><span class="p">)</span> <span class="o">**</span> <span class="m">2</span><span class="p">,</span> <span class="p">(</span><span class="n">clipped_value</span> <span class="o">-</span> <span class="n">sampled_return</span><span class="p">)</span> <span class="o">**</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno">15</span>
+<span class="lineno">16</span>        <span class="c"># 乘以1/2是为了与MSE损失保持一致</span>
+<span class="lineno">17</span>        <span class="k">return</span> <span class="m">0.5</span> <span class="o">*</span> <span class="n">vf_loss</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">18</span>
+<span class="lineno">19</span></pre>
   </div>
 </div>
 <div class="section">
@@ -356,6 +349,8 @@ $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\rig
 <p>但PPO通常使用独立的Actor和Critic头：
 - Actor: 特征 → 策略分布 $\pi_\theta(\cdot|s)$
 - Critic: 特征 → 价值估计 $V_\theta(s)$</p>
+<p>评估给定状态-动作对的对数概率和价值。</p>
+<p>用于PPO更新时计算 $\log \pi_\theta(a_t|s_t)$。</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">PPONetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -390,24 +385,19 @@ $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\rig
 <span class="lineno">30</span>        <span class="k">return</span> <span class="n">action_probs</span><span class="p">,</span> <span class="n">state_value</span>
 <span class="lineno">31</span>
 <span class="lineno">32</span>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">33</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">34</span>        <span class="n">评估给定状态</span><span class="o">-</span><span class="n">动作对的对数概率和价值</span>。
-<span class="lineno">35</span>
-<span class="lineno">36</span>        <span class="n">用于PPO更新时计算</span> <span class="n">$\log \pi_\theta(a_t|s_t)$</span>。
-<span class="lineno">37</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">38</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
-<span class="lineno">39</span>        <span class="n">action_logits</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">actor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
-<span class="lineno">40</span>        <span class="n">state_value</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">critic</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">41</span>
-<span class="lineno">42</span>        <span class="c"># 计算动作的对数概率</span>
-<span class="lineno">43</span>        <span class="n">action_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="n">action_logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">44</span>        <span class="n">action_log_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">action_probs</span> <span class="o">+</span> <span class="m">1e</span><span class="o">-</span><span class="m">8</span><span class="p">)</span>
-<span class="lineno">45</span>
-<span class="lineno">46</span>        <span class="c"># 选择给定动作的对数概率</span>
-<span class="lineno">47</span>        <span class="n">log_pi</span> <span class="o">=</span> <span class="n">action_log_probs</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">action</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
-<span class="lineno">48</span>
-<span class="lineno">49</span>        <span class="k">return</span> <span class="n">log_pi</span><span class="p">,</span> <span class="n">state_value</span>
-<span class="lineno">50</span></pre>
+<span class="lineno">33</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="lineno">34</span>        <span class="n">action_logits</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">actor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="lineno">35</span>        <span class="n">state_value</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">critic</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">36</span>
+<span class="lineno">37</span>        <span class="c"># 计算动作的对数概率</span>
+<span class="lineno">38</span>        <span class="n">action_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="n">action_logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">39</span>        <span class="n">action_log_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">action_probs</span> <span class="o">+</span> <span class="m">1e</span><span class="o">-</span><span class="m">8</span><span class="p">)</span>
+<span class="lineno">40</span>
+<span class="lineno">41</span>        <span class="c"># 选择给定动作的对数概率</span>
+<span class="lineno">42</span>        <span class="n">log_pi</span> <span class="o">=</span> <span class="n">action_log_probs</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">action</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">43</span>
+<span class="lineno">44</span>        <span class="k">return</span> <span class="n">log_pi</span><span class="p">,</span> <span class="n">state_value</span>
+<span class="lineno">45</span></pre>
   </div>
 </div>
 

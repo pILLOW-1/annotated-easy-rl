@@ -222,70 +222,62 @@ $$\hat{A}_t = \sum_{l=0}^{\infty} (\gamma\lambda)^l \delta_{t+l}$$
 $$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$$
 
 <p>其中 $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ 是TD残差。</p>
+<p>初始化GAE计算器。</p>
+<p>参数：
+- <code>n_workers</code>: 并行环境数量
+- <code>worker_steps</code>: 每个环境的步数
+- <code>gamma</code>: $\gamma$ — 折扣因子
+- <code>lambda_</code>: $\lambda$ — GAE参数</p>
+<p>计算优势函数。</p>
+<p>参数映射：
+- <code>done</code>: 是否 episode 结束
+- <code>rewards</code>: $r_t$ — 每步奖励
+- <code>values</code>: $V(s_t)$ — 每步价值估计</p>
+<p>返回值：
+- <code>advantages</code>: $\hat{A}_t$ — 优势函数估计</p>
+<p>计算过程：</p>
+$$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$$
+<p>其中 $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">GAE</span><span class="p">:</span>
 <span class="lineno">2</span>
 <span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">n_workers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">worker_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">lambda_</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">4</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">5</span>        <span class="n">初始化GAE计算器</span>。
-<span class="lineno">6</span>
-<span class="lineno">7</span>        <span class="n">参数</span>：
-<span class="lineno">8</span>        <span class="o">-</span> `<span class="n">n_workers</span>`<span class="p">:</span> <span class="n">并行环境数量</span>
-<span class="lineno">9</span>        <span class="o">-</span> `<span class="n">worker_steps</span>`<span class="p">:</span> <span class="n">每个环境的步数</span>
-<span class="lineno">10</span>        <span class="o">-</span> `<span class="n">gamma</span>`<span class="p">:</span> <span class="n">$\gamma$</span> — <span class="n">折扣因子</span>
-<span class="lineno">11</span>        <span class="o">-</span> `<span class="n">lambda_</span>`<span class="p">:</span> <span class="n">$\lambda$</span> — <span class="nc">GAE参数</span>
-<span class="lineno">12</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">13</span>        <span class="nb">self</span><span class="p">.</span><span class="n">lambda_</span> <span class="o">=</span> <span class="n">lambda_</span>
-<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
-<span class="lineno">15</span>        <span class="nb">self</span><span class="p">.</span><span class="n">worker_steps</span> <span class="o">=</span> <span class="n">worker_steps</span>
-<span class="lineno">16</span>        <span class="nb">self</span><span class="p">.</span><span class="n">n_workers</span> <span class="o">=</span> <span class="n">n_workers</span>
-<span class="lineno">17</span>
-<span class="lineno">18</span>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span>
-<span class="lineno">19</span>        <span class="nb">self</span><span class="p">,</span> <span class="n">done</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">rewards</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span>
-<span class="lineno">20</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="lineno">21</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">22</span>        <span class="n">计算优势函数</span>。
-<span class="lineno">23</span>
-<span class="lineno">24</span>        <span class="n">参数映射</span>：
-<span class="lineno">25</span>        <span class="o">-</span> `<span class="n">done</span>`<span class="p">:</span> <span class="n">是否</span> <span class="n">episode</span> <span class="n">结束</span>
-<span class="lineno">26</span>        <span class="o">-</span> `<span class="n">rewards</span>`<span class="p">:</span> <span class="n">$r_t$</span> — <span class="n">每步奖励</span>
-<span class="lineno">27</span>        <span class="o">-</span> `<span class="n">values</span>`<span class="p">:</span> <span class="n">$V(s_t)$</span> — <span class="n">每步价值估计</span>
+<span class="lineno">4</span>        <span class="nb">self</span><span class="p">.</span><span class="n">lambda_</span> <span class="o">=</span> <span class="n">lambda_</span>
+<span class="lineno">5</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
+<span class="lineno">6</span>        <span class="nb">self</span><span class="p">.</span><span class="n">worker_steps</span> <span class="o">=</span> <span class="n">worker_steps</span>
+<span class="lineno">7</span>        <span class="nb">self</span><span class="p">.</span><span class="n">n_workers</span> <span class="o">=</span> <span class="n">n_workers</span>
+<span class="lineno">8</span>
+<span class="lineno">9</span>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span>
+<span class="lineno">10</span>        <span class="nb">self</span><span class="p">,</span> <span class="n">done</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">rewards</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span>
+<span class="lineno">11</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="lineno">12</span>        <span class="c"># 优势函数表</span>
+<span class="lineno">13</span>        <span class="n">advantages</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">n_workers</span><span class="p">,</span> <span class="nb">self</span><span class="p">.</span><span class="n">worker_steps</span><span class="p">)</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="lineno">14</span>        <span class="n">last_advantage</span> <span class="o">=</span> <span class="m">0</span>
+<span class="lineno">15</span>
+<span class="lineno">16</span>        <span class="c"># $V(s_{T+1})$ — 最后一步的下一个状态价值</span>
+<span class="lineno">17</span>        <span class="n">last_value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="o">-</span><span class="m">1</span><span class="p">]</span>
+<span class="lineno">18</span>
+<span class="lineno">19</span>        <span class="c"># 从后往前递归计算</span>
+<span class="lineno">20</span>        <span class="k">for</span> <span class="n">t</span> <span class="k">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">worker_steps</span><span class="p">)</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">21</span>            <span class="c"># 如果episode已结束，mask为0，否则为1</span>
+<span class="lineno">22</span>            <span class="n">mask</span> <span class="o">=</span> <span class="m">1.0</span> <span class="o">-</span> <span class="n">done</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span>
+<span class="lineno">23</span>            <span class="n">last_value</span> <span class="o">=</span> <span class="n">last_value</span> <span class="o">*</span> <span class="n">mask</span>
+<span class="lineno">24</span>            <span class="n">last_advantage</span> <span class="o">=</span> <span class="n">last_advantage</span> <span class="o">*</span> <span class="n">mask</span>
+<span class="lineno">25</span>
+<span class="lineno">26</span>            <span class="c"># TD残差：$\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$</span>
+<span class="lineno">27</span>            <span class="n">delta</span> <span class="o">=</span> <span class="n">rewards</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">last_value</span> <span class="o">-</span> <span class="n">values</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span>
 <span class="lineno">28</span>
-<span class="lineno">29</span>        <span class="n">返回值</span>：
-<span class="lineno">30</span>        <span class="o">-</span> `<span class="n">advantages</span>`<span class="p">:</span> <span class="n">$\hat{A}_t$</span> — <span class="n">优势函数估计</span>
+<span class="lineno">29</span>            <span class="c"># GAE递归：$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$</span>
+<span class="lineno">30</span>            <span class="n">last_advantage</span> <span class="o">=</span> <span class="n">delta</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">lambda_</span> <span class="o">*</span> <span class="n">last_advantage</span>
 <span class="lineno">31</span>
-<span class="lineno">32</span>        <span class="n">计算过程</span>：
-<span class="lineno">33</span>        <span class="n">$$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$$</span>
-<span class="lineno">34</span>        <span class="n">其中</span> <span class="n">$\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$</span>
-<span class="lineno">35</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">36</span>        <span class="c"># 优势函数表</span>
-<span class="lineno">37</span>        <span class="n">advantages</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">n_workers</span><span class="p">,</span> <span class="nb">self</span><span class="p">.</span><span class="n">worker_steps</span><span class="p">)</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="lineno">38</span>        <span class="n">last_advantage</span> <span class="o">=</span> <span class="m">0</span>
-<span class="lineno">39</span>
-<span class="lineno">40</span>        <span class="c"># $V(s_{T+1})$ — 最后一步的下一个状态价值</span>
-<span class="lineno">41</span>        <span class="n">last_value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="o">-</span><span class="m">1</span><span class="p">]</span>
-<span class="lineno">42</span>
-<span class="lineno">43</span>        <span class="c"># 从后往前递归计算</span>
-<span class="lineno">44</span>        <span class="k">for</span> <span class="n">t</span> <span class="k">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">worker_steps</span><span class="p">)</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">45</span>            <span class="c"># 如果episode已结束，mask为0，否则为1</span>
-<span class="lineno">46</span>            <span class="n">mask</span> <span class="o">=</span> <span class="m">1.0</span> <span class="o">-</span> <span class="n">done</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span>
-<span class="lineno">47</span>            <span class="n">last_value</span> <span class="o">=</span> <span class="n">last_value</span> <span class="o">*</span> <span class="n">mask</span>
-<span class="lineno">48</span>            <span class="n">last_advantage</span> <span class="o">=</span> <span class="n">last_advantage</span> <span class="o">*</span> <span class="n">mask</span>
-<span class="lineno">49</span>
-<span class="lineno">50</span>            <span class="c"># TD残差：$\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$</span>
-<span class="lineno">51</span>            <span class="n">delta</span> <span class="o">=</span> <span class="n">rewards</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">last_value</span> <span class="o">-</span> <span class="n">values</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span>
-<span class="lineno">52</span>
-<span class="lineno">53</span>            <span class="c"># GAE递归：$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$</span>
-<span class="lineno">54</span>            <span class="n">last_advantage</span> <span class="o">=</span> <span class="n">delta</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">lambda_</span> <span class="o">*</span> <span class="n">last_advantage</span>
-<span class="lineno">55</span>
-<span class="lineno">56</span>            <span class="n">advantages</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">last_advantage</span>
-<span class="lineno">57</span>
-<span class="lineno">58</span>            <span class="n">last_value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span>
-<span class="lineno">59</span>
-<span class="lineno">60</span>        <span class="k">return</span> <span class="n">advantages</span>
-<span class="lineno">61</span>
-<span class="lineno">62</span></pre>
+<span class="lineno">32</span>            <span class="n">advantages</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">last_advantage</span>
+<span class="lineno">33</span>
+<span class="lineno">34</span>            <span class="n">last_value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span>
+<span class="lineno">35</span>
+<span class="lineno">36</span>        <span class="k">return</span> <span class="n">advantages</span>
+<span class="lineno">37</span>
+<span class="lineno">38</span></pre>
   </div>
 </div>
 <div class="section">
