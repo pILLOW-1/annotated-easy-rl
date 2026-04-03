@@ -480,18 +480,68 @@ def generate_html_page(title, sections, parent_path="..", parent_title="强化�
     </div>
   </div>
   <script src="{KATEX_JS}"></script>
-  <script src="{AUTORENDER_JS}"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {{
-      if (typeof renderMathInElement === 'function') {{
-        renderMathInElement(document.getElementById('container'), {{
-          delimiters: [
-            {{left: '$$', right: '$$', display: true}},
-            {{left: '$', right: '$', display: false}}
-          ],
-          throwOnError: false
-        }});
+      var container = document.getElementById('container');
+      if (typeof katex === 'undefined') {{
+        console.error('KaTeX not loaded');
+        return;
       }}
+      function renderMath(node) {{
+        if (node.nodeType === 3) {{
+          var text = node.nodeValue;
+          if (text.indexOf('$') === -1) return;
+          var parts = [];
+          var remaining = text;
+          var lastEnd = 0;
+          var regex = /(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g;
+          var match;
+          while ((match = regex.exec(remaining)) !== null) {{
+            if (match.index > lastEnd) {{
+              parts.push(remaining.substring(lastEnd, match.index));
+            }}
+            var math = match[0];
+            var isDisplay = math.startsWith('$$');
+            var latex = isDisplay ? math.slice(2, -2) : math.slice(1, -1);
+            try {{
+              var html = katex.renderToString(latex, {{
+                displayMode: isDisplay,
+                throwOnError: false
+              }});
+              parts.push(html);
+            }} catch (e) {{
+              parts.push(math);
+            }}
+            lastEnd = match.index + match[0].length;
+          }}
+          if (parts.length > 0) {{
+            if (lastEnd < remaining.length) {{
+              parts.push(remaining.substring(lastEnd));
+            }}
+            var frag = document.createDocumentFragment();
+            for (var i = 0; i < parts.length; i++) {{
+              var p = parts[i];
+              if (i % 2 === 0 && p.indexOf('<span') === -1 && p.indexOf('katex') === -1) {{
+                frag.appendChild(document.createTextNode(p));
+              }} else {{
+                var wrapper = document.createElement('span');
+                wrapper.innerHTML = p;
+                while (wrapper.firstChild) {{
+                  frag.appendChild(wrapper.firstChild);
+                }}
+              }}
+            }}
+            node.parentNode.replaceChild(frag, node);
+          }}
+        }} else if (node.nodeType === 1) {{
+          var tag = node.tagName.toLowerCase();
+          if (tag === 'pre' || tag === 'code' || tag === 'script' || tag === 'style') return;
+          for (var i = 0; i < node.childNodes.length; i++) {{
+            renderMath(node.childNodes[i]);
+          }}
+        }}
+      }}
+      renderMath(container);
     }});
   </script>
 </body>
@@ -558,15 +608,66 @@ def generate_index_page(html_dir):
   <script src="{AUTORENDER_JS}"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {{
-      if (typeof renderMathInElement === 'function') {{
-        renderMathInElement(document.getElementById('container'), {{
-          delimiters: [
-            {{left: '$$', right: '$$', display: true}},
-            {{left: '$', right: '$', display: false}}
-          ],
-          throwOnError: false
-        }});
+      var container = document.getElementById('container');
+      if (typeof katex === 'undefined') {{
+        console.error('KaTeX not loaded');
+        return;
       }}
+      function renderMath(node) {{
+        if (node.nodeType === 3) {{
+          var text = node.nodeValue;
+          if (text.indexOf('$') === -1) return;
+          var parts = [];
+          var remaining = text;
+          var lastEnd = 0;
+          var regex = /(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g;
+          var match;
+          while ((match = regex.exec(remaining)) !== null) {{
+            if (match.index > lastEnd) {{
+              parts.push(remaining.substring(lastEnd, match.index));
+            }}
+            var math = match[0];
+            var isDisplay = math.startsWith('$$');
+            var latex = isDisplay ? math.slice(2, -2) : math.slice(1, -1);
+            try {{
+              var html = katex.renderToString(latex, {{
+                displayMode: isDisplay,
+                throwOnError: false
+              }});
+              parts.push(html);
+            }} catch (e) {{
+              parts.push(math);
+            }}
+            lastEnd = match.index + match[0].length;
+          }}
+          if (parts.length > 0) {{
+            if (lastEnd < remaining.length) {{
+              parts.push(remaining.substring(lastEnd));
+            }}
+            var frag = document.createDocumentFragment();
+            for (var i = 0; i < parts.length; i++) {{
+              var p = parts[i];
+              if (i % 2 === 0 && p.indexOf('<span') === -1 && p.indexOf('katex') === -1) {{
+                frag.appendChild(document.createTextNode(p));
+              }} else {{
+                var wrapper = document.createElement('span');
+                wrapper.innerHTML = p;
+                while (wrapper.firstChild) {{
+                  frag.appendChild(wrapper.firstChild);
+                }}
+              }}
+            }}
+            node.parentNode.replaceChild(frag, node);
+          }}
+        }} else if (node.nodeType === 1) {{
+          var tag = node.tagName.toLowerCase();
+          if (tag === 'pre' || tag === 'code' || tag === 'script' || tag === 'style') return;
+          for (var i = 0; i < node.childNodes.length; i++) {{
+            renderMath(node.childNodes[i]);
+          }}
+        }}
+      }}
+      renderMath(container);
     }});
   </script>
 </body>
