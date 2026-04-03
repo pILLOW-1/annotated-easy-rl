@@ -164,380 +164,322 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
     <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-0">#</a></div>
-    
+    <hr />
+<p>title: 深度确定性策略梯度 (DDPG) - Deep Deterministic Policy Gradient
+summary: &gt;
+  基于蘑菇书EasyRL第十二章的深度确定性策略梯度(DDPG)算法的PyTorch实现，
+  包含Actor-Critic架构、目标网络、经验回放等核心公式的逐行注释。</p>
+<hr />
+<h1>深度确定性策略梯度 (DDPG) - Deep Deterministic Policy Gradient</h1>
+<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第十二章的PyTorch实现，
+参考论文<a href="https://arxiv.org/abs/1509.02971">Continuous control with deep reinforcement learning</a>。</p>
+<p>DDPG是DQN在连续动作空间的扩展，结合了DQN和确定性策略梯度的优点。</p>
+<h2>确定性策略梯度</h2>
+<p>在连续动作空间中，动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x02208;</mo><mi>&#x1D49C;</mi><mo>&#x02286;</mo><msup><mi>&#x0211D;</mi><mi>d</mi></msup></mrow></math></span> 是连续值。
+确定性策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BC;</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 直接输出动作，而不是动作的概率分布。</p>
+<p>确定性策略梯度定理：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>J</mi><mo>&#x02248;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><msup><mi>&#x003C1;</mi><mi>&#x003BC;</mi></msup></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mo>&#x02207;</mo><mi>a</mi></msub><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mi>;</mi><mi>&#x003D5;</mi><mo stretchy="false">&#x00029;</mo><msub><mo stretchy="false">&#x0007C;</mo><mrow><mi>a</mi><mo>&#x0003D;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+
+<p>其中：
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是确定性策略（Actor）
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mi>;</mi><mi>&#x003D5;</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是动作价值函数（Critic）
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003C1;</mi><mi>&#x003BC;</mi></msup></mrow></math></span> 是策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BC;</mi></mrow></math></span> 下的状态分布</p>
+<h2>DDPG算法</h2>
+<p>DDPG使用四个神经网络：
+1. <strong>Actor</strong> <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>：确定性策略，直接输出动作
+2. <strong>Critic</strong> <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>：动作价值函数
+3. <strong>Target Actor</strong> <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BC;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>：目标策略网络
+4. <strong>Target Critic</strong> <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mrow><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>：目标价值网络</p>
+<h3>Critic更新</h3>
+<p>Critic通过最小化TD误差来学习：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003D5;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo>&#x0002C;</mo><mi>r</mi><mo>&#x0002C;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>y</mi><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+
+<p>其中目标值：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>y</mi><mo>&#x0003D;</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>Q</mi><mrow><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></div>
+
+<h3>Actor更新</h3>
+<p>Actor通过最大化Critic的输出来学习：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>J</mi><mo>&#x02248;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mo>&#x02207;</mo><mi>a</mi></msub><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><msub><mo stretchy="false">&#x0007C;</mo><mrow><mi>a</mi><mo>&#x0003D;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+
+<p>等价于最大化：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>J</mi><mo>&#x02248;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+
+<h3>目标网络软更新</h3>
+<p>DDPG使用软更新来平滑地更新目标网络：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup><mo>&#x02190;</mo><mi>&#x003C4;</mi><mi>&#x003B8;</mi><mo>&#x0002B;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></math></div>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup><mo>&#x02190;</mo><mi>&#x003C4;</mi><mi>&#x003D5;</mi><mo>&#x0002B;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup></mrow></math></div>
+
+<p>其中 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C4;</mi><mo>&#x0226A;</mo><mn>1</mn></mrow></math></span>（通常取0.001~0.01）。</p>
+<h2>探索策略</h2>
+<p>DDPG使用Ornstein-Uhlenbeck (OU) 过程来添加探索噪声：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>d</mi><msub><mi>x</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003BC;</mi><mo>&#x02212;</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>d</mi><mi>t</mi><mo>&#x0002B;</mo><mi>&#x003C3;</mi><mi>d</mi><msub><mi>W</mi><mi>t</mi></msub></mrow></math></div>
+
+<p>其中：
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math></span> 是均值回归速度
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BC;</mi></mrow></math></span> 是均值
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C3;</mi></mrow></math></span> 是波动率
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>W</mi><mi>t</mi></msub></mrow></math></span> 是维纳过程（布朗运动）</p>
+<p>OU过程产生的噪声具有时间相关性，适合连续控制任务。</p>
+<h2>蘑菇书中的DDPG</h2>
+<p>根据蘑菇书第十二章，DDPG的核心组件：
+1. <strong>Actor网络</strong>：输入状态，输出连续动作
+2. <strong>Critic网络</strong>：输入状态和动作，输出Q值
+3. <strong>经验回放缓冲区</strong>：存储 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo>&#x0002C;</mo><mi>r</mi><mo>&#x0002C;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><mi>d</mi><mi>o</mi><mi>n</mi><mi>e</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 元组
+4. <strong>目标网络</strong>：Actor和Critic各有对应的目标网络</p>
+<p>训练流程：
+1. Actor根据当前策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 选择动作，加上OU噪声
+2. 执行动作，观察奖励和下一状态
+3. 存储经验到回放缓冲区
+4. 从缓冲区采样小批量数据
+5. 更新Critic：最小化TD误差
+6. 更新Actor：最大化Q值
+7. 软更新目标网络</p>
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="n">r</span><span class="s2">"""
-<span class="lineno">2</span>---
-<span class="lineno">3</span>title: 深度确定性策略梯度 (DDPG) - Deep Deterministic Policy Gradient
-<span class="lineno">4</span>summary: &gt;
-<span class="lineno">5</span>  基于蘑菇书EasyRL第十二章的深度确定性策略梯度(DDPG)算法的PyTorch实现，
-<span class="lineno">6</span>  包含Actor-Critic架构、目标网络、经验回放等核心公式的逐行注释。
-<span class="lineno">7</span>---
-<span class="lineno">8</span>
-<span class="lineno">9</span># 深度确定性策略梯度 (DDPG) - Deep Deterministic Policy Gradient
-<span class="lineno">10</span>
-<span class="lineno">11</span>本文件是[蘑菇书EasyRL](https://github.com/datawhalechina/easy-rl/)第十二章的PyTorch实现，
-<span class="lineno">12</span>参考论文[Continuous control with deep reinforcement learning](https://arxiv.org/abs/1509.02971)。
-<span class="lineno">13</span>
-<span class="lineno">14</span>DDPG是DQN在连续动作空间的扩展，结合了DQN和确定性策略梯度的优点。
-<span class="lineno">15</span>
-<span class="lineno">16</span>## 确定性策略梯度
-<span class="lineno">17</span>
-<span class="lineno">18</span>在连续动作空间中，动作 a \in \mathcal{A} \subseteq \mathbb{R}^d 是连续值。
-<span class="lineno">19</span>确定性策略 \mu(s) 直接输出动作，而不是动作的概率分布。
-<span class="lineno">20</span>
-<span class="lineno">21</span>确定性策略梯度定理：
-<span class="lineno">22</span>
-<span class="lineno">23</span>\nabla_\theta J \approx \mathbb{E}_{s \sim \rho^\mu}\left[\nabla_a Q(s, a; \phi)|_{a=\mu_\theta(s)} \nabla_\theta \mu_\theta(s)\right]
-<span class="lineno">24</span>
-<span class="lineno">25</span>其中：
-<span class="lineno">26</span>- \mu_\theta(s) 是确定性策略（Actor）
-<span class="lineno">27</span>- Q(s, a; \phi) 是动作价值函数（Critic）
-<span class="lineno">28</span>- \rho^\mu 是策略 \mu 下的状态分布
-<span class="lineno">29</span>
-<span class="lineno">30</span>## DDPG算法
-<span class="lineno">31</span>
-<span class="lineno">32</span>DDPG使用四个神经网络：
-<span class="lineno">33</span>1. **Actor** \mu_\theta(s)：确定性策略，直接输出动作
-<span class="lineno">34</span>2. **Critic** Q_\phi(s, a)：动作价值函数
-<span class="lineno">35</span>3. **Target Actor** \mu_{\theta'}(s)：目标策略网络
-<span class="lineno">36</span>4. **Target Critic** Q_{\phi'}(s, a)：目标价值网络
-<span class="lineno">37</span>
-<span class="lineno">38</span>### Critic更新
-<span class="lineno">39</span>
-<span class="lineno">40</span>Critic通过最小化TD误差来学习：
-<span class="lineno">41</span>
-<span class="lineno">42</span>L(\phi) = \mathbb{E}_{(s,a,r,s') \sim D}\left[(Q_\phi(s, a) - y)^2\right]
-<span class="lineno">43</span>
-<span class="lineno">44</span>其中目标值：
-<span class="lineno">45</span>y = r + \gamma Q_{\phi'}(s', \mu_{\theta'}(s'))
-<span class="lineno">46</span>
-<span class="lineno">47</span>### Actor更新
-<span class="lineno">48</span>
-<span class="lineno">49</span>Actor通过最大化Critic的输出来学习：
-<span class="lineno">50</span>
-<span class="lineno">51</span>\nabla_\theta J \approx \mathbb{E}_{s \sim D}\left[\nabla_a Q_\phi(s, a)|_{a=\mu_\theta(s)} \nabla_\theta \mu_\theta(s)\right]
-<span class="lineno">52</span>
-<span class="lineno">53</span>等价于最大化：
-<span class="lineno">54</span>J \approx \mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]
-<span class="lineno">55</span>
-<span class="lineno">56</span>### 目标网络软更新
-<span class="lineno">57</span>
-<span class="lineno">58</span>DDPG使用软更新来平滑地更新目标网络：
-<span class="lineno">59</span>
-<span class="lineno">60</span>\theta' \leftarrow \tau \theta + (1 - \tau) \theta'
-<span class="lineno">61</span>\phi' \leftarrow \tau \phi + (1 - \tau) \phi'
-<span class="lineno">62</span>
-<span class="lineno">63</span>其中 \tau \ll 1（通常取0.001~0.01）。
-<span class="lineno">64</span>
-<span class="lineno">65</span>## 探索策略
-<span class="lineno">66</span>
-<span class="lineno">67</span>DDPG使用Ornstein-Uhlenbeck (OU) 过程来添加探索噪声：
-<span class="lineno">68</span>
-<span class="lineno">69</span>dx_t = \theta(\mu - x_t)dt + \sigma dW_t
-<span class="lineno">70</span>
-<span class="lineno">71</span>其中：
-<span class="lineno">72</span>- \theta 是均值回归速度
-<span class="lineno">73</span>- \mu 是均值
-<span class="lineno">74</span>- \sigma 是波动率
-<span class="lineno">75</span>- W_t 是维纳过程（布朗运动）
-<span class="lineno">76</span>
-<span class="lineno">77</span>OU过程产生的噪声具有时间相关性，适合连续控制任务。
-<span class="lineno">78</span>
-<span class="lineno">79</span>## 蘑菇书中的DDPG
-<span class="lineno">80</span>
-<span class="lineno">81</span>根据蘑菇书第十二章，DDPG的核心组件：
-<span class="lineno">82</span>1. **Actor网络**：输入状态，输出连续动作
-<span class="lineno">83</span>2. **Critic网络**：输入状态和动作，输出Q值
-<span class="lineno">84</span>3. **经验回放缓冲区**：存储 (s, a, r, s', done) 元组
-<span class="lineno">85</span>4. **目标网络**：Actor和Critic各有对应的目标网络
-<span class="lineno">86</span>
-<span class="lineno">87</span>训练流程：
-<span class="lineno">88</span>1. Actor根据当前策略 \mu_\theta(s) 选择动作，加上OU噪声
-<span class="lineno">89</span>2. 执行动作，观察奖励和下一状态
-<span class="lineno">90</span>3. 存储经验到回放缓冲区
-<span class="lineno">91</span>4. 从缓冲区采样小批量数据
-<span class="lineno">92</span>5. 更新Critic：最小化TD误差
-<span class="lineno">93</span>6. 更新Actor：最大化Q值
-<span class="lineno">94</span>7. 软更新目标网络
-<span class="lineno">95</span>"""</span>
-<span class="lineno">96</span>
-<span class="lineno">97</span><span class="k">import</span> <span class="n">torch</span>
-<span class="lineno">98</span><span class="k">from</span> <span class="n">torch</span> <span class="k">import</span> <span class="n">nn</span>
-<span class="lineno">99</span><span class="k">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span></pre>
+    
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-1">#</a></div>
-    <p>def <strong>init</strong>(self, state_dim: int, action_dim: int, hidden_dim: int = 256, action_scale: float = 1.0):
-    super().<strong>init</strong>()
-    self.action_scale = action_scale
-    self.network = nn.Sequential(
-        nn.Linear(state_dim, hidden_dim),
-        nn.ReLU(),
-        nn.Linear(hidden_dim, hidden_dim),
-        nn.ReLU(),
-        nn.Linear(hidden_dim, action_dim),
-        nn.Tanh(),  # 输出限制在 [-1, 1]
-    )</p>
-<p>def forward(self, state: torch.Tensor) -&gt; torch.Tensor:
-    r</p>
-<p>action = self.network(state)
-return action * self.action_scale</p>
+    
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">Actor</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
-<span class="lineno">3</span>    ## Actor网络（确定性策略）
-<span class="lineno">4</span>
-<span class="lineno">5</span>    Actor \mu_\theta(s) 是一个确定性策略网络，
-<span class="lineno">6</span>    输入状态 s，输出连续动作 a。
-<span class="lineno">7</span>
-<span class="lineno">8</span>    a = \mu_\theta(s)
-<span class="lineno">9</span>
-<span class="lineno">10</span>    输出通常使用tanh激活函数，将动作限制在 [-1, 1] 范围内，
-<span class="lineno">11</span>    然后缩放到实际的动作空间。
-<span class="lineno">12</span>        输出确定性动作 a = \mu_\theta(s)。
-<span class="lineno">13</span>
-<span class="lineno">14</span>        参数：
-<span class="lineno">15</span>        - `state`: s — 状态
-<span class="lineno">16</span>
-<span class="lineno">17</span>        返回值：
-<span class="lineno">18</span>        - `action`: a = \mu_\theta(s) \times \text{scale} — 缩放后的动作
-<span class="lineno">19</span>        action = self.network(state)
-<span class="lineno">20</span>        return action * self.action_scale
-<span class="lineno">21</span>
-<span class="lineno">22</span></span></pre>
+    <pre><span class="lineno">1</span><span class="k">import</span> <span class="n">torch</span>
+<span class="lineno">2</span><span class="k">from</span> <span class="n">torch</span> <span class="k">import</span> <span class="n">nn</span>
+<span class="lineno">3</span><span class="k">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
-    <p>def <strong>init</strong>(self, state_dim: int, action_dim: int, hidden_dim: int = 256):
-    super().<strong>init</strong>()
-    # 状态和动作拼接后输入网络
-    self.network = nn.Sequential(
-        nn.Linear(state_dim + action_dim, hidden_dim),
-        nn.ReLU(),
-        nn.Linear(hidden_dim, hidden_dim),
-        nn.ReLU(),
-        nn.Linear(hidden_dim, 1),  # 输出标量Q值
-    )</p>
-<p>def forward(self, state: torch.Tensor, action: torch.Tensor) -&gt; torch.Tensor:
-    r</p>
-<h1>拼接状态和动作：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">[</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">]</mo></mrow></math></span></h1>
-<p>x = torch.cat([state, action], dim=-1)
-return self.network(x).squeeze(-1)</p>
+    <h2>Actor网络（确定性策略）</h2>
+<p>Actor <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是一个确定性策略网络，
+   输入状态 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span>，输出连续动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span>。</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></div>
+
+<p>输出通常使用tanh激活函数，将动作限制在 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">[</mo><mo>&#x02212;</mo><mn>1</mn><mo>&#x0002C;</mo><mn>1</mn><mo stretchy="false">]</mo></mrow></math></span> 范围内，
+   然后缩放到实际的动作空间。</p>
+<p>输出确定性动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>。</p>
+<p>参数：
+- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> — 状态</p>
+<p>返回值：
+- <code>action</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mtext>scale</mtext></mrow></math></span> — 缩放后的动作</p>
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">Critic</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
-<span class="lineno">3</span>    ## Critic网络（动作价值函数）
-<span class="lineno">4</span>
-<span class="lineno">5</span>    Critic Q_\phi(s, a) 估计状态-动作对的价值。
-<span class="lineno">6</span>
-<span class="lineno">7</span>    Q_\phi(s, a) \approx Q^\mu(s, a)
-<span class="lineno">8</span>
-<span class="lineno">9</span>    输入状态 s 和动作 a，输出标量Q值。
-<span class="lineno">10</span>        输出动作价值 Q_\phi(s, a)。
-<span class="lineno">11</span>
-<span class="lineno">12</span>        参数：
-<span class="lineno">13</span>        - `state`: s — 状态
-<span class="lineno">14</span>        - `action`: a — 动作
-<span class="lineno">15</span>
-<span class="lineno">16</span>        返回值：
-<span class="lineno">17</span>        - `q_value`: Q_\phi(s, a) — 动作价值
-<span class="lineno">18</span>        # 拼接状态和动作：[s, a]
-<span class="lineno">19</span>        x = torch.cat([state, action], dim=-1)
-<span class="lineno">20</span>        return self.network(x).squeeze(-1)
-<span class="lineno">21</span>
-<span class="lineno">22</span></span></pre>
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">Actor</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="m">256</span><span class="p">,</span> <span class="n">action_scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">1.0</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">4</span>        <span class="nf">super</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="nf">__init__</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">5</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_scale</span> <span class="o">=</span> <span class="n">action_scale</span>
+<span class="lineno">6</span>        <span class="nb">self</span><span class="p">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Sequential</span><span class="p">(</span>
+<span class="lineno">7</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">8</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">9</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">10</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">11</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">12</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Tanh</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>  <span class="c"># 输出限制在 [-1, 1]</span>
+<span class="lineno">13</span>        <span class="p">)</span>
+<span class="lineno">14</span>
+<span class="lineno">15</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
+<span class="lineno">16</span>        <span class="n">action</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">network</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="lineno">17</span>        <span class="k">return</span> <span class="n">action</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">action_scale</span>
+<span class="lineno">18</span>
+<span class="lineno">19</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
-    <p>def <strong>init</strong>(self, gamma: float):
-    super().<strong>init</strong>()
-    self.gamma = gamma</p>
-<p>def compute_critic_loss(
-    self,
-    q_values: torch.Tensor,
-    next_q_values: torch.Tensor,
-    rewards: torch.Tensor,
-    dones: torch.Tensor,
-) -&gt; torch.Tensor:
-    r</p>
-<h1>目标值：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>y</mi><mo>&#x0003D;</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>Q</mi><mrow><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mtext>done</mtext><mo stretchy="false">&#x00029;</mo></mrow></math></span></h1>
-<pre><code>with torch.no_grad():
-    target_q = rewards + self.gamma * next_q_values * (1 - dones)
+    <h2>Critic网络（动作价值函数）</h2>
+<p>Critic <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 估计状态-动作对的价值。</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02248;</mo><msup><mi>Q</mi><mi>&#x003BC;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
-# MSE损失：&lt;span class="math-inline"&gt;&lt;math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"&gt;&lt;mrow&gt;&lt;mi&gt;L&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;mi&gt;&amp;#x003D5;&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;mo&gt;&amp;#x0003D;&lt;/mo&gt;&lt;mi&gt;&amp;#x1D53C;&lt;/mi&gt;&lt;mo stretchy="false"&gt;[&lt;/mo&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;Q&lt;/mi&gt;&lt;mi&gt;&amp;#x003D5;&lt;/mi&gt;&lt;/msub&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;mi&gt;s&lt;/mi&gt;&lt;mo&gt;&amp;#x0002C;&lt;/mo&gt;&lt;mi&gt;a&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;mo&gt;&amp;#x02212;&lt;/mo&gt;&lt;mi&gt;y&lt;/mi&gt;&lt;msup&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;/msup&gt;&lt;mo stretchy="false"&gt;]&lt;/mo&gt;&lt;/mrow&gt;&lt;/math&gt;&lt;/span&gt;
-critic_loss = nn.MSELoss()(q_values, target_q)
-
-return critic_loss
-</code></pre>
-<p>def compute_actor_loss(self, q_values: torch.Tensor) -&gt; torch.Tensor:
-    r</p>
-<h1>最大化Q值等价于最小化负Q值</h1>
-<h1><span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mo>&#x02212;</mo><mi>&#x1D53C;</mi><mo stretchy="false">[</mo><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span></h1>
-<p>actor_loss = -q_values.mean()
-return actor_loss</p>
+<p>输入状态 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> 和动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span>，输出标量Q值。</p>
+<p>输出动作价值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>。</p>
+<p>参数：
+- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> — 状态
+- <code>action</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> — 动作</p>
+<p>返回值：
+- <code>q_value</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 动作价值</p>
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">DDPGLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
-<span class="lineno">3</span>    ## DDPG损失函数
-<span class="lineno">4</span>
-<span class="lineno">5</span>    ### Critic损失
-<span class="lineno">6</span>
-<span class="lineno">7</span>    L(\phi) = \mathbb{E}_{(s,a,r,s') \sim D}\left[(Q_\phi(s, a) - y)^2\right]
-<span class="lineno">8</span>
-<span class="lineno">9</span>    其中目标值：
-<span class="lineno">10</span>    y = r + \gamma Q_{\phi'}(s', \mu_{\theta'}(s')) \times (1 - \text{done})
-<span class="lineno">11</span>
-<span class="lineno">12</span>    ### Actor损失
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">Critic</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="m">256</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">4</span>        <span class="nf">super</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="nf">__init__</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">5</span> <span class="c"># 状态和动作拼接后输入网络</span>
+<span class="lineno">6</span>        <span class="nb">self</span><span class="p">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Sequential</span><span class="p">(</span>
+<span class="lineno">7</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">state_dim</span> <span class="o">+</span> <span class="n">action_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">8</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">9</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">10</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">11</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span><span class="p">,</span>  <span class="c"># 输出标量Q值</span>
+<span class="lineno">12</span>        <span class="p">)</span>
 <span class="lineno">13</span>
-<span class="lineno">14</span>    Actor通过最大化Critic的输出来学习：
-<span class="lineno">15</span>    J(\theta) = \mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]
-<span class="lineno">16</span>
-<span class="lineno">17</span>    由于优化器执行最小化，Actor损失为：
-<span class="lineno">18</span>    L(\theta) = -\mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]
-<span class="lineno">19</span>        计算Critic损失。
-<span class="lineno">20</span>
-<span class="lineno">21</span>        参数映射：
-<span class="lineno">22</span>        - `q_values`: Q_\phi(s, a) — 当前状态-动作对的Q值
-<span class="lineno">23</span>        - `next_q_values`: Q_{\phi'}(s', \mu_{\theta'}(s')) — 目标网络对下一状态的Q值
-<span class="lineno">24</span>        - `rewards`: r — 奖励
-<span class="lineno">25</span>        - `dones`: 是否episode结束
-<span class="lineno">26</span>
-<span class="lineno">27</span>        返回值：
-<span class="lineno">28</span>        - Critic损失
-<span class="lineno">29</span>        计算Actor损失。
-<span class="lineno">30</span>
-<span class="lineno">31</span>        参数：
-<span class="lineno">32</span>        - `q_values`: Q_\phi(s, \mu_\theta(s)) — Critic对Actor输出动作的Q值
-<span class="lineno">33</span>
-<span class="lineno">34</span>        返回值：
-<span class="lineno">35</span>        - Actor损失（取负号）
-<span class="lineno">36</span>        # 最大化Q值等价于最小化负Q值
-<span class="lineno">37</span>        # L(\theta) = -\mathbb{E}[Q_\phi(s, \mu_\theta(s))]
-<span class="lineno">38</span>        actor_loss = -q_values.mean()
-<span class="lineno">39</span>        return actor_loss
-<span class="lineno">40</span>
-<span class="lineno">41</span></span></pre>
+<span class="lineno">14</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
+<span class="lineno">15</span> <span class="c"># 拼接状态和动作：</span>
+<span class="lineno">16</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">cat</span><span class="p">(</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">17</span>        <span class="k">return</span> <span class="nb">self</span><span class="p">.</span><span class="nf">network</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">18</span>
+<span class="lineno">19</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
-    <p>def <strong>init</strong>(
-    self,
-    action_dim: int,
-    mu: float = 0.0,
-    theta: float = 0.15,
-    sigma: float = 0.2,
-):
-    self.action_dim = action_dim
-    self.mu = mu
-    self.theta = theta
-    self.sigma = sigma
-    self.state = np.ones(self.action_dim) * self.mu</p>
-<p>def reset(self):</p>
-<p>x = self.state
-dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(len(x))
-self.state = x + dx
-return self.state</p>
+    <h2>DDPG损失函数</h2>
+<h3>Critic损失</h3>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003D5;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo>&#x0002C;</mo><mi>r</mi><mo>&#x0002C;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>y</mi><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+
+<p>其中目标值：
+ <br />
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>y</mi><mo>&#x0003D;</mo><mi>r</mi><mo>&#x0002B;</mo><mi>&#x003B3;</mi><msub><mi>Q</mi><mrow><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mtext>done</mtext><mo stretchy="false">&#x00029;</mo></mrow></math></div>
+</p>
+<h3>Actor损失</h3>
+<p>Actor通过最大化Critic的输出来学习：
+ <br />
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>J</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+</p>
+<p>由于优化器执行最小化，Actor损失为：
+ <br />
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mo>&#x02212;</mo><msub><mi>&#x1D53C;</mi><mrow><mi>s</mi><mi>&#x0007E;</mi><mi>D</mi></mrow></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+</p>
+<p>计算Critic损失。</p>
+<p>参数映射：
+- <code>q_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 当前状态-动作对的Q值
+- <code>next_q_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mrow><msup><mi>&#x003D5;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></msub><mo stretchy="false">&#x00028;</mo><msup><mi>s</mi><mi>&#x02032;</mi></msup><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 目标网络对下一状态的Q值
+- <code>rewards</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>r</mi></mrow></math></span> — 奖励
+- <code>dones</code>: 是否episode结束</p>
+<p>返回值：
+- Critic损失</p>
+<p>计算Actor损失。</p>
+<p>参数：
+- <code>q_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>Q</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><msub><mi>&#x003BC;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></span> — Critic对Actor输出动作的Q值</p>
+<p>返回值：
+- Actor损失（取负号）</p>
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">OUNoise</span><span class="p">:</span>
-<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
-<span class="lineno">3</span>    ## Ornstein-Uhlenbeck噪声过程
-<span class="lineno">4</span>
-<span class="lineno">5</span>    OU过程用于生成时间相关的探索噪声：
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">DDPGLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">4</span>        <span class="nf">super</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="nf">__init__</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">5</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
 <span class="lineno">6</span>
-<span class="lineno">7</span>    dx_t = \theta(\mu - x_t)dt + \sigma dW_t
-<span class="lineno">8</span>
-<span class="lineno">9</span>    其中：
-<span class="lineno">10</span>    - \theta：均值回归速度
-<span class="lineno">11</span>    - \mu：均值
-<span class="lineno">12</span>    - \sigma：波动率
-<span class="lineno">13</span>    - W_t：维纳过程
-<span class="lineno">14</span>
-<span class="lineno">15</span>    OU过程的特性：
-<span class="lineno">16</span>    1. 均值回归：噪声会趋向于均值 \mu
-<span class="lineno">17</span>    2. 时间相关性：连续时间步的噪声相关
-<span class="lineno">18</span>    3. 适合连续控制：噪声变化平滑
-<span class="lineno">19</span>        self.state = np.ones(self.action_dim) * self.mu
+<span class="lineno">7</span>    <span class="k">def</span> <span class="nf">compute_critic_loss</span><span class="p">(</span>
+<span class="lineno">8</span>        <span class="nb">self</span><span class="p">,</span>
+<span class="lineno">9</span>        <span class="n">q_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">10</span>        <span class="n">next_q_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">11</span>        <span class="n">rewards</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">12</span>        <span class="n">dones</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">13</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
+<span class="lineno">14</span> <span class="c"># 目标值：</span>
+<span class="lineno">15</span>        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">16</span>            <span class="n">target_q</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">next_q_values</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">dones</span><span class="p">)</span>
+<span class="lineno">17</span>
+<span class="lineno">18</span> <span class="c"># MSE损失：</span>
+<span class="lineno">19</span>        <span class="n">critic_loss</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">MSELoss</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="n">target_q</span><span class="p">)</span>
 <span class="lineno">20</span>
-<span class="lineno">21</span>    def sample(self) -&gt; np.ndarray:
-<span class="lineno">22</span>        r"""</span>
-<span class="lineno">23</span>        <span class="n">采样OU噪声</span>。
-<span class="lineno">24</span>
-<span class="lineno">25</span>        <span class="n">dx</span> <span class="o">=</span> \<span class="nf">theta</span><span class="p">(</span>\<span class="n">mu</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> \<span class="n">sigma</span> \<span class="n">mathcal</span><span class="p">{</span><span class="nc">N</span><span class="p">}</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
-<span class="lineno">26</span>
-<span class="lineno">27</span>        <span class="n">返回值</span>：
-<span class="lineno">28</span>        <span class="o">-</span> <span class="nc">OU噪声样本</span>
-<span class="lineno">29</span>        <span class="n">x</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">state</span>
-<span class="lineno">30</span>        <span class="n">dx</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">theta</span> <span class="o">*</span> <span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">mu</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="p">)</span>
-<span class="lineno">31</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dx</span>
-<span class="lineno">32</span>        <span class="k">return</span> <span class="nb">self</span><span class="p">.</span><span class="n">state</span>
-<span class="lineno">33</span>
-<span class="lineno">34</span></pre>
+<span class="lineno">21</span>        <span class="k">return</span> <span class="n">critic_loss</span>
+<span class="lineno">22</span>
+<span class="lineno">23</span>    <span class="k">def</span> <span class="nf">compute_actor_loss</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
+<span class="lineno">24</span> <span class="c"># 最大化Q值等价于最小化负Q值</span>
+<span class="lineno">25</span> <span class="c">#</span>
+<span class="lineno">26</span>        <span class="n">actor_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">q_values</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">27</span>        <span class="k">return</span> <span class="n">actor_loss</span>
+<span class="lineno">28</span>
+<span class="lineno">29</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-5">#</a></div>
-    <p>for target_param, param in zip(target.parameters(), source.parameters()):
-    target_param.data.copy_(
-        target_param.data * (1.0 - tau) + param.data * tau
-    )</p>
+    <h2>Ornstein-Uhlenbeck噪声过程</h2>
+<p>OU过程用于生成时间相关的探索噪声：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>d</mi><msub><mi>x</mi><mi>t</mi></msub><mo>&#x0003D;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003BC;</mi><mo>&#x02212;</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>d</mi><mi>t</mi><mo>&#x0002B;</mo><mi>&#x003C3;</mi><mi>d</mi><msub><mi>W</mi><mi>t</mi></msub></mrow></math></div>
+
+<p>其中：
+   - <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math></span>：均值回归速度
+   - <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BC;</mi></mrow></math></span>：均值
+   - <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C3;</mi></mrow></math></span>：波动率
+   - <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>W</mi><mi>t</mi></msub></mrow></math></span>：维纳过程</p>
+<p>OU过程的特性：
+   1. 均值回归：噪声会趋向于均值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003BC;</mi></mrow></math></span>
+   2. 时间相关性：连续时间步的噪声相关
+   3. 适合连续控制：噪声变化平滑</p>
+<p>重置噪声状态。</p>
+<p>采样OU噪声。</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>d</mi><mi>x</mi><mo>&#x0003D;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003BC;</mi><mo>&#x02212;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mi>&#x003C3;</mi><mi>&#x1D4A9;</mi><mo stretchy="false">&#x00028;</mo><mn>0</mn><mo>&#x0002C;</mo><mn>1</mn><mo stretchy="false">&#x00029;</mo></mrow></math></div>
+
+<p>返回值：
+- OU噪声样本</p>
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">soft_update</span><span class="p">(</span><span class="n">target</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
-<span class="lineno">3</span>    ## 目标网络软更新
-<span class="lineno">4</span>
-<span class="lineno">5</span>    \theta' \leftarrow \tau \theta + (1 - \tau) \theta'
-<span class="lineno">6</span>
-<span class="lineno">7</span>    软更新使目标网络平滑地跟踪主网络，避免剧烈变化。
-<span class="lineno">8</span>
-<span class="lineno">9</span>    参数：
-<span class="lineno">10</span>    - `target`: 目标网络 \theta'
-<span class="lineno">11</span>    - `source`: 主网络 \theta
-<span class="lineno">12</span>    - `tau`: \tau — 软更新系数（通常取0.001~0.01）
-<span class="lineno">13</span>    for target_param, param in zip(target.parameters(), source.parameters()):
-<span class="lineno">14</span>        target_param.data.copy_(
-<span class="lineno">15</span>            target_param.data * (1.0 - tau) + param.data * tau
-<span class="lineno">16</span>        )
-<span class="lineno">17</span>
-<span class="lineno">18</span></span></pre>
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">OUNoise</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<span class="lineno">4</span>        <span class="nb">self</span><span class="p">,</span>
+<span class="lineno">5</span>        <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="lineno">6</span>        <span class="n">mu</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.0</span><span class="p">,</span>
+<span class="lineno">7</span>        <span class="n">theta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.15</span><span class="p">,</span>
+<span class="lineno">8</span>        <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.2</span><span class="p">,</span>
+<span class="lineno">9</span>    <span class="p">)</span><span class="p">:</span>
+<span class="lineno">10</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span> <span class="o">=</span> <span class="n">action_dim</span>
+<span class="lineno">11</span>        <span class="nb">self</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span>
+<span class="lineno">12</span>        <span class="nb">self</span><span class="p">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span>
+<span class="lineno">13</span>        <span class="nb">self</span><span class="p">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
+<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">ones</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">mu</span>
+<span class="lineno">15</span>
+<span class="lineno">16</span>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">17</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">ones</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">mu</span>
+<span class="lineno">18</span>
+<span class="lineno">19</span>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="lineno">20</span>        <span class="n">x</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">state</span>
+<span class="lineno">21</span>        <span class="n">dx</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">theta</span> <span class="o">*</span> <span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">mu</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="p">)</span>
+<span class="lineno">22</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dx</span>
+<span class="lineno">23</span>        <span class="k">return</span> <span class="nb">self</span><span class="p">.</span><span class="n">state</span>
+<span class="lineno">24</span>
+<span class="lineno">25</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-6">#</a></div>
-    <p>for target_param, param in zip(target.parameters(), source.parameters()):
-    target_param.data.copy_(param.data)</p>
+    <h2>目标网络软更新</h2>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup><mo>&#x02190;</mo><mi>&#x003C4;</mi><mi>&#x003B8;</mi><mo>&#x0002B;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003C4;</mi><mo stretchy="false">&#x00029;</mo><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></math></div>
+
+<p>软更新使目标网络平滑地跟踪主网络，避免剧烈变化。</p>
+<p>参数：
+   - <code>target</code>: 目标网络 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup></mrow></math></span>
+   - <code>source</code>: 主网络 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math></span>
+   - <code>tau</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C4;</mi></mrow></math></span> — 软更新系数（通常取0.001~0.01）</p>
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">soft_update</span><span class="p">(</span><span class="n">target</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>    <span class="k">for</span> <span class="n">target_param</span><span class="p">,</span> <span class="n">param</span> <span class="k">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">target</span><span class="p">.</span><span class="nf">parameters</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">source</span><span class="p">.</span><span class="nf">parameters</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">3</span>        <span class="n">target_param</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="nf">copy_</span><span class="p">(</span>
+<span class="lineno">4</span>            <span class="n">target_param</span><span class="p">.</span><span class="n">data</span> <span class="o">*</span> <span class="p">(</span><span class="m">1.0</span> <span class="o">-</span> <span class="n">tau</span><span class="p">)</span> <span class="o">+</span> <span class="n">param</span><span class="p">.</span><span class="n">data</span> <span class="o">*</span> <span class="n">tau</span>
+<span class="lineno">5</span>        <span class="p">)</span>
+<span class="lineno">6</span>
+<span class="lineno">7</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-7">#</a></div>
+    <h2>目标网络硬更新</h2>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mi>&#x02032;</mi></msup><mo>&#x02190;</mo><mi>&#x003B8;</mi></mrow></math></div>
+
+<p>直接将主网络的参数复制到目标网络。</p>
+<p>参数：
+   - <code>target</code>: 目标网络
+   - <code>source</code>: 主网络</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">hard_update</span><span class="p">(</span><span class="n">target</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
-<span class="lineno">3</span>    ## 目标网络硬更新
-<span class="lineno">4</span>
-<span class="lineno">5</span>    \theta' \leftarrow \theta
-<span class="lineno">6</span>
-<span class="lineno">7</span>    直接将主网络的参数复制到目标网络。
-<span class="lineno">8</span>
-<span class="lineno">9</span>    参数：
-<span class="lineno">10</span>    - `target`: 目标网络
-<span class="lineno">11</span>    - `source`: 主网络
-<span class="lineno">12</span>    for target_param, param in zip(target.parameters(), source.parameters()):
-<span class="lineno">13</span>        target_param.data.copy_(param.data)
-<span class="lineno">14</span></span></pre>
+<span class="lineno">2</span>    <span class="k">for</span> <span class="n">target_param</span><span class="p">,</span> <span class="n">param</span> <span class="k">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">target</span><span class="p">.</span><span class="nf">parameters</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="n">source</span><span class="p">.</span><span class="nf">parameters</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">3</span>        <span class="n">target_param</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="nf">copy_</span><span class="p">(</span><span class="n">param</span><span class="p">.</span><span class="n">data</span><span class="p">)</span>
+<span class="lineno">4</span></pre>
   </div>
 </div>
 

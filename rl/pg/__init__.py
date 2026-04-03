@@ -76,7 +76,7 @@ from torch import nn
 
 class PolicyNetwork(nn.Module):
     r"""
-    ## 策略网络
+ ## 策略网络
 
     策略网络 $\pi_\theta(a|s)$ 输出在给定状态下每个动作的概率分布。
 
@@ -126,7 +126,7 @@ class PolicyNetwork(nn.Module):
 
 class ValueNetwork(nn.Module):
     r"""
-    ## 价值网络
+ ## 价值网络
 
     价值网络 $V_\phi(s)$ 估计状态的期望累积奖励。
 
@@ -160,7 +160,7 @@ class ValueNetwork(nn.Module):
 
 def compute_discounted_returns(rewards: list, gamma: float) -> list:
     r"""
-    ## 计算折扣累积回报
+ ## 计算折扣累积回报
 
     $$G_t = \sum_{k=t+1}^{T} \gamma^{k-t-1} r_k = r_{t+1} + \gamma G_{t+1}$$
 
@@ -176,7 +176,7 @@ def compute_discounted_returns(rewards: list, gamma: float) -> list:
     returns = []
     discounted_sum = 0
 
-    # 从后往前计算 $G_t = r_{t+1} + \gamma G_{t+1}$
+ # 从后往前计算
     for reward in reversed(rewards):
         discounted_sum = reward + gamma * discounted_sum
         returns.insert(0, discounted_sum)
@@ -186,7 +186,7 @@ def compute_discounted_returns(rewards: list, gamma: float) -> list:
 
 def reinforce_loss(log_probs: torch.Tensor, returns: torch.Tensor) -> torch.Tensor:
     r"""
-    ## REINFORCE损失函数
+ ## REINFORCE损失函数
 
     REINFORCE更新规则：
     $$\nabla_\theta \bar{R}_\theta \approx \frac{1}{N} \sum_{n=1}^{N} \sum_{t=1}^{T_n} G_t^n \nabla_\theta \log \pi_\theta(a_t^n | s_t^n)$$
@@ -201,7 +201,7 @@ def reinforce_loss(log_probs: torch.Tensor, returns: torch.Tensor) -> torch.Tens
     返回值：
     - REINFORCE损失（取负号）
     """
-    # $L(\theta) = -\sum_t G_t \log \pi_\theta(a_t|s_t)$
+ #
     loss = -torch.sum(log_probs * returns)
     return loss
 
@@ -214,7 +214,7 @@ def actor_critic_loss(
     entropy_coef: float = 0.01,
 ) -> tuple:
     r"""
-    ## Actor-Critic损失函数
+ ## Actor-Critic损失函数
 
     Actor-Critic结合策略梯度和价值函数：
     $$\nabla_\theta J \approx \mathbb{E}_t\left[A(s_t, a_t) \nabla_\theta \log \pi_\theta(a_t|s_t)\right]$$
@@ -242,16 +242,16 @@ def actor_critic_loss(
     - Critic损失
     - 总损失
     """
-    # 优势函数：$A(s_t, a_t) = G_t - V(s_t)$
+ # 优势函数：
     advantages = returns - values.detach()
 
-    # Actor损失：$-\mathbb{E}[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]$
+ # Actor损失：
     actor_loss = -torch.mean(log_probs * advantages)
 
-    # Critic损失：$\mathbb{E}[(G_t - V(s_t))^2]$
+ # Critic损失：
     critic_loss = torch.mean((returns - values) ** 2)
 
-    # 总损失
+ # 总损失
     total_loss = actor_loss + 0.5 * critic_loss
 
     if entropy is not None:

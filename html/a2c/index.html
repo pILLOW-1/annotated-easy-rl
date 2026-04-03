@@ -164,267 +164,232 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
     <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-0">#</a></div>
-    
+    <hr />
+<p>title: 演员-评论员算法 (Actor-Critic) - A2C
+summary: &gt;
+  基于蘑菇书EasyRL第九章的演员-评论员(Actor-Critic)算法的PyTorch实现，
+  包含A2C算法的核心公式逐行注释。</p>
+<hr />
+<h1>演员-评论员算法 (Actor-Critic) - A2C</h1>
+<p>本文件是<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a>第九章的PyTorch实现。</p>
+<p>Actor-Critic算法结合了策略梯度(Actor)和价值函数(Critic)的优点：
+- <strong>Actor</strong> (演员)：负责学习策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>，输出动作
+- <strong>Critic</strong> (评论员)：负责学习价值函数 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>，评估Actor的表现</p>
+<h2>优势函数</h2>
+<p>优势函数衡量在状态 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> 下采取动作 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> 相对于平均水平的优势：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>A</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msup><mi>Q</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></div>
+
+<p>其中：
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>Q</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是动作价值函数
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>V</mi><mi>&#x003C0;</mi></msup><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 是状态价值函数</p>
+<p>优势函数可以通过TD残差估计：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02248;</mo><msub><mi>&#x003B4;</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></div>
+
+<h2>Actor-Critic目标函数</h2>
+<p>Actor的更新方向由优势函数加权：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>J</mi><mo>&#x02248;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+
+<p>Critic通过最小化TD误差来学习价值函数：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="true" fence="true" form="postfix">]</mo></mrow></mrow></math></div>
+
+<h2>A2C (Advantage Actor-Critic)</h2>
+<p>A2C是同步的Actor-Critic算法，多个并行环境同时收集经验，
+然后同步更新所有环境的策略和价值函数。</p>
+<h3>A2C算法流程</h3>
+<ol>
+<li>每个并行环境运行 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>n</mi></mrow></math></span> 步，收集 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span></li>
+<li>计算优势函数（使用GAE或TD残差）</li>
+<li>计算Actor损失和Critic损失</li>
+<li>同步更新所有环境的网络参数</li>
+</ol>
+<h3>损失函数</h3>
+<p>总损失由三部分组成：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo>&#x0003D;</mo><msub><mi>L</mi><mrow><mi>a</mi><mi>c</mi><mi>t</mi><mi>o</mi><mi>r</mi></mrow></msub><mo>&#x0002B;</mo><msub><mi>c</mi><mn>1</mn></msub><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x02212;</mo><msub><mi>c</mi><mn>2</mn></msub><mi>&#x0210B;</mi></mrow></math></div>
+
+<p>其中：
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>a</mi><mi>c</mi><mi>t</mi><mi>o</mi><mi>r</mi></mrow></msub><mo>&#x0003D;</mo><mo>&#x02212;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mo stretchy="false">[</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span> — Actor损失
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mo stretchy="false">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="false">]</mo></mrow></math></span> — Critic损失
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x0210B;</mi><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>t</mi></msub><mo stretchy="false">[</mo><mi>&#x0210B;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span> — 策略熵（鼓励探索）
+- <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>c</mi><mn>1</mn></msub><mo>&#x0002C;</mo><msub><mi>c</mi><mn>2</mn></msub></mrow></math></span> 是系数</p>
+<h2>蘑菇书中的Actor-Critic</h2>
+<p>根据蘑菇书第九章，Actor-Critic的核心思想是：
+- Actor根据策略 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> 选择动作
+- Critic评估当前状态的价值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>
+- 使用Critic的输出作为基线，降低策略梯度的方差</p>
+<p>策略梯度更新：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi><mo>&#x02190;</mo><mi>&#x003B8;</mi><mo>&#x0002B;</mo><mi>&#x003B1;</mi><msub><mo>&#x02207;</mo><mi>&#x003B8;</mi></msub><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></div>
+
+<p>价值函数更新：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003D5;</mi><mo>&#x02190;</mo><mi>&#x003D5;</mi><mo>&#x02212;</mo><mi>&#x003B2;</mi><msub><mo>&#x02207;</mo><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup></mrow></math></div>
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="n">r</span><span class="s2">"""
-<span class="lineno">2</span>---
-<span class="lineno">3</span>title: 演员-评论员算法 (Actor-Critic) - A2C
-<span class="lineno">4</span>summary: &gt;
-<span class="lineno">5</span>  基于蘑菇书EasyRL第九章的演员-评论员(Actor-Critic)算法的PyTorch实现，
-<span class="lineno">6</span>  包含A2C算法的核心公式逐行注释。
-<span class="lineno">7</span>---
-<span class="lineno">8</span>
-<span class="lineno">9</span># 演员-评论员算法 (Actor-Critic) - A2C
-<span class="lineno">10</span>
-<span class="lineno">11</span>本文件是[蘑菇书EasyRL](https://github.com/datawhalechina/easy-rl/)第九章的PyTorch实现。
-<span class="lineno">12</span>
-<span class="lineno">13</span>Actor-Critic算法结合了策略梯度(Actor)和价值函数(Critic)的优点：
-<span class="lineno">14</span>- **Actor** (演员)：负责学习策略 \pi_\theta(a|s)，输出动作
-<span class="lineno">15</span>- **Critic** (评论员)：负责学习价值函数 V_\phi(s)，评估Actor的表现
-<span class="lineno">16</span>
-<span class="lineno">17</span>## 优势函数
-<span class="lineno">18</span>
-<span class="lineno">19</span>优势函数衡量在状态 s 下采取动作 a 相对于平均水平的优势：
-<span class="lineno">20</span>
-<span class="lineno">21</span>A^\pi(s, a) = Q^\pi(s, a) - V^\pi(s)
-<span class="lineno">22</span>
-<span class="lineno">23</span>其中：
-<span class="lineno">24</span>- Q^\pi(s, a) 是动作价值函数
-<span class="lineno">25</span>- V^\pi(s) 是状态价值函数
-<span class="lineno">26</span>
-<span class="lineno">27</span>优势函数可以通过TD残差估计：
-<span class="lineno">28</span>A(s_t, a_t) \approx \delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)
-<span class="lineno">29</span>
-<span class="lineno">30</span>## Actor-Critic目标函数
-<span class="lineno">31</span>
-<span class="lineno">32</span>Actor的更新方向由优势函数加权：
-<span class="lineno">33</span>
-<span class="lineno">34</span>\nabla_\theta J \approx \mathbb{E}_t\left[A(s_t, a_t) \nabla_\theta \log \pi_\theta(a_t|s_t)\right]
-<span class="lineno">35</span>
-<span class="lineno">36</span>Critic通过最小化TD误差来学习价值函数：
-<span class="lineno">37</span>
-<span class="lineno">38</span>L_{critic} = \mathbb{E}_t\left[(r_t + \gamma V(s_{t+1}) - V(s_t))^2\right]
-<span class="lineno">39</span>
-<span class="lineno">40</span>## A2C (Advantage Actor-Critic)
-<span class="lineno">41</span>
-<span class="lineno">42</span>A2C是同步的Actor-Critic算法，多个并行环境同时收集经验，
-<span class="lineno">43</span>然后同步更新所有环境的策略和价值函数。
-<span class="lineno">44</span>
-<span class="lineno">45</span>### A2C算法流程
-<span class="lineno">46</span>
-<span class="lineno">47</span>1. 每个并行环境运行 n 步，收集 (s_t, a_t, r_t, s_{t+1})
-<span class="lineno">48</span>2. 计算优势函数（使用GAE或TD残差）
-<span class="lineno">49</span>3. 计算Actor损失和Critic损失
-<span class="lineno">50</span>4. 同步更新所有环境的网络参数
-<span class="lineno">51</span>
-<span class="lineno">52</span>### 损失函数
-<span class="lineno">53</span>
-<span class="lineno">54</span>总损失由三部分组成：
-<span class="lineno">55</span>
-<span class="lineno">56</span>L = L_{actor} + c_1 L_{critic} - c_2 \mathcal{H}
-<span class="lineno">57</span>
-<span class="lineno">58</span>其中：
-<span class="lineno">59</span>- L_{actor} = -\mathbb{E}_t[A(s_t, a_t) \log \pi_\theta(a_t|s_t)] — Actor损失
-<span class="lineno">60</span>- L_{critic} = \mathbb{E}_t[(G_t - V(s_t))^2] — Critic损失
-<span class="lineno">61</span>- \mathcal{H} = \mathbb{E}_t[\mathcal{H}(\pi_\theta(\cdot|s_t))] — 策略熵（鼓励探索）
-<span class="lineno">62</span>- c_1, c_2 是系数
-<span class="lineno">63</span>
-<span class="lineno">64</span>## 蘑菇书中的Actor-Critic
-<span class="lineno">65</span>
-<span class="lineno">66</span>根据蘑菇书第九章，Actor-Critic的核心思想是：
-<span class="lineno">67</span>- Actor根据策略 \pi_\theta(a|s) 选择动作
-<span class="lineno">68</span>- Critic评估当前状态的价值 V(s)
-<span class="lineno">69</span>- 使用Critic的输出作为基线，降低策略梯度的方差
-<span class="lineno">70</span>
-<span class="lineno">71</span>策略梯度更新：
-<span class="lineno">72</span>\theta \leftarrow \theta + \alpha \nabla_\theta \log \pi_\theta(a_t|s_t) A(s_t, a_t)
-<span class="lineno">73</span>
-<span class="lineno">74</span>价值函数更新：
-<span class="lineno">75</span>\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2
-<span class="lineno">76</span>"""</span>
-<span class="lineno">77</span>
-<span class="lineno">78</span><span class="k">import</span> <span class="n">torch</span>
-<span class="lineno">79</span><span class="k">from</span> <span class="n">torch</span> <span class="k">import</span> <span class="n">nn</span></pre>
+    
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-1">#</a></div>
-    <p>def <strong>init</strong>(self, state_dim: int, action_dim: int, hidden_dim: int = 256):
-    super().<strong>init</strong>()
-    # 共享特征提取器
-    self.feature = nn.Sequential(
-        nn.Linear(state_dim, hidden_dim),
-        nn.ReLU(),
-        nn.Linear(hidden_dim, hidden_dim),
-        nn.ReLU(),
-    )</p>
-<pre><code># Actor头：输出动作分布 &lt;span class="math-inline"&gt;&lt;math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"&gt;&lt;mrow&gt;&lt;msub&gt;&lt;mi&gt;&amp;#x003C0;&lt;/mi&gt;&lt;mi&gt;&amp;#x003B8;&lt;/mi&gt;&lt;/msub&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;mo&gt;&amp;#x000B7;&lt;/mo&gt;&lt;mo stretchy="false"&gt;&amp;#x0007C;&lt;/mo&gt;&lt;mi&gt;s&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;/mrow&gt;&lt;/math&gt;&lt;/span&gt;
-self.actor = nn.Linear(hidden_dim, action_dim)
-
-# Critic头：输出状态价值 &lt;span class="math-inline"&gt;&lt;math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"&gt;&lt;mrow&gt;&lt;msub&gt;&lt;mi&gt;V&lt;/mi&gt;&lt;mi&gt;&amp;#x003D5;&lt;/mi&gt;&lt;/msub&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;mi&gt;s&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;/mrow&gt;&lt;/math&gt;&lt;/span&gt;
-self.critic = nn.Linear(hidden_dim, 1)
-</code></pre>
-<p>def forward(self, state: torch.Tensor):
-    r</p>
-<p>features = self.feature(state)</p>
-<pre><code># Actor: &lt;span class="math-inline"&gt;&lt;math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"&gt;&lt;mrow&gt;&lt;msub&gt;&lt;mi&gt;&amp;#x003C0;&lt;/mi&gt;&lt;mi&gt;&amp;#x003B8;&lt;/mi&gt;&lt;/msub&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;mi&gt;a&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x0007C;&lt;/mo&gt;&lt;mi&gt;s&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;mo&gt;&amp;#x0003D;&lt;/mo&gt;&lt;mtext&gt;softmax&lt;/mtext&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;f&lt;/mi&gt;&lt;mi&gt;&amp;#x003B8;&lt;/mi&gt;&lt;/msub&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;mi&gt;s&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;/mrow&gt;&lt;/math&gt;&lt;/span&gt;
-action_logits = self.actor(features)
-action_probs = torch.softmax(action_logits, dim=-1)
-
-# Critic: &lt;span class="math-inline"&gt;&lt;math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"&gt;&lt;mrow&gt;&lt;msub&gt;&lt;mi&gt;V&lt;/mi&gt;&lt;mi&gt;&amp;#x003D5;&lt;/mi&gt;&lt;/msub&gt;&lt;mo stretchy="false"&gt;&amp;#x00028;&lt;/mo&gt;&lt;mi&gt;s&lt;/mi&gt;&lt;mo stretchy="false"&gt;&amp;#x00029;&lt;/mo&gt;&lt;/mrow&gt;&lt;/math&gt;&lt;/span&gt;
-state_value = self.critic(features).squeeze(-1)
-
-return action_probs, state_value
-</code></pre>
-<p>def evaluate(self, state: torch.Tensor, action: torch.Tensor):
-    r</p>
-<p>features = self.feature(state)
-action_logits = self.actor(features)
-state_value = self.critic(features).squeeze(-1)</p>
-<h1>计算动作概率和对数概率</h1>
-<p>action_probs = torch.softmax(action_logits, dim=-1)
-action_log_probs = torch.log(action_probs + 1e-8)</p>
-<h1>选择给定动作的对数概率</h1>
-<p>log_prob = action_log_probs.gather(-1, action.unsqueeze(-1)).squeeze(-1)</p>
-<h1>计算策略熵 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x0210B;</mi><mo stretchy="false">&#x00028;</mo><mi>&#x003C0;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mo>&#x02212;</mo><msub><mo>&#x02211;</mo><mi>a</mi></msub><mi>&#x003C0;</mi><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mi>log</mi><mi>&#x003C0;</mi><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></h1>
-<p>entropy = -(action_probs * action_log_probs).sum(dim=-1)</p>
-<p>return log_prob, state_value, entropy</p>
+    
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ActorCriticNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
-<span class="lineno">3</span>    ## Actor-Critic共享网络
-<span class="lineno">4</span>
-<span class="lineno">5</span>    共享特征提取器的Actor-Critic网络：
-<span class="lineno">6</span>    - 共享层：提取状态特征
-<span class="lineno">7</span>    - Actor头：输出策略分布 \pi_\theta(a|s)
-<span class="lineno">8</span>    - Critic头：输出状态价值 V_\phi(s)
-<span class="lineno">9</span>        前向传播。
-<span class="lineno">10</span>
-<span class="lineno">11</span>        参数：
-<span class="lineno">12</span>        - `state`: s — 状态
-<span class="lineno">13</span>
-<span class="lineno">14</span>        返回值：
-<span class="lineno">15</span>        - `action_probs`: \pi_\theta(a|s) — 动作概率分布
-<span class="lineno">16</span>        - `state_value`: V_\phi(s) — 状态价值
-<span class="lineno">17</span>        评估给定状态-动作对。
-<span class="lineno">18</span>
-<span class="lineno">19</span>        用于计算 \log \pi_\theta(a_t|s_t) 和策略熵。
-<span class="lineno">20</span>
-<span class="lineno">21</span>        参数：
-<span class="lineno">22</span>        - `state`: s — 状态
-<span class="lineno">23</span>        - `action`: a — 动作
-<span class="lineno">24</span>
-<span class="lineno">25</span>        返回值：
-<span class="lineno">26</span>        - `log_prob`: \log \pi_\theta(a|s) — 动作的对数概率
-<span class="lineno">27</span>        - `state_value`: V_\phi(s) — 状态价值
-<span class="lineno">28</span>        - `entropy`: \mathcal{H}(\pi_\theta(\cdot|s)) — 策略熵
-<span class="lineno">29</span>        features = self.feature(state)
-<span class="lineno">30</span>        action_logits = self.actor(features)
-<span class="lineno">31</span>        state_value = self.critic(features).squeeze(-1)
-<span class="lineno">32</span>
-<span class="lineno">33</span>        # 计算动作概率和对数概率
-<span class="lineno">34</span>        action_probs = torch.softmax(action_logits, dim=-1)
-<span class="lineno">35</span>        action_log_probs = torch.log(action_probs + 1e-8)
-<span class="lineno">36</span>
-<span class="lineno">37</span>        # 选择给定动作的对数概率
-<span class="lineno">38</span>        log_prob = action_log_probs.gather(-1, action.unsqueeze(-1)).squeeze(-1)
-<span class="lineno">39</span>
-<span class="lineno">40</span>        # 计算策略熵 \mathcal{H}(\pi) = -\sum_a \pi(a) \log \pi(a)
-<span class="lineno">41</span>        entropy = -(action_probs * action_log_probs).sum(dim=-1)
-<span class="lineno">42</span>
-<span class="lineno">43</span>        return log_prob, state_value, entropy
-<span class="lineno">44</span>
-<span class="lineno">45</span></span></pre>
+    <pre><span class="lineno">1</span><span class="k">import</span> <span class="n">torch</span>
+<span class="lineno">2</span><span class="k">from</span> <span class="n">torch</span> <span class="k">import</span> <span class="n">nn</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
-    <p>def <strong>init</strong>(self, value_loss_coef: float = 0.5, entropy_coef: float = 0.01):
-    super().<strong>init</strong>()
-    self.value_loss_coef = value_loss_coef
-    self.entropy_coef = entropy_coef</p>
-<p>def forward(
-    self,
-    log_probs: torch.Tensor,
-    state_values: torch.Tensor,
-    returns: torch.Tensor,
-    entropy: torch.Tensor,
-) -&gt; tuple:
-    r</p>
-<h1>优势函数：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span></h1>
-<h1>detach防止梯度通过价值函数流向Actor</h1>
-<p>advantages = returns - state_values.detach()</p>
-<h1>Actor损失：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x02212;</mo><mi>&#x1D53C;</mi><mo stretchy="false">[</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span></h1>
-<h1>负号因为优化器执行最小化</h1>
-<p>actor_loss = -torch.mean(log_probs * advantages)</p>
-<h1>Critic损失：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x1D53C;</mi><mo stretchy="false">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="false">]</mo></mrow></math></span></h1>
-<p>critic_loss = torch.mean((returns - state_values) ** 2)</p>
-<h1>熵损失：鼓励探索</h1>
-<p>entropy_loss = -torch.mean(entropy)</p>
-<h1>总损失：<span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo>&#x0003D;</mo><msub><mi>L</mi><mrow><mi>a</mi><mi>c</mi><mi>t</mi><mi>o</mi><mi>r</mi></mrow></msub><mo>&#x0002B;</mo><msub><mi>c</mi><mn>1</mn></msub><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x02212;</mo><msub><mi>c</mi><mn>2</mn></msub><mi>&#x0210B;</mi></mrow></math></span></h1>
-<p>total_loss = actor_loss + self.value_loss_coef * critic_loss + self.entropy_coef * entropy_loss</p>
-<p>return actor_loss, critic_loss, entropy_loss, total_loss</p>
+    <h2>Actor-Critic共享网络</h2>
+<p>共享特征提取器的Actor-Critic网络：
+   - 共享层：提取状态特征
+   - Actor头：输出策略分布 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span>
+   - Critic头：输出状态价值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span></p>
+<p>前向传播。</p>
+<p>参数：
+- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> — 状态</p>
+<p>返回值：
+- <code>action_probs</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 动作概率分布
+- <code>state_value</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 状态价值</p>
+<p>评估给定状态-动作对。</p>
+<p>用于计算 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> 和策略熵。</p>
+<p>参数：
+- <code>state</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>s</mi></mrow></math></span> — 状态
+- <code>action</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> — 动作</p>
+<p>返回值：
+- <code>log_prob</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>a</mi><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 动作的对数概率
+- <code>state_value</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 状态价值
+- <code>entropy</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x0210B;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><mi>s</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 策略熵</p>
   </div>
   <div class="code">
-    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">A2CLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
-<span class="lineno">2</span>    <span class="n">r</span><span class="s2">"""
-<span class="lineno">3</span>    ## A2C损失函数
-<span class="lineno">4</span>
-<span class="lineno">5</span>    A2C的总损失由三部分组成：
-<span class="lineno">6</span>
-<span class="lineno">7</span>    L = L_{actor} + c_1 L_{critic} - c_2 \mathcal{H}
-<span class="lineno">8</span>
-<span class="lineno">9</span>    其中：
-<span class="lineno">10</span>    - L_{actor} = -\mathbb{E}[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]
-<span class="lineno">11</span>    - L_{critic} = \mathbb{E}[(G_t - V(s_t))^2]
-<span class="lineno">12</span>    - \mathcal{H} = \mathbb{E}[\mathcal{H}(\pi_\theta(\cdot|s_t))]
-<span class="lineno">13</span>
-<span class="lineno">14</span>    优势函数通过TD残差或GAE估计：
-<span class="lineno">15</span>    A(s_t, a_t) = G_t - V(s_t)
-<span class="lineno">16</span>        计算A2C损失。
-<span class="lineno">17</span>
-<span class="lineno">18</span>        参数映射：
-<span class="lineno">19</span>        - `log_probs`: \log \pi_\theta(a_t|s_t) — 动作的对数概率
-<span class="lineno">20</span>        - `state_values`: V_\phi(s_t) — 状态价值
-<span class="lineno">21</span>        - `returns`: G_t — 折扣累积回报
-<span class="lineno">22</span>        - `entropy`: \mathcal{H}(\pi_\theta(\cdot|s_t)) — 策略熵
-<span class="lineno">23</span>
-<span class="lineno">24</span>        返回值：
-<span class="lineno">25</span>        - Actor损失
-<span class="lineno">26</span>        - Critic损失
-<span class="lineno">27</span>        - 熵损失
-<span class="lineno">28</span>        - 总损失
-<span class="lineno">29</span>        # 优势函数：A(s_t, a_t) = G_t - V(s_t)
-<span class="lineno">30</span>        # detach防止梯度通过价值函数流向Actor
-<span class="lineno">31</span>        advantages = returns - state_values.detach()
-<span class="lineno">32</span>
-<span class="lineno">33</span>        # Actor损失：-\mathbb{E}[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]
-<span class="lineno">34</span>        # 负号因为优化器执行最小化
-<span class="lineno">35</span>        actor_loss = -torch.mean(log_probs * advantages)
-<span class="lineno">36</span>
-<span class="lineno">37</span>        # Critic损失：\mathbb{E}[(G_t - V(s_t))^2]
-<span class="lineno">38</span>        critic_loss = torch.mean((returns - state_values) ** 2)
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ActorCriticNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="m">256</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">4</span>        <span class="nf">super</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="nf">__init__</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">5</span> <span class="c"># 共享特征提取器</span>
+<span class="lineno">6</span>        <span class="nb">self</span><span class="p">.</span><span class="n">feature</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Sequential</span><span class="p">(</span>
+<span class="lineno">7</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">8</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">9</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">10</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
+<span class="lineno">11</span>        <span class="p">)</span>
+<span class="lineno">12</span>
+<span class="lineno">13</span> <span class="c"># Actor头：输出动作分布</span>
+<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">actor</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span>
+<span class="lineno">15</span>
+<span class="lineno">16</span> <span class="c"># Critic头：输出状态价值</span>
+<span class="lineno">17</span>        <span class="nb">self</span><span class="p">.</span><span class="n">critic</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
+<span class="lineno">18</span>
+<span class="lineno">19</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">20</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="lineno">21</span>
+<span class="lineno">22</span> <span class="c"># Actor:</span>
+<span class="lineno">23</span>        <span class="n">action_logits</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">actor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="lineno">24</span>        <span class="n">action_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="n">action_logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">25</span>
+<span class="lineno">26</span> <span class="c"># Critic:</span>
+<span class="lineno">27</span>        <span class="n">state_value</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">critic</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">28</span>
+<span class="lineno">29</span>        <span class="k">return</span> <span class="n">action_probs</span><span class="p">,</span> <span class="n">state_value</span>
+<span class="lineno">30</span>
+<span class="lineno">31</span>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">32</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="lineno">33</span>        <span class="n">action_logits</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">actor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="lineno">34</span>        <span class="n">state_value</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">critic</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">35</span>
+<span class="lineno">36</span> <span class="c"># 计算动作概率和对数概率</span>
+<span class="lineno">37</span>        <span class="n">action_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="n">action_logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
+<span class="lineno">38</span>        <span class="n">action_log_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">action_probs</span> <span class="o">+</span> <span class="m">1e</span><span class="o">-</span><span class="m">8</span><span class="p">)</span>
 <span class="lineno">39</span>
-<span class="lineno">40</span>        # 熵损失：鼓励探索
-<span class="lineno">41</span>        entropy_loss = -torch.mean(entropy)
+<span class="lineno">40</span> <span class="c"># 选择给定动作的对数概率</span>
+<span class="lineno">41</span>        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">action_log_probs</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">action</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">42</span>
-<span class="lineno">43</span>        # 总损失：L = L_{actor} + c_1 L_{critic} - c_2 \mathcal{H}
-<span class="lineno">44</span>        total_loss = actor_loss + self.value_loss_coef * critic_loss + self.entropy_coef * entropy_loss
+<span class="lineno">43</span> <span class="c"># 计算策略熵</span>
+<span class="lineno">44</span>        <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">action_probs</span> <span class="o">*</span> <span class="n">action_log_probs</span><span class="p">)</span><span class="p">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">45</span>
-<span class="lineno">46</span>        return actor_loss, critic_loss, entropy_loss, total_loss
+<span class="lineno">46</span>        <span class="k">return</span> <span class="n">log_prob</span><span class="p">,</span> <span class="n">state_value</span><span class="p">,</span> <span class="n">entropy</span>
 <span class="lineno">47</span>
-<span class="lineno">48</span></span></pre>
+<span class="lineno">48</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
-    <p>td_targets = rewards + gamma * next_values * (1 - dones)
-return td_targets</p>
+    <h2>A2C损失函数</h2>
+<p>A2C的总损失由三部分组成：</p>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi><mo>&#x0003D;</mo><msub><mi>L</mi><mrow><mi>a</mi><mi>c</mi><mi>t</mi><mi>o</mi><mi>r</mi></mrow></msub><mo>&#x0002B;</mo><msub><mi>c</mi><mn>1</mn></msub><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x02212;</mo><msub><mi>c</mi><mn>2</mn></msub><mi>&#x0210B;</mi></mrow></math></div>
+
+<p>其中：
+   - <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>a</mi><mi>c</mi><mi>t</mi><mi>o</mi><mi>r</mi></mrow></msub><mo>&#x0003D;</mo><mo>&#x02212;</mo><mi>&#x1D53C;</mi><mo stretchy="false">[</mo><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span>
+   - <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>L</mi><mrow><mi>c</mi><mi>r</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>c</mi></mrow></msub><mo>&#x0003D;</mo><mi>&#x1D53C;</mi><mo stretchy="false">[</mo><mo stretchy="false">&#x00028;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><msup><mo stretchy="false">&#x00029;</mo><mn>2</mn></msup><mo stretchy="false">]</mo></mrow></math></span>
+   - <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x0210B;</mi><mo>&#x0003D;</mo><mi>&#x1D53C;</mi><mo stretchy="false">[</mo><mi>&#x0210B;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo><mo stretchy="false">]</mo></mrow></math></span></p>
+<p>优势函数通过TD残差或GAE估计：
+ <br />
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>G</mi><mi>t</mi></msub><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></div>
+</p>
+<p>计算A2C损失。</p>
+<p>参数映射：
+- <code>log_probs</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>log</mi><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 动作的对数概率
+- <code>state_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>V</mi><mi>&#x003D5;</mi></msub><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 状态价值
+- <code>returns</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub></mrow></math></span> — 折扣累积回报
+- <code>entropy</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x0210B;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C0;</mi><mi>&#x003B8;</mi></msub><mo stretchy="false">&#x00028;</mo><mo>&#x000B7;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 策略熵</p>
+<p>返回值：
+- Actor损失
+- Critic损失
+- 熵损失
+- 总损失</p>
+  </div>
+  <div class="code">
+    <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">A2CLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">2</span>
+<span class="lineno">3</span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">value_loss_coef</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.5</span><span class="p">,</span> <span class="n">entropy_coef</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="m">0.01</span><span class="p">)</span><span class="p">:</span>
+<span class="lineno">4</span>        <span class="nf">super</span><span class="p">(</span><span class="p">)</span><span class="p">.</span><span class="nf">__init__</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">5</span>        <span class="nb">self</span><span class="p">.</span><span class="n">value_loss_coef</span> <span class="o">=</span> <span class="n">value_loss_coef</span>
+<span class="lineno">6</span>        <span class="nb">self</span><span class="p">.</span><span class="n">entropy_coef</span> <span class="o">=</span> <span class="n">entropy_coef</span>
+<span class="lineno">7</span>
+<span class="lineno">8</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+<span class="lineno">9</span>        <span class="nb">self</span><span class="p">,</span>
+<span class="lineno">10</span>        <span class="n">log_probs</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">11</span>        <span class="n">state_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">12</span>        <span class="n">returns</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">13</span>        <span class="n">entropy</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
+<span class="lineno">14</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="lineno">15</span> <span class="c"># 优势函数：</span>
+<span class="lineno">16</span> <span class="c"># detach防止梯度通过价值函数流向Actor</span>
+<span class="lineno">17</span>        <span class="n">advantages</span> <span class="o">=</span> <span class="n">returns</span> <span class="o">-</span> <span class="n">state_values</span><span class="p">.</span><span class="nf">detach</span><span class="p">(</span><span class="p">)</span>
+<span class="lineno">18</span>
+<span class="lineno">19</span> <span class="c"># Actor损失：</span>
+<span class="lineno">20</span> <span class="c"># 负号因为优化器执行最小化</span>
+<span class="lineno">21</span>        <span class="n">actor_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">log_probs</span> <span class="o">*</span> <span class="n">advantages</span><span class="p">)</span>
+<span class="lineno">22</span>
+<span class="lineno">23</span> <span class="c"># Critic损失：</span>
+<span class="lineno">24</span>        <span class="n">critic_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">(</span><span class="n">returns</span> <span class="o">-</span> <span class="n">state_values</span><span class="p">)</span> <span class="o">**</span> <span class="m">2</span><span class="p">)</span>
+<span class="lineno">25</span>
+<span class="lineno">26</span> <span class="c"># 熵损失：鼓励探索</span>
+<span class="lineno">27</span>        <span class="n">entropy_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">entropy</span><span class="p">)</span>
+<span class="lineno">28</span>
+<span class="lineno">29</span> <span class="c"># 总损失：</span>
+<span class="lineno">30</span>        <span class="n">total_loss</span> <span class="o">=</span> <span class="n">actor_loss</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_loss_coef</span> <span class="o">*</span> <span class="n">critic_loss</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">entropy_coef</span> <span class="o">*</span> <span class="n">entropy_loss</span>
+<span class="lineno">31</span>
+<span class="lineno">32</span>        <span class="k">return</span> <span class="n">actor_loss</span><span class="p">,</span> <span class="n">critic_loss</span><span class="p">,</span> <span class="n">entropy_loss</span><span class="p">,</span> <span class="n">total_loss</span>
+<span class="lineno">33</span>
+<span class="lineno">34</span></pre>
+  </div>
+</div>
+<div class="section">
+  <div class="docs">
+    <div class="section-link"><a href="#section-4">#</a></div>
+    <h2>计算TD目标值</h2>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mtext>done</mtext><mo stretchy="false">&#x00029;</mo></mrow></math></div>
+
+<p>如果episode结束（done=True），则 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub><mo>&#x0003D;</mo><msub><mi>r</mi><mi>t</mi></msub></mrow></math></span>。</p>
+<p>参数：
+   - <code>rewards</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mi>t</mi></msub></mrow></math></span> — 每步奖励
+   - <code>values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 当前状态价值
+   - <code>next_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 下一状态价值
+   - <code>dones</code>: 是否episode结束
+   - <code>gamma</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi></mrow></math></span> — 折扣因子</p>
+<p>返回值：
+   - TD目标值 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>G</mi><mi>t</mi></msub></mrow></math></span></p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">compute_td_targets</span><span class="p">(</span>
@@ -434,34 +399,26 @@ return td_targets</p>
 <span class="lineno">5</span>    <span class="n">dones</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">6</span>    <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="lineno">7</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">8</span>    <span class="n">r</span><span class="s2">"""
-<span class="lineno">9</span>    ## 计算TD目标值
+<span class="lineno">8</span>    <span class="n">td_targets</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">next_values</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">dones</span><span class="p">)</span>
+<span class="lineno">9</span>    <span class="k">return</span> <span class="n">td_targets</span>
 <span class="lineno">10</span>
-<span class="lineno">11</span>    G_t = r_t + \gamma V(s_{t+1}) \times (1 - \text{done})
-<span class="lineno">12</span>
-<span class="lineno">13</span>    如果episode结束（done=True），则 G_t = r_t。
-<span class="lineno">14</span>
-<span class="lineno">15</span>    参数：
-<span class="lineno">16</span>    - `rewards`: r_t — 每步奖励
-<span class="lineno">17</span>    - `values`: V(s_t) — 当前状态价值
-<span class="lineno">18</span>    - `next_values`: V(s_{t+1}) — 下一状态价值
-<span class="lineno">19</span>    - `dones`: 是否episode结束
-<span class="lineno">20</span>    - `gamma`: \gamma — 折扣因子
-<span class="lineno">21</span>
-<span class="lineno">22</span>    返回值：
-<span class="lineno">23</span>    - TD目标值 G_t
-<span class="lineno">24</span>    td_targets = rewards + gamma * next_values * (1 - dones)
-<span class="lineno">25</span>    return td_targets
-<span class="lineno">26</span>
-<span class="lineno">27</span></span></pre>
+<span class="lineno">11</span></pre>
   </div>
 </div>
 <div class="section">
   <div class="docs">
-    <div class="section-link"><a href="#section-4">#</a></div>
-    <p>td_targets = compute_td_targets(rewards, values, next_values, dones, gamma)
-advantages = td_targets - values
-return advantages</p>
+    <div class="section-link"><a href="#section-5">#</a></div>
+    <h2>计算优势函数（单步TD）</h2>
+<div class="math-display"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>r</mi><mi>t</mi></msub><mo>&#x0002B;</mo><mi>&#x003B3;</mi><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo><mo>&#x02212;</mo><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></div>
+
+<p>参数：
+   - <code>rewards</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>r</mi><mi>t</mi></msub></mrow></math></span> — 每步奖励
+   - <code>values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 当前状态价值
+   - <code>next_values</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>V</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span> — 下一状态价值
+   - <code>dones</code>: 是否episode结束
+   - <code>gamma</code>: <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B3;</mi></mrow></math></span> — 折扣因子</p>
+<p>返回值：
+   - 优势函数估计 <span class="math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>A</mi><mo stretchy="false">&#x00028;</mo><msub><mi>s</mi><mi>t</mi></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mi>t</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math></span></p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">compute_advantages</span><span class="p">(</span>
@@ -471,24 +428,10 @@ return advantages</p>
 <span class="lineno">5</span>    <span class="n">dones</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">6</span>    <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="lineno">7</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">8</span>    <span class="n">r</span><span class="s2">"""
-<span class="lineno">9</span>    ## 计算优势函数（单步TD）
-<span class="lineno">10</span>
-<span class="lineno">11</span>    A(s_t, a_t) = r_t + \gamma V(s_{t+1}) - V(s_t)
-<span class="lineno">12</span>
-<span class="lineno">13</span>    参数：
-<span class="lineno">14</span>    - `rewards`: r_t — 每步奖励
-<span class="lineno">15</span>    - `values`: V(s_t) — 当前状态价值
-<span class="lineno">16</span>    - `next_values`: V(s_{t+1}) — 下一状态价值
-<span class="lineno">17</span>    - `dones`: 是否episode结束
-<span class="lineno">18</span>    - `gamma`: \gamma — 折扣因子
-<span class="lineno">19</span>
-<span class="lineno">20</span>    返回值：
-<span class="lineno">21</span>    - 优势函数估计 A(s_t, a_t)
-<span class="lineno">22</span>    td_targets = compute_td_targets(rewards, values, next_values, dones, gamma)
-<span class="lineno">23</span>    advantages = td_targets - values
-<span class="lineno">24</span>    return advantages
-<span class="lineno">25</span></span></pre>
+<span class="lineno">8</span>    <span class="n">td_targets</span> <span class="o">=</span> <span class="nf">compute_td_targets</span><span class="p">(</span><span class="n">rewards</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">next_values</span><span class="p">,</span> <span class="n">dones</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
+<span class="lineno">9</span>    <span class="n">advantages</span> <span class="o">=</span> <span class="n">td_targets</span> <span class="o">-</span> <span class="n">values</span>
+<span class="lineno">10</span>    <span class="k">return</span> <span class="n">advantages</span>
+<span class="lineno">11</span></pre>
   </div>
 </div>
 

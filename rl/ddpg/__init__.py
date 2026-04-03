@@ -101,7 +101,7 @@ import numpy as np
 
 class Actor(nn.Module):
     r"""
-    ## Actor网络（确定性策略）
+ ## Actor网络（确定性策略）
 
     Actor $\mu_\theta(s)$ 是一个确定性策略网络，
     输入状态 $s$，输出连续动作 $a$。
@@ -140,7 +140,7 @@ class Actor(nn.Module):
 
 class Critic(nn.Module):
     r"""
-    ## Critic网络（动作价值函数）
+ ## Critic网络（动作价值函数）
 
     Critic $Q_\phi(s, a)$ 估计状态-动作对的价值。
 
@@ -151,7 +151,7 @@ class Critic(nn.Module):
 
     def __init__(self, state_dim: int, action_dim: int, hidden_dim: int = 256):
         super().__init__()
-        # 状态和动作拼接后输入网络
+ # 状态和动作拼接后输入网络
         self.network = nn.Sequential(
             nn.Linear(state_dim + action_dim, hidden_dim),
             nn.ReLU(),
@@ -171,23 +171,23 @@ class Critic(nn.Module):
         返回值：
         - `q_value`: $Q_\phi(s, a)$ — 动作价值
         """
-        # 拼接状态和动作：$[s, a]$
+ # 拼接状态和动作：
         x = torch.cat([state, action], dim=-1)
         return self.network(x).squeeze(-1)
 
 
 class DDPGLoss(nn.Module):
     r"""
-    ## DDPG损失函数
+ ## DDPG损失函数
 
-    ### Critic损失
+ ### Critic损失
 
     $$L(\phi) = \mathbb{E}_{(s,a,r,s') \sim D}\left[(Q_\phi(s, a) - y)^2\right]$$
 
     其中目标值：
     $$y = r + \gamma Q_{\phi'}(s', \mu_{\theta'}(s')) \times (1 - \text{done})$$
 
-    ### Actor损失
+ ### Actor损失
 
     Actor通过最大化Critic的输出来学习：
     $$J(\theta) = \mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]$$
@@ -219,11 +219,11 @@ class DDPGLoss(nn.Module):
         返回值：
         - Critic损失
         """
-        # 目标值：$y = r + \gamma Q_{\phi'}(s', \mu_{\theta'}(s')) \times (1 - \text{done})$
+ # 目标值：
         with torch.no_grad():
             target_q = rewards + self.gamma * next_q_values * (1 - dones)
 
-        # MSE损失：$L(\phi) = \mathbb{E}[(Q_\phi(s, a) - y)^2]$
+ # MSE损失：
         critic_loss = nn.MSELoss()(q_values, target_q)
 
         return critic_loss
@@ -238,15 +238,15 @@ class DDPGLoss(nn.Module):
         返回值：
         - Actor损失（取负号）
         """
-        # 最大化Q值等价于最小化负Q值
-        # $L(\theta) = -\mathbb{E}[Q_\phi(s, \mu_\theta(s))]$
+ # 最大化Q值等价于最小化负Q值
+ #
         actor_loss = -q_values.mean()
         return actor_loss
 
 
 class OUNoise:
     r"""
-    ## Ornstein-Uhlenbeck噪声过程
+ ## Ornstein-Uhlenbeck噪声过程
 
     OU过程用于生成时间相关的探索噪声：
 
@@ -298,7 +298,7 @@ class OUNoise:
 
 def soft_update(target: nn.Module, source: nn.Module, tau: float):
     r"""
-    ## 目标网络软更新
+ ## 目标网络软更新
 
     $$\theta' \leftarrow \tau \theta + (1 - \tau) \theta'$$
 
@@ -317,7 +317,7 @@ def soft_update(target: nn.Module, source: nn.Module, tau: float):
 
 def hard_update(target: nn.Module, source: nn.Module):
     r"""
-    ## 目标网络硬更新
+ ## 目标网络硬更新
 
     $$\theta' \leftarrow \theta$$
 

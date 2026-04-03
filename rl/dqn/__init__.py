@@ -99,7 +99,7 @@ $$(s, a, r, s') \sim U(D)$$
 
 ## 探索策略
 
-### $\varepsilon$-贪心策略
+### -贪心策略
 
 $$a = \begin{cases}
 \underset{a}{\arg\max} Q(s, a) & \text{概率 } 1-\varepsilon \\
@@ -123,7 +123,7 @@ from torch import nn
 
 class QFuncLoss(nn.Module):
     r"""
-    ## DQN损失函数
+ ## DQN损失函数
 
     我们想要找到最优的动作价值函数：
 
@@ -132,7 +132,7 @@ class QFuncLoss(nn.Module):
     Q^*(s,a) &= \mathbb{E}_{s' \sim \mathcal{E}}\left[r + \gamma \max_{a'} Q^*(s', a') \mid s, a\right]
     \end{align}
 
-    ### 目标网络 🎯
+ ### 目标网络 🎯
 
     使用经验回放 $U(D)$ 随机采样历史经验，并使用独立的Q网络
     参数 $\textcolor{orange}{\theta^-}$ 来计算目标值。
@@ -141,7 +141,7 @@ class QFuncLoss(nn.Module):
     损失函数：
     $$\mathcal{L}(\theta) = \mathbb{E}_{(s,a,r,s') \sim U(D)}\left[\left(r + \gamma \max_{a'} Q(s', a'; \textcolor{orange}{\theta^-}) - Q(s,a;\theta)\right)^2\right]$$
 
-    ### Double Q-Learning
+ ### Double Q-Learning
 
     使用Double Q-Learning，其中：
     - $\textcolor{cyan}{\theta}$ 用于选择动作
@@ -184,33 +184,33 @@ class QFuncLoss(nn.Module):
         - TD误差（用于优先级回放）
         - 损失值
         """
-        # $Q(s,a;\theta)$ — 选择当前状态-动作对的Q值
+ # — 选择当前状态-动作对的Q值
         q_sampled_action = q.gather(-1, action.to(torch.long).unsqueeze(-1)).squeeze(-1)
 
-        # 不传播梯度到目标网络
-        # $$r + \gamma \textcolor{orange}{Q}\Big(s', \underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big)$$
+ # 不传播梯度到目标网络
+ #
         with torch.no_grad():
-            # 使用主网络选择最佳动作
-            # $$\underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta})$$
+ # 使用主网络选择最佳动作
+ #
             best_next_action = torch.argmax(double_q, -1)
 
-            # 使用目标网络评估最佳动作的价值
-            # $$\textcolor{orange}{Q}\Big(s', \underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big)$$
+ # 使用目标网络评估最佳动作的价值
+ #
             best_next_q_value = target_q.gather(-1, best_next_action.unsqueeze(-1)).squeeze(-1)
 
-            # 计算目标Q值
-            # 乘以 `(1 - done)` 确保episode结束时不加上下一状态的价值
-            # $$r + \gamma \textcolor{orange}{Q}\Big(s', \text{best\_action}; \textcolor{orange}{\theta^-}\Big)$$
+ # 计算目标Q值
+ # 乘以 `(1 - done)` 确保episode结束时不加上下一状态的价值
+ #
             q_update = reward + self.gamma * best_next_q_value * (1 - done)
 
-            # TD误差 $\delta = Q(s,a;\theta) - y$
+ # TD误差
             td_error = q_sampled_action - q_update
 
-        # 使用Huber损失代替MSE，对异常值更不敏感
+ # 使用Huber损失代替MSE，对异常值更不敏感
         losses = self.huber_loss(q_sampled_action, q_update)
 
         if weights is not None:
-            # 优先级经验回放的加权损失
+ # 优先级经验回放的加权损失
             loss = torch.mean(weights * losses)
         else:
             loss = losses.mean()
@@ -220,7 +220,7 @@ class QFuncLoss(nn.Module):
 
 class DuelingQNetwork(nn.Module):
     r"""
-    ## Dueling网络 ⚔️ 结构
+ ## Dueling网络 ⚔️ 结构
 
     使用[Dueling网络](https://arxiv.org/abs/1511.06581)来计算Q值。
 
@@ -242,7 +242,7 @@ class DuelingQNetwork(nn.Module):
 
     def __init__(self, state_dim: int, action_dim: int, hidden_dim: int = 256):
         super().__init__()
-        # 共享特征提取器
+ # 共享特征提取器
         self.feature = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),
@@ -250,14 +250,14 @@ class DuelingQNetwork(nn.Module):
             nn.ReLU(),
         )
 
-        # 状态价值头 $V(s)$
+ # 状态价值头
         self.state_value = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
             nn.Linear(hidden_dim // 2, 1),
         )
 
-        # 优势函数头 $A(s, a)$
+ # 优势函数头
         self.action_value = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
@@ -265,19 +265,19 @@ class DuelingQNetwork(nn.Module):
         )
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
-        # 共享特征提取
+ # 共享特征提取
         features = self.feature(state)
 
-        # $V(s)$ — 状态价值
+ # — 状态价值
         state_value = self.state_value(features)
 
-        # $A(s, a)$ — 动作优势
+ # — 动作优势
         action_value = self.action_value(features)
 
-        # $A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')$ — 中心化的优势函数
+ # — 中心化的优势函数
         action_score_centered = action_value - action_value.mean(dim=-1, keepdim=True)
 
-        # $Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\right)$
+ #
         q = state_value + action_score_centered
 
         return q
@@ -285,7 +285,7 @@ class DuelingQNetwork(nn.Module):
 
 class EpsilonGreedy:
     r"""
-    ## $\varepsilon$-贪心探索策略
+ ## -贪心探索策略
 
     $$a = \begin{cases}
     \underset{a}{\arg\max} Q(s, a) & \text{概率 } 1-\varepsilon \\
@@ -321,15 +321,15 @@ class EpsilonGreedy:
         - 选择的动作
         """
         self.count += 1
-        # 衰减$\varepsilon$
+ # 衰减
         self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * (
             -self.count / self.decay
         )
         self.epsilon = max(self.epsilon, self.epsilon_end)
 
         if torch.rand(1).item() < self.epsilon:
-            # 探索：随机动作
+ # 探索：随机动作
             return torch.randint(0, self.action_dim, (1,)).item()
         else:
-            # 利用：选择Q值最大的动作
+ # 利用：选择Q值最大的动作
             return torch.argmax(q_values).item()

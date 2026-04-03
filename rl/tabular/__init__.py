@@ -81,7 +81,7 @@ $$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]
 
 $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]$$
 
-## $\varepsilon$-贪心策略
+## -贪心策略
 
 $$\pi(a|s) = \begin{cases}
 1 - \varepsilon + \frac{\varepsilon}{|\mathcal{A}|} & \text{if } a = \arg\max_{a'} Q(s, a') \\
@@ -101,7 +101,7 @@ from collections import defaultdict
 
 class QLearningAgent:
     r"""
-    ## Q-Learning智能体
+ ## Q-Learning智能体
 
     Q-Learning更新规则：
     $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') - Q(s, a)\right]$$
@@ -126,7 +126,7 @@ class QLearningAgent:
         self.lr = learning_rate  # $\alpha$
         self.gamma = gamma  # $\gamma$
         self.epsilon = epsilon  # $\varepsilon$
-        # Q表：$Q(s, a)$
+ # Q表：
         self.q_table = np.zeros((state_dim, action_dim), dtype=np.float32)
 
     def select_action(self, state: int) -> int:
@@ -139,10 +139,10 @@ class QLearningAgent:
         \end{cases}$$
         """
         if np.random.random() < self.epsilon:
-            # 探索：随机动作
+ # 探索：随机动作
             return np.random.randint(self.action_dim)
         else:
-            # 利用：贪婪动作
+ # 利用：贪婪动作
             return np.argmax(self.q_table[state])
 
     def update(
@@ -160,22 +160,22 @@ class QLearningAgent:
         - `next_state`: $s_{t+1}$ — 下一状态
         - `done`: 是否episode结束
         """
-        # TD目标：$r + \gamma \max_{a'} Q(s', a') \times (1 - \text{done})$
+ # TD目标：
         if done:
             td_target = reward
         else:
             td_target = reward + self.gamma * np.max(self.q_table[next_state])
 
-        # TD误差：$\delta = \text{TD目标} - Q(s, a)$
+ # TD误差：
         td_error = td_target - self.q_table[state, action]
 
-        # 更新Q值：$Q(s, a) \leftarrow Q(s, a) + \alpha \delta$
+ # 更新Q值：
         self.q_table[state, action] += self.lr * td_error
 
 
 class SarsaAgent:
     r"""
-    ## Sarsa智能体
+ ## Sarsa智能体
 
     Sarsa更新规则：
     $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') - Q(s, a)\right]$$
@@ -222,22 +222,22 @@ class SarsaAgent:
 
         注意：Sarsa需要下一个动作 $a'$ 来更新，这是同策略的关键。
         """
-        # TD目标：$r + \gamma Q(s', a') \times (1 - \text{done})$
+ # TD目标：
         if done:
             td_target = reward
         else:
             td_target = reward + self.gamma * self.q_table[next_state, next_action]
 
-        # TD误差
+ # TD误差
         td_error = td_target - self.q_table[state, action]
 
-        # 更新Q值
+ # 更新Q值
         self.q_table[state, action] += self.lr * td_error
 
 
 class ValueIterationAgent:
     r"""
-    ## 价值迭代智能体
+ ## 价值迭代智能体
 
     价值迭代是一种动态规划算法，适用于已知环境模型的场景。
 
@@ -255,7 +255,7 @@ class ValueIterationAgent:
         self.theta = theta  # 收敛阈值
         self.value_table = np.zeros(state_dim, dtype=np.float32)
         self.policy = np.zeros(state_dim, dtype=np.int32)
-        # 环境模型：P[s][a] = [(prob, next_state, reward, done), ...]
+ # 环境模型：P[s][a] = [(prob, next_state, reward, done), ...]
         self.P = None
 
     def set_model(self, P: dict):
@@ -281,14 +281,14 @@ class ValueIterationAgent:
         delta = 0
         for s in range(self.state_dim):
             v = self.value_table[s]
-            # 计算每个动作的期望价值
+ # 计算每个动作的期望价值
             action_values = np.zeros(self.action_dim)
             for a in range(self.action_dim):
                 for prob, next_state, reward, done in self.P[s][a]:
-                    # 期望价值：$\sum_{s', r} p(s', r|s, a) [r + \gamma V(s')]$
+ # 期望价值：
                     action_values[a] += prob * (reward + self.gamma * self.value_table[next_state] * (1 - done))
 
-            # 选择最大价值：$V_{k+1}(s) = \max_a Q(s, a)$
+ # 选择最大价值：
             self.value_table[s] = np.max(action_values)
             delta = max(delta, abs(v - self.value_table[s]))
 
@@ -305,7 +305,7 @@ class ValueIterationAgent:
             if delta < self.theta:
                 break
 
-        # 提取最优策略
+ # 提取最优策略
         self.extract_policy()
 
     def extract_policy(self):

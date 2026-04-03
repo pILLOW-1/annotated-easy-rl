@@ -67,7 +67,7 @@ import numpy as np
 
 class GAE:
     r"""
-    ## 广义优势估计计算器
+ ## 广义优势估计计算器
 
     实现GAE公式：
     $$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$$
@@ -108,24 +108,24 @@ class GAE:
         $$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$$
         其中 $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$
         """
-        # 优势函数表
+ # 优势函数表
         advantages = np.zeros((self.n_workers, self.worker_steps), dtype=np.float32)
         last_advantage = 0
 
-        # $V(s_{T+1})$ — 最后一步的下一个状态价值
+ # — 最后一步的下一个状态价值
         last_value = values[:, -1]
 
-        # 从后往前递归计算
+ # 从后往前递归计算
         for t in reversed(range(self.worker_steps)):
-            # 如果episode已结束，mask为0，否则为1
+ # 如果episode已结束，mask为0，否则为1
             mask = 1.0 - done[:, t]
             last_value = last_value * mask
             last_advantage = last_advantage * mask
 
-            # TD残差：$\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$
+ # TD残差：
             delta = rewards[:, t] + self.gamma * last_value - values[:, t]
 
-            # GAE递归：$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$
+ # GAE递归：
             last_advantage = delta + self.gamma * self.lambda_ * last_advantage
 
             advantages[:, t] = last_advantage
@@ -137,7 +137,7 @@ class GAE:
 
 def compute_returns(rewards: np.ndarray, gamma: float, dones: np.ndarray) -> np.ndarray:
     r"""
-    ## 计算折扣累积回报
+ ## 计算折扣累积回报
 
     $$G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots = r_t + \gamma G_{t+1}$$
 
@@ -157,7 +157,7 @@ def compute_returns(rewards: np.ndarray, gamma: float, dones: np.ndarray) -> np.
     for t in reversed(range(rewards.shape[1])):
         mask = 1.0 - dones[:, t]
         last_return = last_return * mask
-        # $G_t = r_t + \gamma G_{t+1}$
+ #
         last_return = rewards[:, t] + gamma * last_return
         returns[:, t] = last_return
 

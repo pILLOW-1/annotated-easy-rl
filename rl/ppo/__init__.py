@@ -92,7 +92,7 @@ from torch import nn
 
 class ClippedPPOLoss(nn.Module):
     r"""
-    ## PPO裁剪损失
+ ## PPO裁剪损失
 
     PPO2的核心：裁剪策略比率以限制策略更新幅度。
 
@@ -136,35 +136,35 @@ class ClippedPPOLoss(nn.Module):
         返回值：
         - PPO损失（取负号，因为优化器执行最小化）
         """
-        # 策略比率 $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)} = \exp(\log \pi_\theta - \log \pi_{\theta_{old}})$
-        # 注意：这里的 ratio 不同于奖励 $r_t$
+ # 策略比率
+ # 注意：这里的 ratio 不同于奖励
         ratio = torch.exp(log_pi - sampled_log_pi)
 
-        # ### 裁剪策略比率
-        #
-        # $$\mathcal{L}^{CLIP}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\varepsilon, 1+\varepsilon)\hat{A}_t\right)\right]$$
-        #
-        # 策略比率被裁剪到 $[1-\varepsilon, 1+\varepsilon]$ 范围内。
-        # 取最小值确保：
-        # - 当 $\hat{A}_t > 0$ 时，$r_t(\theta)$ 不会超过 $1+\varepsilon$
-        # - 当 $\hat{A}_t < 0$ 时，$r_t(\theta)$ 不会低于 $1-\varepsilon$
-        #
-        # 这样限制了新旧策略之间的KL散度，防止策略更新过大导致性能崩溃。
-        # 使用归一化的优势函数 $\bar{A}_t = \frac{\hat{A}_t - \mu(\hat{A}_t)}{\sigma(\hat{A}_t)}$
-        # 虽然引入了偏差，但大幅降低了方差。
+ # ### 裁剪策略比率
+ #
+ #
+ #
+ # 策略比率被裁剪到 范围内。
+ # 取最小值确保：
+ # - 当 时， 不会超过
+ # - 当 时， 不会低于
+ #
+ # 这样限制了新旧策略之间的KL散度，防止策略更新过大导致性能崩溃。
+ # 使用归一化的优势函数
+ # 虽然引入了偏差，但大幅降低了方差。
         clipped_ratio = ratio.clamp(min=1.0 - clip, max=1.0 + clip)
         policy_reward = torch.min(ratio * advantage, clipped_ratio * advantage)
 
-        # 记录裁剪比例，用于监控
+ # 记录裁剪比例，用于监控
         self.clip_fraction = (torch.abs(ratio - 1.0) > clip).to(torch.float).mean()
 
-        # 取负号因为优化器执行最小化
+ # 取负号因为优化器执行最小化
         return -policy_reward.mean()
 
 
 class ClippedValueFunctionLoss(nn.Module):
     r"""
-    ## 裁剪的价值函数损失
+ ## 裁剪的价值函数损失
 
     类似于策略的裁剪，价值函数的更新也需要裁剪以防止过大变化。
 
@@ -191,19 +191,19 @@ class ClippedValueFunctionLoss(nn.Module):
         - `sampled_return`: $R_t$ — 蒙特卡洛回报
         - `clip`: $\varepsilon$ — 裁剪参数
         """
-        # 裁剪的价值函数：$V_{CLIP} = V_{old} + \text{clip}(V - V_{old}, -\varepsilon, \varepsilon)$
+ # 裁剪的价值函数：
         clipped_value = sampled_value + (value - sampled_value).clamp(min=-clip, max=clip)
 
-        # 取两个损失的最大值：未裁剪的和裁剪的
+ # 取两个损失的最大值：未裁剪的和裁剪的
         vf_loss = torch.max((value - sampled_return) ** 2, (clipped_value - sampled_return) ** 2)
 
-        # 乘以1/2是为了与MSE损失保持一致
+ # 乘以1/2是为了与MSE损失保持一致
         return 0.5 * vf_loss.mean()
 
 
 class PPONetwork(nn.Module):
     r"""
-    ## PPO网络
+ ## PPO网络
 
     共享特征提取器的Actor-Critic网络结构。
     Actor输出策略 $\pi_\theta(a|s)$，Critic输出价值 $V_\theta(s)$。
@@ -218,7 +218,7 @@ class PPONetwork(nn.Module):
 
     def __init__(self, state_dim: int, action_dim: int, hidden_dim: int = 256):
         super().__init__()
-        # 共享特征提取器
+ # 共享特征提取器
         self.feature = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),
@@ -226,21 +226,21 @@ class PPONetwork(nn.Module):
             nn.ReLU(),
         )
 
-        # Actor头：输出每个动作的对数概率（用于分类动作空间）
+ # Actor头：输出每个动作的对数概率（用于分类动作空间）
         self.actor = nn.Linear(hidden_dim, action_dim)
 
-        # Critic头：输出状态价值 $V(s)$
+ # Critic头：输出状态价值
         self.critic = nn.Linear(hidden_dim, 1)
 
     def forward(self, state: torch.Tensor):
-        # 提取特征
+ # 提取特征
         features = self.feature(state)
 
-        # Actor: 输出动作 logits
+ # Actor: 输出动作 logits
         action_logits = self.actor(features)
         action_probs = torch.softmax(action_logits, dim=-1)
 
-        # Critic: 输出状态价值
+ # Critic: 输出状态价值
         state_value = self.critic(features).squeeze(-1)
 
         return action_probs, state_value
@@ -255,11 +255,11 @@ class PPONetwork(nn.Module):
         action_logits = self.actor(features)
         state_value = self.critic(features).squeeze(-1)
 
-        # 计算动作的对数概率
+ # 计算动作的对数概率
         action_probs = torch.softmax(action_logits, dim=-1)
         action_log_probs = torch.log(action_probs + 1e-8)
 
-        # 选择给定动作的对数概率
+ # 选择给定动作的对数概率
         log_pi = action_log_probs.gather(-1, action.unsqueeze(-1)).squeeze(-1)
 
         return log_pi, state_value

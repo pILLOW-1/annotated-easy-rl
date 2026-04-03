@@ -63,14 +63,14 @@ summary: >
 ### 公式与代码对照示例
 
 ```python
-# TD目标：$y = r + \gamma \max_{a'} Q(s', a'; \theta^-)$
+# TD目标：
 with torch.no_grad():
     target_q = reward + self.gamma * target_q.max(dim=-1)[0] * (1 - done)
 
-# TD误差：$\delta = Q(s, a; \theta) - y$
+# TD误差：
 td_error = q_value - target_q
 
-# 损失：$L(\theta) = \mathbb{E}[\delta^2]$
+# 损失：
 loss = td_error.pow(2).mean()
 ```
 

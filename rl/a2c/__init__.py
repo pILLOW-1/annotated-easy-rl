@@ -81,7 +81,7 @@ from torch import nn
 
 class ActorCriticNetwork(nn.Module):
     r"""
-    ## Actor-Critic共享网络
+ ## Actor-Critic共享网络
 
     共享特征提取器的Actor-Critic网络：
     - 共享层：提取状态特征
@@ -91,7 +91,7 @@ class ActorCriticNetwork(nn.Module):
 
     def __init__(self, state_dim: int, action_dim: int, hidden_dim: int = 256):
         super().__init__()
-        # 共享特征提取器
+ # 共享特征提取器
         self.feature = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),
@@ -99,10 +99,10 @@ class ActorCriticNetwork(nn.Module):
             nn.ReLU(),
         )
 
-        # Actor头：输出动作分布 $\pi_\theta(\cdot|s)$
+ # Actor头：输出动作分布
         self.actor = nn.Linear(hidden_dim, action_dim)
 
-        # Critic头：输出状态价值 $V_\phi(s)$
+ # Critic头：输出状态价值
         self.critic = nn.Linear(hidden_dim, 1)
 
     def forward(self, state: torch.Tensor):
@@ -118,11 +118,11 @@ class ActorCriticNetwork(nn.Module):
         """
         features = self.feature(state)
 
-        # Actor: $\pi_\theta(a|s) = \text{softmax}(f_\theta(s))$
+ # Actor:
         action_logits = self.actor(features)
         action_probs = torch.softmax(action_logits, dim=-1)
 
-        # Critic: $V_\phi(s)$
+ # Critic:
         state_value = self.critic(features).squeeze(-1)
 
         return action_probs, state_value
@@ -146,14 +146,14 @@ class ActorCriticNetwork(nn.Module):
         action_logits = self.actor(features)
         state_value = self.critic(features).squeeze(-1)
 
-        # 计算动作概率和对数概率
+ # 计算动作概率和对数概率
         action_probs = torch.softmax(action_logits, dim=-1)
         action_log_probs = torch.log(action_probs + 1e-8)
 
-        # 选择给定动作的对数概率
+ # 选择给定动作的对数概率
         log_prob = action_log_probs.gather(-1, action.unsqueeze(-1)).squeeze(-1)
 
-        # 计算策略熵 $\mathcal{H}(\pi) = -\sum_a \pi(a) \log \pi(a)$
+ # 计算策略熵
         entropy = -(action_probs * action_log_probs).sum(dim=-1)
 
         return log_prob, state_value, entropy
@@ -161,7 +161,7 @@ class ActorCriticNetwork(nn.Module):
 
 class A2CLoss(nn.Module):
     r"""
-    ## A2C损失函数
+ ## A2C损失函数
 
     A2C的总损失由三部分组成：
 
@@ -203,21 +203,21 @@ class A2CLoss(nn.Module):
         - 熵损失
         - 总损失
         """
-        # 优势函数：$A(s_t, a_t) = G_t - V(s_t)$
-        # detach防止梯度通过价值函数流向Actor
+ # 优势函数：
+ # detach防止梯度通过价值函数流向Actor
         advantages = returns - state_values.detach()
 
-        # Actor损失：$-\mathbb{E}[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]$
-        # 负号因为优化器执行最小化
+ # Actor损失：
+ # 负号因为优化器执行最小化
         actor_loss = -torch.mean(log_probs * advantages)
 
-        # Critic损失：$\mathbb{E}[(G_t - V(s_t))^2]$
+ # Critic损失：
         critic_loss = torch.mean((returns - state_values) ** 2)
 
-        # 熵损失：鼓励探索
+ # 熵损失：鼓励探索
         entropy_loss = -torch.mean(entropy)
 
-        # 总损失：$L = L_{actor} + c_1 L_{critic} - c_2 \mathcal{H}$
+ # 总损失：
         total_loss = actor_loss + self.value_loss_coef * critic_loss + self.entropy_coef * entropy_loss
 
         return actor_loss, critic_loss, entropy_loss, total_loss
@@ -231,7 +231,7 @@ def compute_td_targets(
     gamma: float,
 ) -> torch.Tensor:
     r"""
-    ## 计算TD目标值
+ ## 计算TD目标值
 
     $$G_t = r_t + \gamma V(s_{t+1}) \times (1 - \text{done})$$
 
@@ -259,7 +259,7 @@ def compute_advantages(
     gamma: float,
 ) -> torch.Tensor:
     r"""
-    ## 计算优势函数（单步TD）
+ ## 计算优势函数（单步TD）
 
     $$A(s_t, a_t) = r_t + \gamma V(s_{t+1}) - V(s_t)$$
 
