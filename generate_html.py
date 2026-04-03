@@ -10,9 +10,9 @@ import os
 import html as html_mod
 import markdown
 
-KATEX_CSS = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
-KATEX_JS = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
-AUTORENDER_JS = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+KATEX_CSS = "https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css"
+KATEX_JS = "https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"
+AUTORENDER_JS = "https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"
 
 PYGMENTS_CSS = """
 .highlight .c { color: #6272a4; }
@@ -483,14 +483,15 @@ def generate_html_page(title, sections, parent_path="..", parent_title="强化�
   <script src="{AUTORENDER_JS}"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {{
-      renderMathInElement(document.body, {{
-        delimiters: [
-          {{left: '$$', right: '$$', display: true}},
-          {{left: '$', right: '$', display: false}}
-        ],
-        throwOnError: false,
-        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
-      }});
+      if (typeof renderMathInElement === 'function') {{
+        renderMathInElement(document.getElementById('container'), {{
+          delimiters: [
+            {{left: '$$', right: '$$', display: true}},
+            {{left: '$', right: '$', display: false}}
+          ],
+          throwOnError: false
+        }});
+      }}
     }});
   </script>
 </body>
@@ -557,14 +558,15 @@ def generate_index_page(html_dir):
   <script src="{AUTORENDER_JS}"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {{
-      renderMathInElement(document.body, {{
-        delimiters: [
-          {{left: '$$', right: '$$', display: true}},
-          {{left: '$', right: '$', display: false}}
-        ],
-        throwOnError: false,
-        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
-      }});
+      if (typeof renderMathInElement === 'function') {{
+        renderMathInElement(document.getElementById('container'), {{
+          delimiters: [
+            {{left: '$$', right: '$$', display: true}},
+            {{left: '$', right: '$', display: false}}
+          ],
+          throwOnError: false
+        }});
+      }}
     }});
   </script>
 </body>
