@@ -147,7 +147,7 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
   <div id="container">
     <div id="background"></div>
     <div class="nav-bar">
-  <a class="parent" href="/">强化学习</a>
+  <a class="parent" href="https://github.com/pILLOW-1/annotated-easy-rl">强化学习</a>
   <h1>表格型方法 (Tabular Methods)</h1><p>Q-Learning & Sarsa — 蘑菇书第三章</p></div>
     <div class="section">
   <div class="docs">
@@ -271,15 +271,14 @@ $$a = \begin{cases}
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>Q-Learning智能体</h2>
-<pre><code>Q-Learning更新规则：
+<p>Q-Learning更新规则：</p>
 $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') - Q(s, a)\right]$$
 
-其中：
+<p>其中：
 - $\alpha$：学习率
 - $\gamma$：折扣因子
 - $r + \gamma \max_{a'} Q(s', a')$：TD目标
-- $r + \gamma \max_{a'} Q(s', a') - Q(s, a)$：TD误差 $\delta$
-</code></pre>
+- $r + \gamma \max_{a'} Q(s', a') - Q(s, a)$：TD误差 $\delta$</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">QLearningAgent</span><span class="p">:</span>
@@ -302,12 +301,12 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') - Q(s
 <span class="lineno">18</span>
 <span class="lineno">19</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="lineno">20</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">21</span>        <span class="n">使用</span>$\<span class="n">varepsilon</span>$<span class="o">-</span><span class="n">贪心策略选择动作</span>。
+<span class="lineno">21</span>        <span class="n">使用$\varepsilon$</span><span class="o">-</span><span class="n">贪心策略选择动作</span>。
 <span class="lineno">22</span>
-<span class="lineno">23</span>        $$<span class="n">a</span> <span class="o">=</span> \<span class="n">begin</span><span class="p">{</span><span class="n">cases</span><span class="p">}</span>
-<span class="lineno">24</span>        \<span class="n">arg</span>\<span class="n">max_a</span> <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="o">&</span><span class="n">amp</span><span class="p">;</span> \<span class="n">text</span><span class="p">{</span><span class="n">概率</span> <span class="p">}</span> <span class="m">1</span><span class="o">-</span>\<span class="n">varepsilon</span> \\
-<span class="lineno">25</span>        \<span class="n">text</span><span class="p">{</span><span class="n">随机动作</span><span class="p">}</span> <span class="o">&</span><span class="n">amp</span><span class="p">;</span> \<span class="n">text</span><span class="p">{</span><span class="n">概率</span> <span class="p">}</span> \<span class="n">varepsilon</span>
-<span class="lineno">26</span>        \<span class="n">end</span><span class="p">{</span><span class="n">cases</span><span class="p">}</span>$$
+<span class="lineno">23</span>        <span class="n">$$a = \begin{cases}
+<span class="lineno">24</span>        \arg\max_a Q(s, a) &amp; \text{概率 } 1-\varepsilon \\
+<span class="lineno">25</span>        \text{随机动作} &amp; \text{概率 } \varepsilon
+<span class="lineno">26</span>        \end{cases}$$</span>
 <span class="lineno">27</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">28</span>        <span class="k">if</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">random</span><span class="p">(</span><span class="p">)</span> <span class="o">&</span><span class="n">lt</span><span class="p">;</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">:</span>
 <span class="lineno">29</span>            <span class="c"># 探索：随机动作</span>
@@ -322,13 +321,13 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') - Q(s
 <span class="lineno">38</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">39</span>        <span class="n">更新Q值</span>。
 <span class="lineno">40</span>
-<span class="lineno">41</span>        $$<span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> \<span class="n">leftarrow</span> <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="o">+</span> \<span class="n">alpha</span> \<span class="n">left</span><span class="p">[</span><span class="n">r</span> <span class="o">+</span> \<span class="n">gamma</span> \<span class="n">max_</span><span class="p">{</span><span class="n">a</span><span class="o">&</span><span class="c">#x27;} Q(s&#x27;, a&#x27;) \times (1 - \text{done}) - Q(s, a)\right]$$</span>
+<span class="lineno">41</span>        <span class="n">$$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a&#x27;} Q(s&#x27;, a&#x27;) \times (1 - \text{done}) - Q(s, a)\right]$$</span>
 <span class="lineno">42</span>
 <span class="lineno">43</span>        <span class="n">参数</span>：
-<span class="lineno">44</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> $<span class="n">s_t</span>$ — <span class="n">当前状态</span>
-<span class="lineno">45</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> $<span class="n">a_t</span>$ — <span class="n">当前动作</span>
-<span class="lineno">46</span>        <span class="o">-</span> `<span class="n">reward</span>`<span class="p">:</span> $<span class="n">r_</span><span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="m">1</span><span class="p">}</span>$ — <span class="n">奖励</span>
-<span class="lineno">47</span>        <span class="o">-</span> `<span class="n">next_state</span>`<span class="p">:</span> $<span class="n">s_</span><span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="m">1</span><span class="p">}</span>$ — <span class="n">下一状态</span>
+<span class="lineno">44</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> <span class="n">$s_t$</span> — <span class="n">当前状态</span>
+<span class="lineno">45</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> <span class="n">$a_t$</span> — <span class="n">当前动作</span>
+<span class="lineno">46</span>        <span class="o">-</span> `<span class="n">reward</span>`<span class="p">:</span> <span class="n">$r_{t+1}$</span> — <span class="n">奖励</span>
+<span class="lineno">47</span>        <span class="o">-</span> `<span class="n">next_state</span>`<span class="p">:</span> <span class="n">$s_{t+1}$</span> — <span class="n">下一状态</span>
 <span class="lineno">48</span>        <span class="o">-</span> `<span class="n">done</span>`<span class="p">:</span> <span class="n">是否episode结束</span>
 <span class="lineno">49</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">50</span>        <span class="c"># TD目标：$r + \gamma \max_{a&#x27;} Q(s&#x27;, a&#x27;) \times (1 - \text{done})$</span>
@@ -350,12 +349,11 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') - Q(s
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>Sarsa智能体</h2>
-<pre><code>Sarsa更新规则：
+<p>Sarsa更新规则：</p>
 $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') - Q(s, a)\right]$$
 
-与Q-Learning不同，Sarsa使用实际采取的下一个动作 $a'$ 的Q值，
-因此是同策略(on-policy)算法。
-</code></pre>
+<p>与Q-Learning不同，Sarsa使用实际采取的下一个动作 $a'$ 的Q值，
+因此是同策略(on-policy)算法。</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">SarsaAgent</span><span class="p">:</span>
@@ -376,7 +374,7 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') - Q(s, a)\right
 <span class="lineno">16</span>        <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
 <span class="lineno">17</span>
 <span class="lineno">18</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="lineno">19</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>$\<span class="n">varepsilon</span>$<span class="o">-</span><span class="n">贪心策略选择动作</span>。<span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
+<span class="lineno">19</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="n">$\varepsilon$</span><span class="o">-</span><span class="n">贪心策略选择动作</span>。<span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">20</span>        <span class="k">if</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">random</span><span class="p">(</span><span class="p">)</span> <span class="o">&</span><span class="n">lt</span><span class="p">;</span> <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">:</span>
 <span class="lineno">21</span>            <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span>
 <span class="lineno">22</span>        <span class="k">else</span><span class="p">:</span>
@@ -394,9 +392,9 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') - Q(s, a)\right
 <span class="lineno">34</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">35</span>        <span class="n">更新Q值</span>。
 <span class="lineno">36</span>
-<span class="lineno">37</span>        $$<span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> \<span class="n">leftarrow</span> <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="o">+</span> \<span class="n">alpha</span> \<span class="n">left</span><span class="p">[</span><span class="n">r</span> <span class="o">+</span> \<span class="n">gamma</span> <span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="o">&</span><span class="c">#x27;, a&#x27;) \times (1 - \text{done}) - Q(s, a)\right]$$</span>
+<span class="lineno">37</span>        <span class="n">$$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s&#x27;, a&#x27;) \times (1 - \text{done}) - Q(s, a)\right]$$</span>
 <span class="lineno">38</span>
-<span class="lineno">39</span>        <span class="n">注意</span>：<span class="nc">Sarsa需要下一个动作</span> $<span class="n">a</span><span class="o">&</span><span class="c">#x27;$ 来更新，这是同策略的关键。</span>
+<span class="lineno">39</span>        <span class="n">注意</span>：<span class="nc">Sarsa需要下一个动作</span> <span class="n">$a&#x27;$</span> <span class="n">来更新</span>，<span class="n">这是同策略的关键</span>。
 <span class="lineno">40</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">41</span>        <span class="c"># TD目标：$r + \gamma Q(s&#x27;, a&#x27;) \times (1 - \text{done})$</span>
 <span class="lineno">42</span>        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
@@ -417,14 +415,12 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') - Q(s, a)\right
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
     <h2>价值迭代智能体</h2>
-<pre><code>价值迭代是一种动态规划算法，适用于已知环境模型的场景。
-
-更新规则：
+<p>价值迭代是一种动态规划算法，适用于已知环境模型的场景。</p>
+<p>更新规则：</p>
 $$V_{k+1}(s) = \max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V_k(s')\right]$$
 
-收敛后，最优策略：
+<p>收敛后，最优策略：</p>
 $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\right]$$
-</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">ValueIterationAgent</span><span class="p">:</span>
@@ -454,7 +450,7 @@ $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\righ
 <span class="lineno">25</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">26</span>        <span class="n">执行一次价值迭代</span>。
 <span class="lineno">27</span>
-<span class="lineno">28</span>        $$<span class="nc">V_</span><span class="p">{</span><span class="n">k</span><span class="o">+</span><span class="m">1</span><span class="p">}</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">=</span> \<span class="n">max_a</span> \<span class="n">sum_</span><span class="p">{</span><span class="n">s</span><span class="o">&</span><span class="c">#x27;, r} p(s&#x27;, r|s, a) \left[r + \gamma V_k(s&#x27;)\right]$$</span>
+<span class="lineno">28</span>        <span class="n">$$V_{k+1}(s) = \max_a \sum_{s&#x27;, r} p(s&#x27;, r|s, a) \left[r + \gamma V_k(s&#x27;)\right]$$</span>
 <span class="lineno">29</span>
 <span class="lineno">30</span>        <span class="n">返回值</span>：
 <span class="lineno">31</span>        <span class="o">-</span> <span class="n">价值函数的最大变化量</span>
@@ -493,7 +489,7 @@ $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\righ
 <span class="lineno">64</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">65</span>        <span class="n">从最优价值函数提取最优策略</span>。
 <span class="lineno">66</span>
-<span class="lineno">67</span>        $$\<span class="n">pi</span><span class="o">^*</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">=</span> \<span class="n">arg</span>\<span class="n">max_a</span> \<span class="n">sum_</span><span class="p">{</span><span class="n">s</span><span class="o">&</span><span class="c">#x27;, r} p(s&#x27;, r|s, a) \left[r + \gamma V^*(s&#x27;)\right]$$</span>
+<span class="lineno">67</span>        <span class="n">$$\pi^*(s) = \arg\max_a \sum_{s&#x27;, r} p(s&#x27;, r|s, a) \left[r + \gamma V^*(s&#x27;)\right]$$</span>
 <span class="lineno">68</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">69</span>        <span class="k">for</span> <span class="n">s</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span><span class="p">)</span><span class="p">:</span>
 <span class="lineno">70</span>            <span class="n">action_values</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span>
@@ -506,7 +502,7 @@ $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\righ
 </div>
 
     <div class="footer">
-      <a href="/">← 返回强化学习算法列表</a>
+      <a href="https://github.com/pILLOW-1/annotated-easy-rl">← 返回强化学习算法列表</a>
       <p style="color:#666; font-size:1.2rem; margin-top:10px;">
         基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
         风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
@@ -522,7 +518,8 @@ $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\righ
           {left: '$$', right: '$$', display: true},
           {left: '$', right: '$', display: false}
         ],
-        throwOnError: false
+        throwOnError: false,
+        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
       });
     });
   </script>

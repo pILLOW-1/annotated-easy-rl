@@ -42,18 +42,18 @@ annotated-rl/
 
 | 章节 | 算法 | Python源码 | 预览 |
 |------|------|-----------|------|
-| 第3章 | Q-Learning | `rl/tabular/__init__.py` | [查看](html/tabular/index.html) |
-| 第3章 | Sarsa | `rl/tabular/__init__.py` | [查看](html/tabular/index.html) |
-| 第3章 | Value Iteration | `rl/tabular/__init__.py` | [查看](html/tabular/index.html) |
-| 第4章 | REINFORCE (策略梯度) | `rl/pg/__init__.py` | [查看](html/pg/index.html) |
-| 第5章 | PPO-Clip (PPO2) | `rl/ppo/__init__.py` | [查看](html/ppo/index.html) |
-| 第5章 | PPO-Penalty (PPO1) | `rl/ppo/__init__.py` | [查看](html/ppo/index.html) |
-| 第5章 | GAE (广义优势估计) | `rl/ppo/gae.py` | [查看](html/ppo/gae.html) |
-| 第6章 | DQN | `rl/dqn/__init__.py` | [查看](html/dqn/index.html) |
-| 第6章 | Double DQN | `rl/dqn/__init__.py` | [查看](html/dqn/index.html) |
-| 第6章 | Dueling DQN | `rl/dqn/__init__.py` | [查看](html/dqn/index.html) |
-| 第9章 | A2C (优势演员-评论员) | `rl/a2c/__init__.py` | [查看](html/a2c/index.html) |
-| 第12章 | DDPG | `rl/ddpg/__init__.py` | [查看](html/ddpg/index.html) |
+| 第3章 | Q-Learning | `rl/tabular/__init__.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/tabular/index.html) |
+| 第3章 | Sarsa | `rl/tabular/__init__.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/tabular/index.html) |
+| 第3章 | Value Iteration | `rl/tabular/__init__.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/tabular/index.html) |
+| 第4章 | REINFORCE (策略梯度) | `rl/pg/__init__.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/pg/index.html) |
+| 第5章 | PPO-Clip (PPO2) | `rl/ppo/__init__.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/ppo/index.html) |
+| 第5章 | PPO-Penalty (PPO1) | `rl/ppo/__init__.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/ppo/index.html) |
+| 第5章 | GAE (广义优势估计) | `rl/ppo/gae.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/ppo/gae.html) |
+| 第6章 | DQN | `rl/dqn/__init__.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/dqn/index.html) |
+| 第6章 | Double DQN | `rl/dqn/__init__.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/dqn/index.html) |
+| 第6章 | Dueling DQN | `rl/dqn/__init__.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/dqn/index.html) |
+| 第9章 | A2C (优势演员-评论员) | `rl/a2c/__init__.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/a2c/index.html) |
+| 第12章 | DDPG | `rl/ddpg/__init__.py` | [查看](https://htmlpreview.github.io/?https://github.com/pILLOW-1/annotated-easy-rl/blob/main/html/ddpg/index.html) |
 
 ## 注释风格
 

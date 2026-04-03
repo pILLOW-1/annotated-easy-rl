@@ -151,8 +151,23 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
 .mjx-chtml { color: #ccc; }
 """
 
+REPO_URL = "https://github.com/pILLOW-1/annotated-easy-rl"
+
 
 def highlight_python(code: str) -> str:
+    # Protect math delimiters in code before escaping
+    code_math_keys = {}
+    code_math_counter = [0]
+
+    def protect_code_math(m):
+        key = f'__CODEMATH{code_math_counter[0]}__'
+        code_math_keys[key] = m.group(0)
+        code_math_counter[0] += 1
+        return key
+
+    code = re.sub(r'\$\$([\s\S]*?)\$\$', protect_code_math, code)
+    code = re.sub(r'\$([^\$\n]+?)\$', protect_code_math, code)
+
     code = html_mod.escape(code)
     keywords = {'import', 'from', 'class', 'def', 'return', 'if', 'else', 'elif',
                 'for', 'while', 'in', 'not', 'and', 'or', 'is', 'with', 'as',
@@ -239,12 +254,15 @@ def highlight_python(code: str) -> str:
         else:
             cls = span_map.get(ttype, 'n')
             result.append(f'<span class="{cls}">{tval}</span>')
-    return ''.join(result)
+    html_out = ''.join(result)
+
+    # Restore math delimiters (already escaped, so restore as-is)
+    for key, value in code_math_keys.items():
+        html_out = html_out.replace(key, html_mod.escape(value))
+    return html_out
 
 
-# ── Math placeholder system ────────────────────────────────────────
-# Replace $...$ and $$...$$ with placeholders before markdown processing,
-# then restore them after. This prevents markdown from mangling the delimiters.
+# Math placeholder system for doc text
 _math_placeholders = {}
 _math_counter = 0
 
@@ -253,6 +271,13 @@ def _protect_math(text):
     global _math_counter
     _math_placeholders.clear()
     _math_counter = 0
+
+    # Convert \begin{align}...\end{align} to $$...$$
+    text = re.sub(
+        r'(?:^|\n)\s*\\begin\{align\}([\s\S]*?)\\end\{align\}',
+        lambda m: f'\n$$\\begin{{align}}{m.group(1)}\\end{{align}}$$\n',
+        text
+    )
 
     # First protect $$...$$ (display math, possibly multiline)
     def replace_display(m):
@@ -290,6 +315,18 @@ def render_markdown_to_html(md_text: str) -> str:
     return _restore_math(html_text)
 
 
+def _dedent(text: str) -> str:
+    """Remove common leading whitespace from text."""
+    lines = text.split('\n')
+    non_empty = [line for line in lines if line.strip()]
+    if not non_empty:
+        return text
+    indent = min(len(line) - len(line.lstrip()) for line in non_empty)
+    if indent == 0:
+        return text
+    return '\n'.join(line[indent:] if line.strip() else line for line in lines)
+
+
 def extract_docstring_from_code_block(code_lines: list) -> tuple:
     """Extract docstring from a code block. Returns (docstring_text, code_without_docstring)."""
     if not code_lines:
@@ -308,7 +345,7 @@ def extract_docstring_from_code_block(code_lines: list) -> tuple:
         if first_line.count(quote) >= 2 and len(first_line) > 6:
             doc_text = first_line[3:first_line.rfind(quote)]
             remaining = code_lines[:first_content_idx] + code_lines[first_content_idx+1:]
-            return doc_text.strip(), '\n'.join(remaining)
+            return _dedent(doc_text).strip(), '\n'.join(remaining)
         else:
             doc_lines = [first_line[3:]]
             end_idx = first_content_idx + 1
@@ -320,7 +357,7 @@ def extract_docstring_from_code_block(code_lines: list) -> tuple:
                     break
                 doc_lines.append(code_lines[j])
             remaining = code_lines[:first_content_idx] + code_lines[end_idx:]
-            return '\n'.join(doc_lines).strip(), '\n'.join(remaining)
+            return _dedent('\n'.join(doc_lines)).strip(), '\n'.join(remaining)
     return '', '\n'.join(code_lines)
 
 
@@ -374,11 +411,8 @@ def parse_annotated_python(filepath: str) -> list:
     return sections
 
 
-BASE_URL = ""
-
-
 def generate_html_page(title, sections, parent_path="..", parent_title="强化学习", subtitle=""):
-    nav_html = f'<div class="nav-bar">\n  <a class="parent" href="{BASE_URL}/">{parent_title}</a>\n  <h1>{title}</h1>'
+    nav_html = f'<div class="nav-bar">\n  <a class="parent" href="{REPO_URL}">{parent_title}</a>\n  <h1>{title}</h1>'
     if subtitle:
         nav_html += f'<p>{subtitle}</p>'
     nav_html += '</div>'
@@ -427,7 +461,7 @@ def generate_html_page(title, sections, parent_path="..", parent_title="强化�
     {nav_html}
     {sections_html}
     <div class="footer">
-      <a href="{BASE_URL}/">← 返回强化学习算法列表</a>
+      <a href="{REPO_URL}">← 返回强化学习算法列表</a>
       <p style="color:#666; font-size:1.2rem; margin-top:10px;">
         基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
         风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
@@ -443,7 +477,8 @@ def generate_html_page(title, sections, parent_path="..", parent_title="强化�
           {{left: '$$', right: '$$', display: true}},
           {{left: '$', right: '$', display: false}}
         ],
-        throwOnError: false
+        throwOnError: false,
+        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
       }});
     }});
   </script>
@@ -453,13 +488,13 @@ def generate_html_page(title, sections, parent_path="..", parent_title="强化�
 
 def generate_index_page(html_dir):
     pages = [
-        ("表格型方法 (Tabular)", "第三章", f"{BASE_URL}/tabular/", "Q-Learning, Sarsa, Value Iteration"),
-        ("策略梯度 (Policy Gradient)", "第四章", f"{BASE_URL}/pg/", "REINFORCE, 基线技巧, 折扣回报"),
-        ("PPO (近端策略优化)", "第五章", f"{BASE_URL}/ppo/", "PPO-Clip, PPO-Penalty"),
-        ("GAE (广义优势估计)", "第五章", f"{BASE_URL}/ppo/gae.html", "广义优势估计"),
-        ("DQN (深度Q网络)", "第六章", f"{BASE_URL}/dqn/", "DQN, Double DQN, Dueling DQN"),
-        ("A2C (优势演员-评论员)", "第九章", f"{BASE_URL}/a2c/", "Advantage Actor-Critic"),
-        ("DDPG (深度确定性策略梯度)", "第十二章", f"{BASE_URL}/ddpg/", "连续动作空间控制"),
+        ("表格型方法 (Tabular)", "第三章", f"{REPO_URL}/html/tabular/", "Q-Learning, Sarsa, Value Iteration"),
+        ("策略梯度 (Policy Gradient)", "第四章", f"{REPO_URL}/html/pg/", "REINFORCE, 基线技巧, 折扣回报"),
+        ("PPO (近端策略优化)", "第五章", f"{REPO_URL}/html/ppo/", "PPO-Clip, PPO-Penalty"),
+        ("GAE (广义优势估计)", "第五章", f"{REPO_URL}/html/ppo/gae.html", "广义优势估计"),
+        ("DQN (深度Q网络)", "第六章", f"{REPO_URL}/html/dqn/", "DQN, Double DQN, Dueling DQN"),
+        ("A2C (优势演员-评论员)", "第九章", f"{REPO_URL}/html/a2c/", "Advantage Actor-Critic"),
+        ("DDPG (深度确定性策略梯度)", "第十二章", f"{REPO_URL}/html/ddpg/", "连续动作空间控制"),
     ]
 
     links_html = ""
@@ -500,6 +535,7 @@ def generate_index_page(html_dir):
     </div>
     {links_html}
     <div class="footer">
+      <a href="{REPO_URL}">← 返回GitHub仓库</a>
       <p style="color:#666; font-size:1.2rem;">
         基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
         风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
@@ -515,7 +551,8 @@ def generate_index_page(html_dir):
           {{left: '$$', right: '$$', display: true}},
           {{left: '$', right: '$', display: false}}
         ],
-        throwOnError: false
+        throwOnError: false,
+        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
       }});
     }});
   </script>

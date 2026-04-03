@@ -147,7 +147,7 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
   <div id="container">
     <div id="background"></div>
     <div class="nav-bar">
-  <a class="parent" href="/">强化学习</a>
+  <a class="parent" href="https://github.com/pILLOW-1/annotated-easy-rl">强化学习</a>
   <h1>近端策略优化 (PPO)</h1><p>Proximal Policy Optimization — 蘑菇书第五章</p></div>
     <div class="section">
   <div class="docs">
@@ -233,28 +233,24 @@ $$J_{\text{PPO2}}^{\theta^k}(\theta) \approx \sum_{(s_t, a_t)} \min\left(\frac{\
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>PPO裁剪损失</h2>
-<pre><code>PPO2的核心：裁剪策略比率以限制策略更新幅度。
-
-目标函数：
+<p>PPO2的核心：裁剪策略比率以限制策略更新幅度。</p>
+<p>目标函数：</p>
 $$J_{\text{PPO2}}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\varepsilon, 1+\varepsilon)\hat{A}_t\right)\right]$$
 
-其中：
+<p>其中：
 - $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}$ 是策略比率
 - $\hat{A}_t$ 是优势函数的估计
-- $\varepsilon$ 是裁剪参数
-
-推导过程：
-
-\begin{align}
+- $\varepsilon$ 是裁剪参数</p>
+<p>推导过程：</p>
+$$\begin{align}
 J(\pi_\theta) - J(\pi_{\theta_{old}})
-&amp;= \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{\infty} \gamma^t A^{\pi_{old}}(s_t, a_t)\right] \\
-&amp;= \frac{1}{1-\gamma} \mathbb{E}_{s \sim d^{\pi_\theta}, a \sim \pi_\theta}\left[A^{\pi_{old}}(s, a)\right] \\
-&amp;= \frac{1}{1-\gamma} \mathbb{E}_{s \sim d^{\pi_{\theta_{old}}}, a \sim \pi_{\theta_{old}}}\left[\frac{\pi_\theta(a|s)}{\pi_{\theta_{old}}(a|s)} A^{\pi_{old}}(s, a)\right] \\
-&amp;\approx \frac{1}{1-\gamma} \mathcal{L}^{CPI}
-\end{align}
+&= \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{\infty} \gamma^t A^{\pi_{old}}(s_t, a_t)\right] \\
+&= \frac{1}{1-\gamma} \mathbb{E}_{s \sim d^{\pi_\theta}, a \sim \pi_\theta}\left[A^{\pi_{old}}(s, a)\right] \\
+&= \frac{1}{1-\gamma} \mathbb{E}_{s \sim d^{\pi_{\theta_{old}}}, a \sim \pi_{\theta_{old}}}\left[\frac{\pi_\theta(a|s)}{\pi_{\theta_{old}}(a|s)} A^{\pi_{old}}(s, a)\right] \\
+&\approx \frac{1}{1-\gamma} \mathcal{L}^{CPI}
+\end{align}$$
 
-其中 $\mathcal{L}^{CPI}$ 是CPI (Conservative Policy Iteration) 的目标函数。
-</code></pre>
+<p>其中 $\mathcal{L}^{CPI}$ 是CPI (Conservative Policy Iteration) 的目标函数。</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ClippedPPOLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -270,10 +266,10 @@ J(\pi_\theta) - J(\pi_{\theta_{old}})
 <span class="lineno">11</span>        <span class="n">计算PPO裁剪损失</span>。
 <span class="lineno">12</span>
 <span class="lineno">13</span>        <span class="n">参数映射</span>：
-<span class="lineno">14</span>        <span class="o">-</span> `<span class="n">log_pi</span>`<span class="p">:</span> $\<span class="n">log</span> \<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">a_t</span><span class="o">|</span><span class="n">s_t</span><span class="p">)</span>$ — <span class="n">当前策略的对数概率</span>
-<span class="lineno">15</span>        <span class="o">-</span> `<span class="n">sampled_log_pi</span>`<span class="p">:</span> $\<span class="n">log</span> \<span class="n">pi_</span><span class="p">{</span>\<span class="n">theta_</span><span class="p">{</span><span class="n">old</span><span class="p">}</span><span class="p">}</span><span class="p">(</span><span class="n">a_t</span><span class="o">|</span><span class="n">s_t</span><span class="p">)</span>$ — <span class="n">旧策略的对数概率</span>
-<span class="lineno">16</span>        <span class="o">-</span> `<span class="n">advantage</span>`<span class="p">:</span> $\<span class="n">hat</span><span class="p">{</span><span class="nc">A</span><span class="p">}</span><span class="n">_t</span>$ — <span class="n">优势函数估计</span>
-<span class="lineno">17</span>        <span class="o">-</span> `<span class="n">clip</span>`<span class="p">:</span> $\<span class="n">varepsilon</span>$ — <span class="n">裁剪参数</span>
+<span class="lineno">14</span>        <span class="o">-</span> `<span class="n">log_pi</span>`<span class="p">:</span> <span class="n">$\log \pi_\theta(a_t|s_t)$</span> — <span class="n">当前策略的对数概率</span>
+<span class="lineno">15</span>        <span class="o">-</span> `<span class="n">sampled_log_pi</span>`<span class="p">:</span> <span class="n">$\log \pi_{\theta_{old}}(a_t|s_t)$</span> — <span class="n">旧策略的对数概率</span>
+<span class="lineno">16</span>        <span class="o">-</span> `<span class="n">advantage</span>`<span class="p">:</span> <span class="n">$\hat{A}_t$</span> — <span class="n">优势函数估计</span>
+<span class="lineno">17</span>        <span class="o">-</span> `<span class="n">clip</span>`<span class="p">:</span> <span class="n">$\varepsilon$</span> — <span class="n">裁剪参数</span>
 <span class="lineno">18</span>
 <span class="lineno">19</span>        <span class="n">返回值</span>：
 <span class="lineno">20</span>        <span class="o">-</span> <span class="nc">PPO损失</span>（<span class="n">取负号</span>，<span class="n">因为优化器执行最小化</span>）
@@ -310,14 +306,12 @@ J(\pi_\theta) - J(\pi_{\theta_{old}})
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>裁剪的价值函数损失</h2>
-<pre><code>类似于策略的裁剪，价值函数的更新也需要裁剪以防止过大变化。
-
+<p>类似于策略的裁剪，价值函数的更新也需要裁剪以防止过大变化。</p>
 $$V_{CLIP}^{\pi_\theta}(s_t) = V^{\pi_{\theta_{old}}}(s_t) + \text{clip}\left(V^{\pi_\theta}(s_t) - V^{\pi_{\theta_{old}}}(s_t), -\varepsilon, +\varepsilon\right)$$
 
 $$\mathcal{L}^{VF}(\theta) = \frac{1}{2} \mathbb{E}_t\left[\max\left((V^{\pi_\theta}(s_t) - R_t)^2, (V_{CLIP}^{\pi_\theta}(s_t) - R_t)^2\right)\right]$$
 
-裁剪确保价值函数 $V_\theta$ 不会显著偏离 $V_{\theta_{old}}$。
-</code></pre>
+<p>裁剪确保价值函数 $V_\theta$ 不会显著偏离 $V_{\theta_{old}}$。</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ClippedValueFunctionLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -333,10 +327,10 @@ $$\mathcal{L}^{VF}(\theta) = \frac{1}{2} \mathbb{E}_t\left[\max\left((V^{\pi_\th
 <span class="lineno">11</span>        <span class="n">计算裁剪的价值函数损失</span>。
 <span class="lineno">12</span>
 <span class="lineno">13</span>        <span class="n">参数映射</span>：
-<span class="lineno">14</span>        <span class="o">-</span> `<span class="n">value</span>`<span class="p">:</span> $<span class="nc">V</span><span class="o">^</span><span class="p">{</span>\<span class="n">pi_</span>\<span class="n">theta</span><span class="p">}</span><span class="p">(</span><span class="n">s_t</span><span class="p">)</span>$ — <span class="n">当前价值函数估计</span>
-<span class="lineno">15</span>        <span class="o">-</span> `<span class="n">sampled_value</span>`<span class="p">:</span> $<span class="nc">V</span><span class="o">^</span><span class="p">{</span>\<span class="n">pi_</span><span class="p">{</span>\<span class="n">theta_</span><span class="p">{</span><span class="n">old</span><span class="p">}</span><span class="p">}</span><span class="p">}</span><span class="p">(</span><span class="n">s_t</span><span class="p">)</span>$ — <span class="n">旧价值函数估计</span>
-<span class="lineno">16</span>        <span class="o">-</span> `<span class="n">sampled_return</span>`<span class="p">:</span> $<span class="nc">R_t</span>$ — <span class="n">蒙特卡洛回报</span>
-<span class="lineno">17</span>        <span class="o">-</span> `<span class="n">clip</span>`<span class="p">:</span> $\<span class="n">varepsilon</span>$ — <span class="n">裁剪参数</span>
+<span class="lineno">14</span>        <span class="o">-</span> `<span class="n">value</span>`<span class="p">:</span> <span class="n">$V^{\pi_\theta}(s_t)$</span> — <span class="n">当前价值函数估计</span>
+<span class="lineno">15</span>        <span class="o">-</span> `<span class="n">sampled_value</span>`<span class="p">:</span> <span class="n">$V^{\pi_{\theta_{old}}}(s_t)$</span> — <span class="n">旧价值函数估计</span>
+<span class="lineno">16</span>        <span class="o">-</span> `<span class="n">sampled_return</span>`<span class="p">:</span> <span class="n">$R_t$</span> — <span class="n">蒙特卡洛回报</span>
+<span class="lineno">17</span>        <span class="o">-</span> `<span class="n">clip</span>`<span class="p">:</span> <span class="n">$\varepsilon$</span> — <span class="n">裁剪参数</span>
 <span class="lineno">18</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">19</span>        <span class="c"># 裁剪的价值函数：$V_{CLIP} = V_{old} + \text{clip}(V - V_{old}, -\varepsilon, \varepsilon)$</span>
 <span class="lineno">20</span>        <span class="n">clipped_value</span> <span class="o">=</span> <span class="n">sampled_value</span> <span class="o">+</span> <span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">sampled_value</span><span class="p">)</span><span class="p">.</span><span class="nf">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=-</span><span class="n">clip</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">clip</span><span class="p">)</span>
@@ -354,16 +348,14 @@ $$\mathcal{L}^{VF}(\theta) = \frac{1}{2} \mathbb{E}_t\left[\max\left((V^{\pi_\th
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
     <h2>PPO网络</h2>
-<pre><code>共享特征提取器的Actor-Critic网络结构。
-Actor输出策略 $\pi_\theta(a|s)$，Critic输出价值 $V_\theta(s)$。
-
-网络结构：
+<p>共享特征提取器的Actor-Critic网络结构。
+Actor输出策略 $\pi_\theta(a|s)$，Critic输出价值 $V_\theta(s)$。</p>
+<p>网络结构：</p>
 $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\right)$$
 
-但PPO通常使用独立的Actor和Critic头：
+<p>但PPO通常使用独立的Actor和Critic头：
 - Actor: 特征 → 策略分布 $\pi_\theta(\cdot|s)$
-- Critic: 特征 → 价值估计 $V_\theta(s)$
-</code></pre>
+- Critic: 特征 → 价值估计 $V_\theta(s)$</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">PPONetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -401,7 +393,7 @@ $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\rig
 <span class="lineno">33</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">34</span>        <span class="n">评估给定状态</span><span class="o">-</span><span class="n">动作对的对数概率和价值</span>。
 <span class="lineno">35</span>
-<span class="lineno">36</span>        <span class="n">用于PPO更新时计算</span> $\<span class="n">log</span> \<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">a_t</span><span class="o">|</span><span class="n">s_t</span><span class="p">)</span>$。
+<span class="lineno">36</span>        <span class="n">用于PPO更新时计算</span> <span class="n">$\log \pi_\theta(a_t|s_t)$</span>。
 <span class="lineno">37</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">38</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 <span class="lineno">39</span>        <span class="n">action_logits</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">actor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
@@ -420,7 +412,7 @@ $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\rig
 </div>
 
     <div class="footer">
-      <a href="/">← 返回强化学习算法列表</a>
+      <a href="https://github.com/pILLOW-1/annotated-easy-rl">← 返回强化学习算法列表</a>
       <p style="color:#666; font-size:1.2rem; margin-top:10px;">
         基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
         风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
@@ -436,7 +428,8 @@ $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\rig
           {left: '$$', right: '$$', display: true},
           {left: '$', right: '$', display: false}
         ],
-        throwOnError: false
+        throwOnError: false,
+        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
       });
     });
   </script>

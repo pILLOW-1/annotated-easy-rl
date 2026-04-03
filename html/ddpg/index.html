@@ -147,7 +147,7 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
   <div id="container">
     <div id="background"></div>
     <div class="nav-bar">
-  <a class="parent" href="/">强化学习</a>
+  <a class="parent" href="https://github.com/pILLOW-1/annotated-easy-rl">强化学习</a>
   <h1>深度确定性策略梯度 (DDPG)</h1><p>Deep Deterministic Policy Gradient — 蘑菇书第十二章</p></div>
     <div class="section">
   <div class="docs">
@@ -242,14 +242,12 @@ $$dx_t = \theta(\mu - x_t)dt + \sigma dW_t$$
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>Actor网络（确定性策略）</h2>
-<pre><code>Actor $\mu_\theta(s)$ 是一个确定性策略网络，
-输入状态 $s$，输出连续动作 $a$。
-
+<p>Actor $\mu_\theta(s)$ 是一个确定性策略网络，
+输入状态 $s$，输出连续动作 $a$。</p>
 $$a = \mu_\theta(s)$$
 
-输出通常使用tanh激活函数，将动作限制在 $[-1, 1]$ 范围内，
-然后缩放到实际的动作空间。
-</code></pre>
+<p>输出通常使用tanh激活函数，将动作限制在 $[-1, 1]$ 范围内，
+然后缩放到实际的动作空间。</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">Actor</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -268,13 +266,13 @@ $$a = \mu_\theta(s)$$
 <span class="lineno">14</span>
 <span class="lineno">15</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
 <span class="lineno">16</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">17</span>        <span class="n">输出确定性动作</span> $<span class="n">a</span> <span class="o">=</span> \<span class="n">mu_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>$。
+<span class="lineno">17</span>        <span class="n">输出确定性动作</span> <span class="n">$a = \mu_\theta(s)$</span>。
 <span class="lineno">18</span>
 <span class="lineno">19</span>        <span class="n">参数</span>：
-<span class="lineno">20</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> $<span class="n">s</span>$ — <span class="n">状态</span>
+<span class="lineno">20</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> <span class="n">$s$</span> — <span class="n">状态</span>
 <span class="lineno">21</span>
 <span class="lineno">22</span>        <span class="n">返回值</span>：
-<span class="lineno">23</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> $<span class="n">a</span> <span class="o">=</span> \<span class="n">mu_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> \<span class="n">times</span> \<span class="n">text</span><span class="p">{</span><span class="n">scale</span><span class="p">}</span>$ — <span class="n">缩放后的动作</span>
+<span class="lineno">23</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> <span class="n">$a = \mu_\theta(s) \times \text{scale}$</span> — <span class="n">缩放后的动作</span>
 <span class="lineno">24</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">25</span>        <span class="n">action</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">network</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 <span class="lineno">26</span>        <span class="k">return</span> <span class="n">action</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">action_scale</span>
@@ -286,12 +284,10 @@ $$a = \mu_\theta(s)$$
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>Critic网络（动作价值函数）</h2>
-<pre><code>Critic $Q_\phi(s, a)$ 估计状态-动作对的价值。
-
+<p>Critic $Q_\phi(s, a)$ 估计状态-动作对的价值。</p>
 $$Q_\phi(s, a) \approx Q^\mu(s, a)$$
 
-输入状态 $s$ 和动作 $a$，输出标量Q值。
-</code></pre>
+<p>输入状态 $s$ 和动作 $a$，输出标量Q值。</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">Critic</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -309,14 +305,14 @@ $$Q_\phi(s, a) \approx Q^\mu(s, a)$$
 <span class="lineno">13</span>
 <span class="lineno">14</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
 <span class="lineno">15</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">16</span>        <span class="n">输出动作价值</span> $<span class="nc">Q_</span>\<span class="nf">phi</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>$。
+<span class="lineno">16</span>        <span class="n">输出动作价值</span> <span class="n">$Q_\phi(s, a)$</span>。
 <span class="lineno">17</span>
 <span class="lineno">18</span>        <span class="n">参数</span>：
-<span class="lineno">19</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> $<span class="n">s</span>$ — <span class="n">状态</span>
-<span class="lineno">20</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> $<span class="n">a</span>$ — <span class="n">动作</span>
+<span class="lineno">19</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> <span class="n">$s$</span> — <span class="n">状态</span>
+<span class="lineno">20</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> <span class="n">$a$</span> — <span class="n">动作</span>
 <span class="lineno">21</span>
 <span class="lineno">22</span>        <span class="n">返回值</span>：
-<span class="lineno">23</span>        <span class="o">-</span> `<span class="n">q_value</span>`<span class="p">:</span> $<span class="nc">Q_</span>\<span class="nf">phi</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>$ — <span class="n">动作价值</span>
+<span class="lineno">23</span>        <span class="o">-</span> `<span class="n">q_value</span>`<span class="p">:</span> <span class="n">$Q_\phi(s, a)$</span> — <span class="n">动作价值</span>
 <span class="lineno">24</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">25</span>        <span class="c"># 拼接状态和动作：$[s, a]$</span>
 <span class="lineno">26</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">cat</span><span class="p">(</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
@@ -329,21 +325,18 @@ $$Q_\phi(s, a) \approx Q^\mu(s, a)$$
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
     <h2>DDPG损失函数</h2>
-<pre><code>### Critic损失
-
+<h3>Critic损失</h3>
 $$L(\phi) = \mathbb{E}_{(s,a,r,s') \sim D}\left[(Q_\phi(s, a) - y)^2\right]$$
 
-其中目标值：
+<p>其中目标值：</p>
 $$y = r + \gamma Q_{\phi'}(s', \mu_{\theta'}(s')) \times (1 - \text{done})$$
 
-### Actor损失
-
-Actor通过最大化Critic的输出来学习：
+<h3>Actor损失</h3>
+<p>Actor通过最大化Critic的输出来学习：</p>
 $$J(\theta) = \mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]$$
 
-由于优化器执行最小化，Actor损失为：
+<p>由于优化器执行最小化，Actor损失为：</p>
 $$L(\theta) = -\mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]$$
-</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">DDPGLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -363,9 +356,9 @@ $$L(\theta) = -\mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]$$
 <span class="lineno">15</span>        <span class="n">计算Critic损失</span>。
 <span class="lineno">16</span>
 <span class="lineno">17</span>        <span class="n">参数映射</span>：
-<span class="lineno">18</span>        <span class="o">-</span> `<span class="n">q_values</span>`<span class="p">:</span> $<span class="nc">Q_</span>\<span class="nf">phi</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>$ — <span class="n">当前状态</span><span class="o">-</span><span class="n">动作对的Q值</span>
-<span class="lineno">19</span>        <span class="o">-</span> `<span class="n">next_q_values</span>`<span class="p">:</span> $<span class="nc">Q_</span><span class="p">{</span>\<span class="n">phi</span><span class="o">&</span><span class="c">#x27;}(s&#x27;, \mu_{\theta&#x27;}(s&#x27;))$ — 目标网络对下一状态的Q值</span>
-<span class="lineno">20</span>        <span class="o">-</span> `<span class="n">rewards</span>`<span class="p">:</span> $<span class="n">r</span>$ — <span class="n">奖励</span>
+<span class="lineno">18</span>        <span class="o">-</span> `<span class="n">q_values</span>`<span class="p">:</span> <span class="n">$Q_\phi(s, a)$</span> — <span class="n">当前状态</span><span class="o">-</span><span class="n">动作对的Q值</span>
+<span class="lineno">19</span>        <span class="o">-</span> `<span class="n">next_q_values</span>`<span class="p">:</span> <span class="n">$Q_{\phi&#x27;}(s&#x27;, \mu_{\theta&#x27;}(s&#x27;))$</span> — <span class="n">目标网络对下一状态的Q值</span>
+<span class="lineno">20</span>        <span class="o">-</span> `<span class="n">rewards</span>`<span class="p">:</span> <span class="n">$r$</span> — <span class="n">奖励</span>
 <span class="lineno">21</span>        <span class="o">-</span> `<span class="n">dones</span>`<span class="p">:</span> <span class="n">是否episode结束</span>
 <span class="lineno">22</span>
 <span class="lineno">23</span>        <span class="n">返回值</span>：
@@ -385,7 +378,7 @@ $$L(\theta) = -\mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]$$
 <span class="lineno">37</span>        <span class="n">计算Actor损失</span>。
 <span class="lineno">38</span>
 <span class="lineno">39</span>        <span class="n">参数</span>：
-<span class="lineno">40</span>        <span class="o">-</span> `<span class="n">q_values</span>`<span class="p">:</span> $<span class="nc">Q_</span>\<span class="nf">phi</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> \<span class="n">mu_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="p">)</span>$ — <span class="nc">Critic对Actor输出动作的Q值</span>
+<span class="lineno">40</span>        <span class="o">-</span> `<span class="n">q_values</span>`<span class="p">:</span> <span class="n">$Q_\phi(s, \mu_\theta(s))$</span> — <span class="nc">Critic对Actor输出动作的Q值</span>
 <span class="lineno">41</span>
 <span class="lineno">42</span>        <span class="n">返回值</span>：
 <span class="lineno">43</span>        <span class="o">-</span> <span class="nc">Actor损失</span>（<span class="n">取负号</span>）
@@ -402,21 +395,18 @@ $$L(\theta) = -\mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]$$
   <div class="docs">
     <div class="section-link"><a href="#section-5">#</a></div>
     <h2>Ornstein-Uhlenbeck噪声过程</h2>
-<pre><code>OU过程用于生成时间相关的探索噪声：
-
+<p>OU过程用于生成时间相关的探索噪声：</p>
 $$dx_t = \theta(\mu - x_t)dt + \sigma dW_t$$
 
-其中：
+<p>其中：
 - $\theta$：均值回归速度
 - $\mu$：均值
 - $\sigma$：波动率
-- $W_t$：维纳过程
-
-OU过程的特性：
+- $W_t$：维纳过程</p>
+<p>OU过程的特性：
 1. 均值回归：噪声会趋向于均值 $\mu$
 2. 时间相关性：连续时间步的噪声相关
-3. 适合连续控制：噪声变化平滑
-</code></pre>
+3. 适合连续控制：噪声变化平滑</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">OUNoise</span><span class="p">:</span>
@@ -442,7 +432,7 @@ OU过程的特性：
 <span class="lineno">21</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">22</span>        <span class="n">采样OU噪声</span>。
 <span class="lineno">23</span>
-<span class="lineno">24</span>        $$<span class="n">dx</span> <span class="o">=</span> \<span class="nf">theta</span><span class="p">(</span>\<span class="n">mu</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> \<span class="n">sigma</span> \<span class="n">mathcal</span><span class="p">{</span><span class="nc">N</span><span class="p">}</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>$$
+<span class="lineno">24</span>        <span class="n">$$dx = \theta(\mu - x) + \sigma \mathcal{N}(0, 1)$$</span>
 <span class="lineno">25</span>
 <span class="lineno">26</span>        <span class="n">返回值</span>：
 <span class="lineno">27</span>        <span class="o">-</span> <span class="nc">OU噪声样本</span>
@@ -459,15 +449,13 @@ OU过程的特性：
   <div class="docs">
     <div class="section-link"><a href="#section-6">#</a></div>
     <h2>目标网络软更新</h2>
-<pre><code>$$\theta' \leftarrow \tau \theta + (1 - \tau) \theta'$$
+$$\theta' \leftarrow \tau \theta + (1 - \tau) \theta'$$
 
-软更新使目标网络平滑地跟踪主网络，避免剧烈变化。
-
-参数：
-- `target`: 目标网络 $\theta'$
-- `source`: 主网络 $\theta$
-- `tau`: $\tau$ — 软更新系数（通常取0.001~0.01）
-</code></pre>
+<p>软更新使目标网络平滑地跟踪主网络，避免剧烈变化。</p>
+<p>参数：
+- <code>target</code>: 目标网络 $\theta'$
+- <code>source</code>: 主网络 $\theta$
+- <code>tau</code>: $\tau$ — 软更新系数（通常取0.001~0.01）</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">soft_update</span><span class="p">(</span><span class="n">target</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span><span class="p">:</span>
@@ -483,14 +471,12 @@ OU过程的特性：
   <div class="docs">
     <div class="section-link"><a href="#section-7">#</a></div>
     <h2>目标网络硬更新</h2>
-<pre><code>$$\theta' \leftarrow \theta$$
+$$\theta' \leftarrow \theta$$
 
-直接将主网络的参数复制到目标网络。
-
-参数：
-- `target`: 目标网络
-- `source`: 主网络
-</code></pre>
+<p>直接将主网络的参数复制到目标网络。</p>
+<p>参数：
+- <code>target</code>: 目标网络
+- <code>source</code>: 主网络</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">def</span> <span class="nf">hard_update</span><span class="p">(</span><span class="n">target</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -501,7 +487,7 @@ OU过程的特性：
 </div>
 
     <div class="footer">
-      <a href="/">← 返回强化学习算法列表</a>
+      <a href="https://github.com/pILLOW-1/annotated-easy-rl">← 返回强化学习算法列表</a>
       <p style="color:#666; font-size:1.2rem; margin-top:10px;">
         基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
         风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
@@ -517,7 +503,8 @@ OU过程的特性：
           {left: '$$', right: '$$', display: true},
           {left: '$', right: '$', display: false}
         ],
-        throwOnError: false
+        throwOnError: false,
+        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
       });
     });
   </script>

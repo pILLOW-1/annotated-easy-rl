@@ -147,7 +147,7 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
   <div id="container">
     <div id="background"></div>
     <div class="nav-bar">
-  <a class="parent" href="/">强化学习</a>
+  <a class="parent" href="https://github.com/pILLOW-1/annotated-easy-rl">强化学习</a>
   <h1>深度Q网络 (DQN)</h1><p>Deep Q Networks — 蘑菇书第六章</p></div>
     <div class="section">
   <div class="docs">
@@ -203,10 +203,11 @@ $$L(\theta) = \mathbb{E}\left[\left(r + \gamma Q\left(s', \underset{a'}{\arg\max
 
 <h2>Dueling Network ⚔️</h2>
 <p>Dueling网络将Q值分解为状态价值和优势函数：</p>
-<p>\begin{align}
-Q^\pi(s, a) &amp;= V^\pi(s) + A^\pi(s, a) \
-\mathbb{E}_{a \sim \pi(s)}\left[A^\pi(s, a)\right] &amp;= 0
-\end{align}</p>
+$$\begin{align}
+Q^\pi(s, a) &= V^\pi(s) + A^\pi(s, a) \\
+\mathbb{E}_{a \sim \pi(s)}\left[A^\pi(s, a)\right] &= 0
+\end{align}$$
+
 <p>实际计算中：</p>
 $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a' \in \mathcal{A}} A(s, a')\right)$$
 
@@ -259,33 +260,28 @@ $$\pi(a|s) = \frac{e^{Q(s,a)/T}}{\sum_{a'} e^{Q(s,a')/T}}$$
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>DQN损失函数</h2>
-<pre><code>我们想要找到最优的动作价值函数：
+<p>我们想要找到最优的动作价值函数：</p>
+$$\begin{align}
+Q^*(s,a) &= \max_\pi \mathbb{E}\left[r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots \mid s_t=s, a_t=a, \pi\right] \\
+Q^*(s,a) &= \mathbb{E}_{s' \sim \mathcal{E}}\left[r + \gamma \max_{a'} Q^*(s', a') \mid s, a\right]
+\end{align}$$
 
-\begin{align}
-Q^*(s,a) &amp;= \max_\pi \mathbb{E}\left[r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots \mid s_t=s, a_t=a, \pi\right] \\
-Q^*(s,a) &amp;= \mathbb{E}_{s' \sim \mathcal{E}}\left[r + \gamma \max_{a'} Q^*(s', a') \mid s, a\right]
-\end{align}
-
-### 目标网络 🎯
-
-使用经验回放 $U(D)$ 随机采样历史经验，并使用独立的Q网络
-参数 $\textcolor{orange}{\theta^-}$ 来计算目标值。
-$\textcolor{orange}{\theta^-}$ 定期更新。
-
-损失函数：
+<h3>目标网络 🎯</h3>
+<p>使用经验回放 $U(D)$ 随机采样历史经验，并使用独立的Q网络
+参数 $\textcolor{orange}{\theta^-}$ 来计算目标值。</p>
+$\textcolor{orange}{\theta^-}$
+<p>定期更新。</p>
+<p>损失函数：</p>
 $$\mathcal{L}(\theta) = \mathbb{E}_{(s,a,r,s') \sim U(D)}\left[\left(r + \gamma \max_{a'} Q(s', a'; \textcolor{orange}{\theta^-}) - Q(s,a;\theta)\right)^2\right]$$
 
-### Double Q-Learning
-
-使用Double Q-Learning，其中：
+<h3>Double Q-Learning</h3>
+<p>使用Double Q-Learning，其中：
 - $\textcolor{cyan}{\theta}$ 用于选择动作
-- $\textcolor{orange}{\theta^-}$ 用于评估价值
-
-\begin{align}
-\mathcal{L}(\theta) = \mathbb{E}\Bigg[\bigg(&amp;r + \gamma \textcolor{orange}{Q}\Big(s', \underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big) \\
-&amp;- Q(s,a;\theta)\bigg)^2\Bigg]
-\end{align}
-</code></pre>
+- $\textcolor{orange}{\theta^-}$ 用于评估价值</p>
+$$\begin{align}
+\mathcal{L}(\theta) = \mathbb{E}\Bigg[\bigg(&r + \gamma \textcolor{orange}{Q}\Big(s', \underset{a'}{\arg\max} \textcolor{cyan}{Q}(s', a'; \textcolor{cyan}{\theta}); \textcolor{orange}{\theta^-}\Big) \\
+&- Q(s,a;\theta)\bigg)^2\Bigg]
+\end{align}$$
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">QFuncLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -309,12 +305,12 @@ $$\mathcal{L}(\theta) = \mathbb{E}_{(s,a,r,s') \sim U(D)}\left[\left(r + \gamma 
 <span class="lineno">19</span>        <span class="n">计算DQN损失</span>。
 <span class="lineno">20</span>
 <span class="lineno">21</span>        <span class="n">参数映射</span>：
-<span class="lineno">22</span>        <span class="o">-</span> `<span class="n">q</span>`<span class="p">:</span> $<span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">a</span><span class="p">;</span>\<span class="n">theta</span><span class="p">)</span>$ — <span class="n">主网络输出的Q值</span>
-<span class="lineno">23</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> $<span class="n">a</span>$ — <span class="n">采取的动作</span>
-<span class="lineno">24</span>        <span class="o">-</span> `<span class="n">double_q</span>`<span class="p">:</span> $\<span class="n">textcolor</span><span class="p">{</span><span class="n">cyan</span><span class="p">}</span><span class="p">{</span><span class="nc">Q</span><span class="p">}</span><span class="p">(</span><span class="n">s</span><span class="o">&</span><span class="c">#x27;;\textcolor{cyan}{\theta})$ — 主网络对下一状态的Q值</span>
-<span class="lineno">25</span>        <span class="o">-</span> `<span class="n">target_q</span>`<span class="p">:</span> $\<span class="n">textcolor</span><span class="p">{</span><span class="n">orange</span><span class="p">}</span><span class="p">{</span><span class="nc">Q</span><span class="p">}</span><span class="p">(</span><span class="n">s</span><span class="o">&</span><span class="c">#x27;;\textcolor{orange}{\theta^-})$ — 目标网络对下一状态的Q值</span>
+<span class="lineno">22</span>        <span class="o">-</span> `<span class="n">q</span>`<span class="p">:</span> <span class="n">$Q(s,a;\theta)$</span> — <span class="n">主网络输出的Q值</span>
+<span class="lineno">23</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> <span class="n">$a$</span> — <span class="n">采取的动作</span>
+<span class="lineno">24</span>        <span class="o">-</span> `<span class="n">double_q</span>`<span class="p">:</span> <span class="n">$\textcolor{cyan}{Q}(s&#x27;;\textcolor{cyan}{\theta})$</span> — <span class="n">主网络对下一状态的Q值</span>
+<span class="lineno">25</span>        <span class="o">-</span> `<span class="n">target_q</span>`<span class="p">:</span> <span class="n">$\textcolor{orange}{Q}(s&#x27;;\textcolor{orange}{\theta^-})$</span> — <span class="n">目标网络对下一状态的Q值</span>
 <span class="lineno">26</span>        <span class="o">-</span> `<span class="n">done</span>`<span class="p">:</span> <span class="n">是否episode结束</span>
-<span class="lineno">27</span>        <span class="o">-</span> `<span class="n">reward</span>`<span class="p">:</span> $<span class="n">r</span>$ — <span class="n">奖励</span>
+<span class="lineno">27</span>        <span class="o">-</span> `<span class="n">reward</span>`<span class="p">:</span> <span class="n">$r$</span> — <span class="n">奖励</span>
 <span class="lineno">28</span>        <span class="o">-</span> `<span class="n">weights</span>`<span class="p">:</span> <span class="n">优先级经验回放的权重</span>
 <span class="lineno">29</span>
 <span class="lineno">30</span>        <span class="n">返回值</span>：
@@ -361,23 +357,22 @@ $$\mathcal{L}(\theta) = \mathbb{E}_{(s,a,r,s') \sim U(D)}\left[\left(r + \gamma 
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>Dueling网络 ⚔️ 结构</h2>
-<pre><code>使用[Dueling网络](https://arxiv.org/abs/1511.06581)来计算Q值。
-
-Dueling网络的直觉：
+<p>使用<a href="https://arxiv.org/abs/1511.06581">Dueling网络</a>来计算Q值。</p>
+<p>Dueling网络的直觉：
 - 在大多数状态下，动作并不重要
 - 在少数状态下，动作非常关键
-- Dueling网络可以很好地表示这种差异
+- Dueling网络可以很好地表示这种差异</p>
+$$\begin{align}
+Q^\pi(s,a) &= V^\pi(s) + A^\pi(s, a) \\
+\mathbb{E}_{a \sim \pi(s)}\left[A^\pi(s, a)\right] &= 0
+\end{align}$$
 
-\begin{align}
-Q^\pi(s,a) &amp;= V^\pi(s) + A^\pi(s, a) \\
-\mathbb{E}_{a \sim \pi(s)}\left[A^\pi(s, a)\right] &amp;= 0
-\end{align}
-
-实际计算：
+<p>实际计算：</p>
 $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a' \in \mathcal{A}} A(s, a')\right)$$
 
-$V$ 和 $A$ 网络共享前面的卷积层。
-</code></pre>
+$V$
+<p>和  网络共享前面的卷积层。</p>
+$A$
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">DuelingQNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -431,14 +426,14 @@ $V$ 和 $A$ 网络共享前面的卷积层。
   <div class="docs">
     <div class="section-link"><a href="#section-4">#</a></div>
     <h2>$\varepsilon$-贪心探索策略</h2>
-<pre><code>$$a = \begin{cases}
-    \underset{a}{\arg\max} Q(s, a) & \text{概率 } 1-\varepsilon \\
-    \text{随机动作} & \text{概率 } \varepsilon
-    \end{cases}$$
+$$a = \begin{cases}
+\underset{a}{\arg\max} Q(s, a) & \text{概率 } 1-\varepsilon \\
+\text{随机动作} & \text{概率 } \varepsilon
+\end{cases}$$
 
-$\varepsilon$ 随时间衰减：
+$\varepsilon$
+<p>随时间衰减：</p>
 $$\varepsilon_t = \varepsilon_{end} + (\varepsilon_{start} - \varepsilon_{end}) \times e^{-t/\text{decay}}$$
-</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nc">EpsilonGreedy</span><span class="p">:</span>
@@ -459,10 +454,10 @@ $$\varepsilon_t = \varepsilon_{end} + (\varepsilon_{start} - \varepsilon_{end}) 
 <span class="lineno">16</span>
 <span class="lineno">17</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="lineno">18</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
-<span class="lineno">19</span>        <span class="n">根据</span>$\<span class="n">varepsilon</span>$<span class="o">-</span><span class="n">贪心策略选择动作</span>。
+<span class="lineno">19</span>        <span class="n">根据$\varepsilon$</span><span class="o">-</span><span class="n">贪心策略选择动作</span>。
 <span class="lineno">20</span>
 <span class="lineno">21</span>        <span class="n">参数</span>：
-<span class="lineno">22</span>        <span class="o">-</span> `<span class="n">q_values</span>`<span class="p">:</span> $<span class="nf">Q</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">;</span>\<span class="n">theta</span><span class="p">)</span>$ — <span class="n">当前状态的Q值</span>
+<span class="lineno">22</span>        <span class="o">-</span> `<span class="n">q_values</span>`<span class="p">:</span> <span class="n">$Q(s, a;\theta)$</span> — <span class="n">当前状态的Q值</span>
 <span class="lineno">23</span>
 <span class="lineno">24</span>        <span class="n">返回值</span>：
 <span class="lineno">25</span>        <span class="o">-</span> <span class="n">选择的动作</span>
@@ -485,7 +480,7 @@ $$\varepsilon_t = \varepsilon_{end} + (\varepsilon_{start} - \varepsilon_{end}) 
 </div>
 
     <div class="footer">
-      <a href="/">← 返回强化学习算法列表</a>
+      <a href="https://github.com/pILLOW-1/annotated-easy-rl">← 返回强化学习算法列表</a>
       <p style="color:#666; font-size:1.2rem; margin-top:10px;">
         基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
         风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
@@ -501,7 +496,8 @@ $$\varepsilon_t = \varepsilon_{end} + (\varepsilon_{start} - \varepsilon_{end}) 
           {left: '$$', right: '$$', display: true},
           {left: '$', right: '$', display: false}
         ],
-        throwOnError: false
+        throwOnError: false,
+        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
       });
     });
   </script>

@@ -147,7 +147,7 @@ div.footer a { display: inline-block; margin: 5px; font-size: 1.3rem; }
   <div id="container">
     <div id="background"></div>
     <div class="nav-bar">
-  <a class="parent" href="/">强化学习</a>
+  <a class="parent" href="https://github.com/pILLOW-1/annotated-easy-rl">强化学习</a>
   <h1>优势演员-评论员 (A2C)</h1><p>Advantage Actor-Critic — 蘑菇书第九章</p></div>
     <div class="section">
   <div class="docs">
@@ -228,11 +228,10 @@ $$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
   <div class="docs">
     <div class="section-link"><a href="#section-2">#</a></div>
     <h2>Actor-Critic共享网络</h2>
-<pre><code>共享特征提取器的Actor-Critic网络：
+<p>共享特征提取器的Actor-Critic网络：
 - 共享层：提取状态特征
 - Actor头：输出策略分布 $\pi_\theta(a|s)$
-- Critic头：输出状态价值 $V_\phi(s)$
-</code></pre>
+- Critic头：输出状态价值 $V_\phi(s)$</p>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">ActorCriticNetwork</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -258,11 +257,11 @@ $$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
 <span class="lineno">21</span>        <span class="n">前向传播</span>。
 <span class="lineno">22</span>
 <span class="lineno">23</span>        <span class="n">参数</span>：
-<span class="lineno">24</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> $<span class="n">s</span>$ — <span class="n">状态</span>
+<span class="lineno">24</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> <span class="n">$s$</span> — <span class="n">状态</span>
 <span class="lineno">25</span>
 <span class="lineno">26</span>        <span class="n">返回值</span>：
-<span class="lineno">27</span>        <span class="o">-</span> `<span class="n">action_probs</span>`<span class="p">:</span> $\<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">a</span><span class="o">|</span><span class="n">s</span><span class="p">)</span>$ — <span class="n">动作概率分布</span>
-<span class="lineno">28</span>        <span class="o">-</span> `<span class="n">state_value</span>`<span class="p">:</span> $<span class="nc">V_</span>\<span class="nf">phi</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>$ — <span class="n">状态价值</span>
+<span class="lineno">27</span>        <span class="o">-</span> `<span class="n">action_probs</span>`<span class="p">:</span> <span class="n">$\pi_\theta(a|s)$</span> — <span class="n">动作概率分布</span>
+<span class="lineno">28</span>        <span class="o">-</span> `<span class="n">state_value</span>`<span class="p">:</span> <span class="n">$V_\phi(s)$</span> — <span class="n">状态价值</span>
 <span class="lineno">29</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">30</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 <span class="lineno">31</span>
@@ -279,16 +278,16 @@ $$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
 <span class="lineno">42</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">43</span>        <span class="n">评估给定状态</span><span class="o">-</span><span class="n">动作对</span>。
 <span class="lineno">44</span>
-<span class="lineno">45</span>        <span class="n">用于计算</span> $\<span class="n">log</span> \<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">a_t</span><span class="o">|</span><span class="n">s_t</span><span class="p">)</span>$ <span class="n">和策略熵</span>。
+<span class="lineno">45</span>        <span class="n">用于计算</span> <span class="n">$\log \pi_\theta(a_t|s_t)$</span> <span class="n">和策略熵</span>。
 <span class="lineno">46</span>
 <span class="lineno">47</span>        <span class="n">参数</span>：
-<span class="lineno">48</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> $<span class="n">s</span>$ — <span class="n">状态</span>
-<span class="lineno">49</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> $<span class="n">a</span>$ — <span class="n">动作</span>
+<span class="lineno">48</span>        <span class="o">-</span> `<span class="n">state</span>`<span class="p">:</span> <span class="n">$s$</span> — <span class="n">状态</span>
+<span class="lineno">49</span>        <span class="o">-</span> `<span class="n">action</span>`<span class="p">:</span> <span class="n">$a$</span> — <span class="n">动作</span>
 <span class="lineno">50</span>
 <span class="lineno">51</span>        <span class="n">返回值</span>：
-<span class="lineno">52</span>        <span class="o">-</span> `<span class="n">log_prob</span>`<span class="p">:</span> $\<span class="n">log</span> \<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">a</span><span class="o">|</span><span class="n">s</span><span class="p">)</span>$ — <span class="n">动作的对数概率</span>
-<span class="lineno">53</span>        <span class="o">-</span> `<span class="n">state_value</span>`<span class="p">:</span> $<span class="nc">V_</span>\<span class="nf">phi</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>$ — <span class="n">状态价值</span>
-<span class="lineno">54</span>        <span class="o">-</span> `<span class="n">entropy</span>`<span class="p">:</span> $\<span class="n">mathcal</span><span class="p">{</span><span class="nc">H</span><span class="p">}</span><span class="p">(</span>\<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span>\<span class="n">cdot</span><span class="o">|</span><span class="n">s</span><span class="p">)</span><span class="p">)</span>$ — <span class="n">策略熵</span>
+<span class="lineno">52</span>        <span class="o">-</span> `<span class="n">log_prob</span>`<span class="p">:</span> <span class="n">$\log \pi_\theta(a|s)$</span> — <span class="n">动作的对数概率</span>
+<span class="lineno">53</span>        <span class="o">-</span> `<span class="n">state_value</span>`<span class="p">:</span> <span class="n">$V_\phi(s)$</span> — <span class="n">状态价值</span>
+<span class="lineno">54</span>        <span class="o">-</span> `<span class="n">entropy</span>`<span class="p">:</span> <span class="n">$\mathcal{H}(\pi_\theta(\cdot|s))$</span> — <span class="n">策略熵</span>
 <span class="lineno">55</span>        <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">56</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 <span class="lineno">57</span>        <span class="n">action_logits</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">actor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
@@ -313,18 +312,15 @@ $$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
   <div class="docs">
     <div class="section-link"><a href="#section-3">#</a></div>
     <h2>A2C损失函数</h2>
-<pre><code>A2C的总损失由三部分组成：
-
+<p>A2C的总损失由三部分组成：</p>
 $$L = L_{actor} + c_1 L_{critic} - c_2 \mathcal{H}$$
 
-其中：
+<p>其中：
 - $L_{actor} = -\mathbb{E}[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]$
 - $L_{critic} = \mathbb{E}[(G_t - V(s_t))^2]$
-- $\mathcal{H} = \mathbb{E}[\mathcal{H}(\pi_\theta(\cdot|s_t))]$
-
-优势函数通过TD残差或GAE估计：
+- $\mathcal{H} = \mathbb{E}[\mathcal{H}(\pi_\theta(\cdot|s_t))]$</p>
+<p>优势函数通过TD残差或GAE估计：</p>
 $$A(s_t, a_t) = G_t - V(s_t)$$
-</code></pre>
   </div>
   <div class="code">
     <pre><span class="lineno">1</span><span class="k">class</span> <span class="nf">A2CLoss</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="nc">Module</span><span class="p">)</span><span class="p">:</span>
@@ -345,10 +341,10 @@ $$A(s_t, a_t) = G_t - V(s_t)$$
 <span class="lineno">16</span>        <span class="n">计算A2C损失</span>。
 <span class="lineno">17</span>
 <span class="lineno">18</span>        <span class="n">参数映射</span>：
-<span class="lineno">19</span>        <span class="o">-</span> `<span class="n">log_probs</span>`<span class="p">:</span> $\<span class="n">log</span> \<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span><span class="n">a_t</span><span class="o">|</span><span class="n">s_t</span><span class="p">)</span>$ — <span class="n">动作的对数概率</span>
-<span class="lineno">20</span>        <span class="o">-</span> `<span class="n">state_values</span>`<span class="p">:</span> $<span class="nc">V_</span>\<span class="nf">phi</span><span class="p">(</span><span class="n">s_t</span><span class="p">)</span>$ — <span class="n">状态价值</span>
-<span class="lineno">21</span>        <span class="o">-</span> `<span class="n">returns</span>`<span class="p">:</span> $<span class="nc">G_t</span>$ — <span class="n">折扣累积回报</span>
-<span class="lineno">22</span>        <span class="o">-</span> `<span class="n">entropy</span>`<span class="p">:</span> $\<span class="n">mathcal</span><span class="p">{</span><span class="nc">H</span><span class="p">}</span><span class="p">(</span>\<span class="n">pi_</span>\<span class="nf">theta</span><span class="p">(</span>\<span class="n">cdot</span><span class="o">|</span><span class="n">s_t</span><span class="p">)</span><span class="p">)</span>$ — <span class="n">策略熵</span>
+<span class="lineno">19</span>        <span class="o">-</span> `<span class="n">log_probs</span>`<span class="p">:</span> <span class="n">$\log \pi_\theta(a_t|s_t)$</span> — <span class="n">动作的对数概率</span>
+<span class="lineno">20</span>        <span class="o">-</span> `<span class="n">state_values</span>`<span class="p">:</span> <span class="n">$V_\phi(s_t)$</span> — <span class="n">状态价值</span>
+<span class="lineno">21</span>        <span class="o">-</span> `<span class="n">returns</span>`<span class="p">:</span> <span class="n">$G_t$</span> — <span class="n">折扣累积回报</span>
+<span class="lineno">22</span>        <span class="o">-</span> `<span class="n">entropy</span>`<span class="p">:</span> <span class="n">$\mathcal{H}(\pi_\theta(\cdot|s_t))$</span> — <span class="n">策略熵</span>
 <span class="lineno">23</span>
 <span class="lineno">24</span>        <span class="n">返回值</span>：
 <span class="lineno">25</span>        <span class="o">-</span> <span class="nc">Actor损失</span>
@@ -394,19 +390,19 @@ $$A(s_t, a_t) = G_t - V(s_t)$$
 <span class="lineno">8</span>    <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">9</span>    <span class="c">## 计算TD目标值</span>
 <span class="lineno">10</span>
-<span class="lineno">11</span>    $$<span class="nc">G_t</span> <span class="o">=</span> <span class="n">r_t</span> <span class="o">+</span> \<span class="n">gamma</span> <span class="nf">V</span><span class="p">(</span><span class="n">s_</span><span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="m">1</span><span class="p">}</span><span class="p">)</span> \<span class="n">times</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> \<span class="n">text</span><span class="p">{</span><span class="n">done</span><span class="p">}</span><span class="p">)</span>$$
+<span class="lineno">11</span>    <span class="n">$$G_t = r_t + \gamma V(s_{t+1}) \times (1 - \text{done})$$</span>
 <span class="lineno">12</span>
-<span class="lineno">13</span>    <span class="n">如果episode结束</span>（<span class="n">done</span><span class="o">=</span><span class="nb">True</span>），<span class="n">则</span> $<span class="nc">G_t</span> <span class="o">=</span> <span class="n">r_t</span>$。
+<span class="lineno">13</span>    <span class="n">如果episode结束</span>（<span class="n">done</span><span class="o">=</span><span class="nb">True</span>），<span class="n">则</span> <span class="n">$G_t = r_t$</span>。
 <span class="lineno">14</span>
 <span class="lineno">15</span>    <span class="n">参数</span>：
-<span class="lineno">16</span>    <span class="o">-</span> `<span class="n">rewards</span>`<span class="p">:</span> $<span class="n">r_t</span>$ — <span class="n">每步奖励</span>
-<span class="lineno">17</span>    <span class="o">-</span> `<span class="n">values</span>`<span class="p">:</span> $<span class="nf">V</span><span class="p">(</span><span class="n">s_t</span><span class="p">)</span>$ — <span class="n">当前状态价值</span>
-<span class="lineno">18</span>    <span class="o">-</span> `<span class="n">next_values</span>`<span class="p">:</span> $<span class="nf">V</span><span class="p">(</span><span class="n">s_</span><span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="m">1</span><span class="p">}</span><span class="p">)</span>$ — <span class="n">下一状态价值</span>
+<span class="lineno">16</span>    <span class="o">-</span> `<span class="n">rewards</span>`<span class="p">:</span> <span class="n">$r_t$</span> — <span class="n">每步奖励</span>
+<span class="lineno">17</span>    <span class="o">-</span> `<span class="n">values</span>`<span class="p">:</span> <span class="n">$V(s_t)$</span> — <span class="n">当前状态价值</span>
+<span class="lineno">18</span>    <span class="o">-</span> `<span class="n">next_values</span>`<span class="p">:</span> <span class="n">$V(s_{t+1})$</span> — <span class="n">下一状态价值</span>
 <span class="lineno">19</span>    <span class="o">-</span> `<span class="n">dones</span>`<span class="p">:</span> <span class="n">是否episode结束</span>
-<span class="lineno">20</span>    <span class="o">-</span> `<span class="n">gamma</span>`<span class="p">:</span> $\<span class="n">gamma</span>$ — <span class="n">折扣因子</span>
+<span class="lineno">20</span>    <span class="o">-</span> `<span class="n">gamma</span>`<span class="p">:</span> <span class="n">$\gamma$</span> — <span class="n">折扣因子</span>
 <span class="lineno">21</span>
 <span class="lineno">22</span>    <span class="n">返回值</span>：
-<span class="lineno">23</span>    <span class="o">-</span> <span class="nc">TD目标值</span> $<span class="nc">G_t</span>$
+<span class="lineno">23</span>    <span class="o">-</span> <span class="nc">TD目标值</span> <span class="n">$G_t$</span>
 <span class="lineno">24</span>    <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">25</span>    <span class="n">td_targets</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">next_values</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">dones</span><span class="p">)</span>
 <span class="lineno">26</span>    <span class="k">return</span> <span class="n">td_targets</span>
@@ -430,17 +426,17 @@ $$A(s_t, a_t) = G_t - V(s_t)$$
 <span class="lineno">8</span>    <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">9</span>    <span class="c">## 计算优势函数（单步TD）</span>
 <span class="lineno">10</span>
-<span class="lineno">11</span>    $$<span class="nf">A</span><span class="p">(</span><span class="n">s_t</span><span class="p">,</span> <span class="n">a_t</span><span class="p">)</span> <span class="o">=</span> <span class="n">r_t</span> <span class="o">+</span> \<span class="n">gamma</span> <span class="nf">V</span><span class="p">(</span><span class="n">s_</span><span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="m">1</span><span class="p">}</span><span class="p">)</span> <span class="o">-</span> <span class="nf">V</span><span class="p">(</span><span class="n">s_t</span><span class="p">)</span>$$
+<span class="lineno">11</span>    <span class="n">$$A(s_t, a_t) = r_t + \gamma V(s_{t+1}) - V(s_t)$$</span>
 <span class="lineno">12</span>
 <span class="lineno">13</span>    <span class="n">参数</span>：
-<span class="lineno">14</span>    <span class="o">-</span> `<span class="n">rewards</span>`<span class="p">:</span> $<span class="n">r_t</span>$ — <span class="n">每步奖励</span>
-<span class="lineno">15</span>    <span class="o">-</span> `<span class="n">values</span>`<span class="p">:</span> $<span class="nf">V</span><span class="p">(</span><span class="n">s_t</span><span class="p">)</span>$ — <span class="n">当前状态价值</span>
-<span class="lineno">16</span>    <span class="o">-</span> `<span class="n">next_values</span>`<span class="p">:</span> $<span class="nf">V</span><span class="p">(</span><span class="n">s_</span><span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="m">1</span><span class="p">}</span><span class="p">)</span>$ — <span class="n">下一状态价值</span>
+<span class="lineno">14</span>    <span class="o">-</span> `<span class="n">rewards</span>`<span class="p">:</span> <span class="n">$r_t$</span> — <span class="n">每步奖励</span>
+<span class="lineno">15</span>    <span class="o">-</span> `<span class="n">values</span>`<span class="p">:</span> <span class="n">$V(s_t)$</span> — <span class="n">当前状态价值</span>
+<span class="lineno">16</span>    <span class="o">-</span> `<span class="n">next_values</span>`<span class="p">:</span> <span class="n">$V(s_{t+1})$</span> — <span class="n">下一状态价值</span>
 <span class="lineno">17</span>    <span class="o">-</span> `<span class="n">dones</span>`<span class="p">:</span> <span class="n">是否episode结束</span>
-<span class="lineno">18</span>    <span class="o">-</span> `<span class="n">gamma</span>`<span class="p">:</span> $\<span class="n">gamma</span>$ — <span class="n">折扣因子</span>
+<span class="lineno">18</span>    <span class="o">-</span> `<span class="n">gamma</span>`<span class="p">:</span> <span class="n">$\gamma$</span> — <span class="n">折扣因子</span>
 <span class="lineno">19</span>
 <span class="lineno">20</span>    <span class="n">返回值</span>：
-<span class="lineno">21</span>    <span class="o">-</span> <span class="n">优势函数估计</span> $<span class="nf">A</span><span class="p">(</span><span class="n">s_t</span><span class="p">,</span> <span class="n">a_t</span><span class="p">)</span>$
+<span class="lineno">21</span>    <span class="o">-</span> <span class="n">优势函数估计</span> <span class="n">$A(s_t, a_t)$</span>
 <span class="lineno">22</span>    <span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span><span class="o">&</span><span class="n">quot</span><span class="p">;</span>
 <span class="lineno">23</span>    <span class="n">td_targets</span> <span class="o">=</span> <span class="nf">compute_td_targets</span><span class="p">(</span><span class="n">rewards</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">next_values</span><span class="p">,</span> <span class="n">dones</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
 <span class="lineno">24</span>    <span class="n">advantages</span> <span class="o">=</span> <span class="n">td_targets</span> <span class="o">-</span> <span class="n">values</span>
@@ -450,7 +446,7 @@ $$A(s_t, a_t) = G_t - V(s_t)$$
 </div>
 
     <div class="footer">
-      <a href="/">← 返回强化学习算法列表</a>
+      <a href="https://github.com/pILLOW-1/annotated-easy-rl">← 返回强化学习算法列表</a>
       <p style="color:#666; font-size:1.2rem; margin-top:10px;">
         基于<a href="https://github.com/datawhalechina/easy-rl/">蘑菇书EasyRL</a> |
         风格参考<a href="https://github.com/labmlai/annotated_deep_learning_paper_implementations">labml.ai</a>
@@ -466,7 +462,8 @@ $$A(s_t, a_t) = G_t - V(s_t)$$
           {left: '$$', right: '$$', display: true},
           {left: '$', right: '$', display: false}
         ],
-        throwOnError: false
+        throwOnError: false,
+        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
       });
     });
   </script>
