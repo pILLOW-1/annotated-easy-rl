@@ -261,20 +261,20 @@ $$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
 <span class="lineno">10</span>            <span class="n">nn</span><span class="p">.</span><span class="nf">ReLU</span><span class="p">(</span><span class="p">)</span><span class="p">,</span>
 <span class="lineno">11</span>        <span class="p">)</span>
 <span class="lineno">12</span>
-<span class="lineno">13</span>        <span class="c"># Actor头：输出动作分布 $\pi_\theta(\cdot|s)$</span>
+<span class="lineno">13</span>        <span class="c"># Actor头：输出动作分布 \pi_\theta(\cdot|s)</span>
 <span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">actor</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span>
 <span class="lineno">15</span>
-<span class="lineno">16</span>        <span class="c"># Critic头：输出状态价值 $V_\phi(s)$</span>
+<span class="lineno">16</span>        <span class="c"># Critic头：输出状态价值 V_\phi(s)</span>
 <span class="lineno">17</span>        <span class="nb">self</span><span class="p">.</span><span class="n">critic</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
 <span class="lineno">18</span>
 <span class="lineno">19</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span><span class="p">:</span>
 <span class="lineno">20</span>        <span class="n">features</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 <span class="lineno">21</span>
-<span class="lineno">22</span>        <span class="c"># Actor: $\pi_\theta(a|s) = \text{softmax}(f_\theta(s))$</span>
+<span class="lineno">22</span>        <span class="c"># Actor: \pi_\theta(a|s) = \text{softmax}(f_\theta(s))</span>
 <span class="lineno">23</span>        <span class="n">action_logits</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">actor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
 <span class="lineno">24</span>        <span class="n">action_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="n">action_logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">25</span>
-<span class="lineno">26</span>        <span class="c"># Critic: $V_\phi(s)$</span>
+<span class="lineno">26</span>        <span class="c"># Critic: V_\phi(s)</span>
 <span class="lineno">27</span>        <span class="n">state_value</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nf">critic</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">28</span>
 <span class="lineno">29</span>        <span class="k">return</span> <span class="n">action_probs</span><span class="p">,</span> <span class="n">state_value</span>
@@ -291,7 +291,7 @@ $$\phi \leftarrow \phi - \beta \nabla_\phi (G_t - V_\phi(s_t))^2$$
 <span class="lineno">40</span>        <span class="c"># 选择给定动作的对数概率</span>
 <span class="lineno">41</span>        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">action_log_probs</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">,</span> <span class="n">action</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">42</span>
-<span class="lineno">43</span>        <span class="c"># 计算策略熵 $\mathcal{H}(\pi) = -\sum_a \pi(a) \log \pi(a)$</span>
+<span class="lineno">43</span>        <span class="c"># 计算策略熵 \mathcal{H}(\pi) = -\sum_a \pi(a) \log \pi(a)</span>
 <span class="lineno">44</span>        <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">action_probs</span> <span class="o">*</span> <span class="n">action_log_probs</span><span class="p">)</span><span class="p">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">45</span>
 <span class="lineno">46</span>        <span class="k">return</span> <span class="n">log_prob</span><span class="p">,</span> <span class="n">state_value</span><span class="p">,</span> <span class="n">entropy</span>
@@ -340,21 +340,21 @@ $$A(s_t, a_t) = G_t - V(s_t)$$
 <span class="lineno">12</span>        <span class="n">returns</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">13</span>        <span class="n">entropy</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">14</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="lineno">15</span>        <span class="c"># 优势函数：$A(s_t, a_t) = G_t - V(s_t)$</span>
+<span class="lineno">15</span>        <span class="c"># 优势函数：A(s_t, a_t) = G_t - V(s_t)</span>
 <span class="lineno">16</span>        <span class="c"># detach防止梯度通过价值函数流向Actor</span>
 <span class="lineno">17</span>        <span class="n">advantages</span> <span class="o">=</span> <span class="n">returns</span> <span class="o">-</span> <span class="n">state_values</span><span class="p">.</span><span class="nf">detach</span><span class="p">(</span><span class="p">)</span>
 <span class="lineno">18</span>
-<span class="lineno">19</span>        <span class="c"># Actor损失：$-\mathbb{E}[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]$</span>
+<span class="lineno">19</span>        <span class="c"># Actor损失：-\mathbb{E}[A(s_t, a_t) \log \pi_\theta(a_t|s_t)]</span>
 <span class="lineno">20</span>        <span class="c"># 负号因为优化器执行最小化</span>
 <span class="lineno">21</span>        <span class="n">actor_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">log_probs</span> <span class="o">*</span> <span class="n">advantages</span><span class="p">)</span>
 <span class="lineno">22</span>
-<span class="lineno">23</span>        <span class="c"># Critic损失：$\mathbb{E}[(G_t - V(s_t))^2]$</span>
+<span class="lineno">23</span>        <span class="c"># Critic损失：\mathbb{E}[(G_t - V(s_t))^2]</span>
 <span class="lineno">24</span>        <span class="n">critic_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">(</span><span class="n">returns</span> <span class="o">-</span> <span class="n">state_values</span><span class="p">)</span> <span class="o">**</span> <span class="m">2</span><span class="p">)</span>
 <span class="lineno">25</span>
 <span class="lineno">26</span>        <span class="c"># 熵损失：鼓励探索</span>
 <span class="lineno">27</span>        <span class="n">entropy_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">entropy</span><span class="p">)</span>
 <span class="lineno">28</span>
-<span class="lineno">29</span>        <span class="c"># 总损失：$L = L_{actor} + c_1 L_{critic} - c_2 \mathcal{H}$</span>
+<span class="lineno">29</span>        <span class="c"># 总损失：L = L_{actor} + c_1 L_{critic} - c_2 \mathcal{H}</span>
 <span class="lineno">30</span>        <span class="n">total_loss</span> <span class="o">=</span> <span class="n">actor_loss</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_loss_coef</span> <span class="o">*</span> <span class="n">critic_loss</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">entropy_coef</span> <span class="o">*</span> <span class="n">entropy_loss</span>
 <span class="lineno">31</span>
 <span class="lineno">32</span>        <span class="k">return</span> <span class="n">actor_loss</span><span class="p">,</span> <span class="n">critic_loss</span><span class="p">,</span> <span class="n">entropy_loss</span><span class="p">,</span> <span class="n">total_loss</span>

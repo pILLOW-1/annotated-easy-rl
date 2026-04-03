@@ -270,21 +270,21 @@ J(\pi_\theta) - J(\pi_{\theta_{old}})
 <span class="lineno">7</span>        <span class="n">advantage</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">8</span>        <span class="n">clip</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="lineno">9</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">10</span>        <span class="c"># 策略比率 $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)} = \exp(\log \pi_\theta - \log \pi_{\theta_{old}})$</span>
-<span class="lineno">11</span>        <span class="c"># 注意：这里的 ratio 不同于奖励 $r_t$</span>
+<span class="lineno">10</span>        <span class="c"># 策略比率 r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)} = \exp(\log \pi_\theta - \log \pi_{\theta_{old}})</span>
+<span class="lineno">11</span>        <span class="c"># 注意：这里的 ratio 不同于奖励 r_t</span>
 <span class="lineno">12</span>        <span class="n">ratio</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="n">log_pi</span> <span class="o">-</span> <span class="n">sampled_log_pi</span><span class="p">)</span>
 <span class="lineno">13</span>
 <span class="lineno">14</span>        <span class="c"># ### 裁剪策略比率</span>
 <span class="lineno">15</span>        <span class="c">#</span>
-<span class="lineno">16</span>        <span class="c"># $$\mathcal{L}^{CLIP}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\varepsilon, 1+\varepsilon)\hat{A}_t\right)\right]$$</span>
+<span class="lineno">16</span>        <span class="c"># \mathcal{L}^{CLIP}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\varepsilon, 1+\varepsilon)\hat{A}_t\right)\right]</span>
 <span class="lineno">17</span>        <span class="c">#</span>
-<span class="lineno">18</span>        <span class="c"># 策略比率被裁剪到 $[1-\varepsilon, 1+\varepsilon]$ 范围内。</span>
+<span class="lineno">18</span>        <span class="c"># 策略比率被裁剪到 [1-\varepsilon, 1+\varepsilon] 范围内。</span>
 <span class="lineno">19</span>        <span class="c"># 取最小值确保：</span>
-<span class="lineno">20</span>        <span class="c"># - 当 $\hat{A}_t &gt; 0$ 时，$r_t(\theta)$ 不会超过 $1+\varepsilon$</span>
-<span class="lineno">21</span>        <span class="c"># - 当 $\hat{A}_t &lt; 0$ 时，$r_t(\theta)$ 不会低于 $1-\varepsilon$</span>
+<span class="lineno">20</span>        <span class="c"># - 当 \hat{A}_t &gt; 0 时，r_t(\theta) 不会超过 1+\varepsilon</span>
+<span class="lineno">21</span>        <span class="c"># - 当 \hat{A}_t &lt; 0 时，r_t(\theta) 不会低于 1-\varepsilon</span>
 <span class="lineno">22</span>        <span class="c">#</span>
 <span class="lineno">23</span>        <span class="c"># 这样限制了新旧策略之间的KL散度，防止策略更新过大导致性能崩溃。</span>
-<span class="lineno">24</span>        <span class="c"># 使用归一化的优势函数 $\bar{A}_t = \frac{\hat{A}_t - \mu(\hat{A}_t)}{\sigma(\hat{A}_t)}$</span>
+<span class="lineno">24</span>        <span class="c"># 使用归一化的优势函数 \bar{A}_t = \frac{\hat{A}_t - \mu(\hat{A}_t)}{\sigma(\hat{A}_t)}</span>
 <span class="lineno">25</span>        <span class="c"># 虽然引入了偏差，但大幅降低了方差。</span>
 <span class="lineno">26</span>        <span class="n">clipped_ratio</span> <span class="o">=</span> <span class="n">ratio</span><span class="p">.</span><span class="nf">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="m">1.0</span> <span class="o">-</span> <span class="n">clip</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="m">1.0</span> <span class="o">+</span> <span class="n">clip</span><span class="p">)</span>
 <span class="lineno">27</span>        <span class="n">policy_reward</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nb">min</span><span class="p">(</span><span class="n">ratio</span> <span class="o">*</span> <span class="n">advantage</span><span class="p">,</span> <span class="n">clipped_ratio</span> <span class="o">*</span> <span class="n">advantage</span><span class="p">)</span>
@@ -325,7 +325,7 @@ $$\mathcal{L}^{VF}(\theta) = \frac{1}{2} \mathbb{E}_t\left[\max\left((V^{\pi_\th
 <span class="lineno">7</span>        <span class="n">sampled_return</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">8</span>        <span class="n">clip</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="lineno">9</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">10</span>        <span class="c"># 裁剪的价值函数：$V_{CLIP} = V_{old} + \text{clip}(V - V_{old}, -\varepsilon, \varepsilon)$</span>
+<span class="lineno">10</span>        <span class="c"># 裁剪的价值函数：V_{CLIP} = V_{old} + \text{clip}(V - V_{old}, -\varepsilon, \varepsilon)</span>
 <span class="lineno">11</span>        <span class="n">clipped_value</span> <span class="o">=</span> <span class="n">sampled_value</span> <span class="o">+</span> <span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">sampled_value</span><span class="p">)</span><span class="p">.</span><span class="nf">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=-</span><span class="n">clip</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">clip</span><span class="p">)</span>
 <span class="lineno">12</span>
 <span class="lineno">13</span>        <span class="c"># 取两个损失的最大值：未裁剪的和裁剪的</span>
@@ -368,7 +368,7 @@ $$Q(s, a) = V(s) + \left(A(s, a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s, a')\rig
 <span class="lineno">13</span>        <span class="c"># Actor头：输出每个动作的对数概率（用于分类动作空间）</span>
 <span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">actor</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span>
 <span class="lineno">15</span>
-<span class="lineno">16</span>        <span class="c"># Critic头：输出状态价值 $V(s)$</span>
+<span class="lineno">16</span>        <span class="c"># Critic头：输出状态价值 V(s)</span>
 <span class="lineno">17</span>        <span class="nb">self</span><span class="p">.</span><span class="n">critic</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
 <span class="lineno">18</span>
 <span class="lineno">19</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span><span class="p">:</span>

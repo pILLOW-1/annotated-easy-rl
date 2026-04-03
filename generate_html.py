@@ -155,20 +155,13 @@ REPO_URL = "https://github.com/pILLOW-1/annotated-easy-rl"
 
 
 def highlight_python(code: str) -> str:
-    # Protect math delimiters in code before escaping
-    code_math_keys = {}
-    code_math_counter = [0]
+    # Remove math delimiters from code comments (they're already in docs column)
+    # Replace $$...$$ with plain text (keep content for readability)
+    code = re.sub(r'\$\$([\s\S]*?)\$\$', r'\1', code)
+    # Replace $...$ with plain text
+    code = re.sub(r'\$([^\$\n]+?)\$', r'\1', code)
 
-    def protect_code_math(m):
-        key = f'__CODEMATH{code_math_counter[0]}__'
-        code_math_keys[key] = m.group(0)
-        code_math_counter[0] += 1
-        return key
-
-    code = re.sub(r'\$\$([\s\S]*?)\$\$', protect_code_math, code)
-    code = re.sub(r'\$([^\$\n]+?)\$', protect_code_math, code)
-
-    code = html_mod.escape(code)
+    code = html_mod.escape(code, quote=False)
     keywords = {'import', 'from', 'class', 'def', 'return', 'if', 'else', 'elif',
                 'for', 'while', 'in', 'not', 'and', 'or', 'is', 'with', 'as',
                 'try', 'except', 'finally', 'raise', 'pass', 'break', 'continue',
@@ -256,9 +249,6 @@ def highlight_python(code: str) -> str:
             result.append(f'<span class="{cls}">{tval}</span>')
     html_out = ''.join(result)
 
-    # Restore math delimiters (already escaped, so restore as-is)
-    for key, value in code_math_keys.items():
-        html_out = html_out.replace(key, html_mod.escape(value))
     return html_out
 
 

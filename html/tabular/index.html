@@ -308,10 +308,10 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') \time
 <span class="lineno">10</span>    <span class="p">)</span><span class="p">:</span>
 <span class="lineno">11</span>        <span class="nb">self</span><span class="p">.</span><span class="n">state_dim</span> <span class="o">=</span> <span class="n">state_dim</span>
 <span class="lineno">12</span>        <span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span> <span class="o">=</span> <span class="n">action_dim</span>
-<span class="lineno">13</span>        <span class="nb">self</span><span class="p">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">learning_rate</span>  <span class="c"># $\alpha$</span>
-<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>  <span class="c"># $\gamma$</span>
-<span class="lineno">15</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>  <span class="c"># $\varepsilon$</span>
-<span class="lineno">16</span>        <span class="c"># Q表：$Q(s, a)$</span>
+<span class="lineno">13</span>        <span class="nb">self</span><span class="p">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">learning_rate</span>  <span class="c"># \alpha</span>
+<span class="lineno">14</span>        <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>  <span class="c"># \gamma</span>
+<span class="lineno">15</span>        <span class="nb">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>  <span class="c"># \varepsilon</span>
+<span class="lineno">16</span>        <span class="c"># Q表：Q(s, a)</span>
 <span class="lineno">17</span>        <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
 <span class="lineno">18</span>
 <span class="lineno">19</span>    <span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="nb">int</span><span class="p">:</span>
@@ -325,16 +325,16 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma \max_{a'} Q(s', a') \time
 <span class="lineno">27</span>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span>
 <span class="lineno">28</span>        <span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">done</span><span class="p">:</span> <span class="n">bool</span>
 <span class="lineno">29</span>    <span class="p">)</span><span class="p">:</span>
-<span class="lineno">30</span>        <span class="c"># TD目标：$r + \gamma \max_{a&#x27;} Q(s&#x27;, a&#x27;) \times (1 - \text{done})$</span>
+<span class="lineno">30</span>        <span class="c"># TD目标：r + \gamma \max_{a'} Q(s', a') \times (1 - \text{done})</span>
 <span class="lineno">31</span>        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
 <span class="lineno">32</span>            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span>
 <span class="lineno">33</span>        <span class="k">else</span><span class="p">:</span>
 <span class="lineno">34</span>            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nb">max</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span><span class="p">)</span>
 <span class="lineno">35</span>
-<span class="lineno">36</span>        <span class="c"># TD误差：$\delta = \text{TD目标} - Q(s, a)$</span>
+<span class="lineno">36</span>        <span class="c"># TD误差：\delta = \text{TD目标} - Q(s, a)</span>
 <span class="lineno">37</span>        <span class="n">td_error</span> <span class="o">=</span> <span class="n">td_target</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span>
 <span class="lineno">38</span>
-<span class="lineno">39</span>        <span class="c"># 更新Q值：$Q(s, a) \leftarrow Q(s, a) + \alpha \delta$</span>
+<span class="lineno">39</span>        <span class="c"># 更新Q值：Q(s, a) \leftarrow Q(s, a) + \alpha \delta</span>
 <span class="lineno">40</span>        <span class="nb">self</span><span class="p">.</span><span class="n">q_table</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">self</span><span class="p">.</span><span class="n">lr</span> <span class="o">*</span> <span class="n">td_error</span>
 <span class="lineno">41</span>
 <span class="lineno">42</span></pre>
@@ -389,7 +389,7 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[r + \gamma Q(s', a') \times (1 - \te
 <span class="lineno">30</span>        <span class="n">next_action</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <span class="lineno">31</span>        <span class="n">done</span><span class="p">:</span> <span class="n">bool</span><span class="p">,</span>
 <span class="lineno">32</span>    <span class="p">)</span><span class="p">:</span>
-<span class="lineno">33</span>        <span class="c"># TD目标：$r + \gamma Q(s&#x27;, a&#x27;) \times (1 - \text{done})$</span>
+<span class="lineno">33</span>        <span class="c"># TD目标：r + \gamma Q(s', a') \times (1 - \text{done})</span>
 <span class="lineno">34</span>        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
 <span class="lineno">35</span>            <span class="n">td_target</span> <span class="o">=</span> <span class="n">reward</span>
 <span class="lineno">36</span>        <span class="k">else</span><span class="p">:</span>
@@ -454,10 +454,10 @@ $$\pi^*(s) = \arg\max_a \sum_{s', r} p(s', r|s, a) \left[r + \gamma V^*(s')\righ
 <span class="lineno">21</span>            <span class="n">action_values</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span>
 <span class="lineno">22</span>            <span class="k">for</span> <span class="n">a</span> <span class="k">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">action_dim</span><span class="p">)</span><span class="p">:</span>
 <span class="lineno">23</span>                <span class="k">for</span> <span class="n">prob</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span> <span class="k">in</span> <span class="nb">self</span><span class="p">.</span><span class="nc">P</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="p">:</span>
-<span class="lineno">24</span>                    <span class="c"># 期望价值：$\sum_{s&#x27;, r} p(s&#x27;, r|s, a) [r + \gamma V(s&#x27;)]$</span>
+<span class="lineno">24</span>                    <span class="c"># 期望价值：\sum_{s', r} p(s', r|s, a) [r + \gamma V(s')]</span>
 <span class="lineno">25</span>                    <span class="n">action_values</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">+=</span> <span class="n">prob</span> <span class="o">*</span> <span class="p">(</span><span class="n">reward</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">done</span><span class="p">)</span><span class="p">)</span>
 <span class="lineno">26</span>
-<span class="lineno">27</span>            <span class="c"># 选择最大价值：$V_{k+1}(s) = \max_a Q(s, a)$</span>
+<span class="lineno">27</span>            <span class="c"># 选择最大价值：V_{k+1}(s) = \max_a Q(s, a)</span>
 <span class="lineno">28</span>            <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nb">max</span><span class="p">(</span><span class="n">action_values</span><span class="p">)</span>
 <span class="lineno">29</span>            <span class="n">delta</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="nb">self</span><span class="p">.</span><span class="n">value_table</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="p">)</span><span class="p">)</span>
 <span class="lineno">30</span>

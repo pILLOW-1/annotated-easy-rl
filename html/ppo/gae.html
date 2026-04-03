@@ -255,7 +255,7 @@ $$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$$
 <span class="lineno">13</span>        <span class="n">advantages</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="p">(</span><span class="nb">self</span><span class="p">.</span><span class="n">n_workers</span><span class="p">,</span> <span class="nb">self</span><span class="p">.</span><span class="n">worker_steps</span><span class="p">)</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
 <span class="lineno">14</span>        <span class="n">last_advantage</span> <span class="o">=</span> <span class="m">0</span>
 <span class="lineno">15</span>
-<span class="lineno">16</span>        <span class="c"># $V(s_{T+1})$ — 最后一步的下一个状态价值</span>
+<span class="lineno">16</span>        <span class="c"># V(s_{T+1}) — 最后一步的下一个状态价值</span>
 <span class="lineno">17</span>        <span class="n">last_value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="o">-</span><span class="m">1</span><span class="p">]</span>
 <span class="lineno">18</span>
 <span class="lineno">19</span>        <span class="c"># 从后往前递归计算</span>
@@ -265,10 +265,10 @@ $$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$$
 <span class="lineno">23</span>            <span class="n">last_value</span> <span class="o">=</span> <span class="n">last_value</span> <span class="o">*</span> <span class="n">mask</span>
 <span class="lineno">24</span>            <span class="n">last_advantage</span> <span class="o">=</span> <span class="n">last_advantage</span> <span class="o">*</span> <span class="n">mask</span>
 <span class="lineno">25</span>
-<span class="lineno">26</span>            <span class="c"># TD残差：$\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$</span>
+<span class="lineno">26</span>            <span class="c"># TD残差：\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)</span>
 <span class="lineno">27</span>            <span class="n">delta</span> <span class="o">=</span> <span class="n">rewards</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">last_value</span> <span class="o">-</span> <span class="n">values</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span>
 <span class="lineno">28</span>
-<span class="lineno">29</span>            <span class="c"># GAE递归：$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$</span>
+<span class="lineno">29</span>            <span class="c"># GAE递归：\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}</span>
 <span class="lineno">30</span>            <span class="n">last_advantage</span> <span class="o">=</span> <span class="n">delta</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="nb">self</span><span class="p">.</span><span class="n">lambda_</span> <span class="o">*</span> <span class="n">last_advantage</span>
 <span class="lineno">31</span>
 <span class="lineno">32</span>            <span class="n">advantages</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">last_advantage</span>
@@ -302,7 +302,7 @@ $$G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots = r_t + \gamma G_{t+1}$
 <span class="lineno">5</span>    <span class="k">for</span> <span class="n">t</span> <span class="k">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">rewards</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="p">)</span><span class="p">)</span><span class="p">:</span>
 <span class="lineno">6</span>        <span class="n">mask</span> <span class="o">=</span> <span class="m">1.0</span> <span class="o">-</span> <span class="n">dones</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span>
 <span class="lineno">7</span>        <span class="n">last_return</span> <span class="o">=</span> <span class="n">last_return</span> <span class="o">*</span> <span class="n">mask</span>
-<span class="lineno">8</span>        <span class="c"># $G_t = r_t + \gamma G_{t+1}$</span>
+<span class="lineno">8</span>        <span class="c"># G_t = r_t + \gamma G_{t+1}</span>
 <span class="lineno">9</span>        <span class="n">last_return</span> <span class="o">=</span> <span class="n">rewards</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">+</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">last_return</span>
 <span class="lineno">10</span>        <span class="n">returns</span><span class="p">[</span><span class="p">:</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">last_return</span>
 <span class="lineno">11</span>

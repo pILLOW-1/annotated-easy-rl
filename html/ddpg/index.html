@@ -306,7 +306,7 @@ $$Q_\phi(s, a) \approx Q^\mu(s, a)$$
 <span class="lineno">12</span>        <span class="p">)</span>
 <span class="lineno">13</span>
 <span class="lineno">14</span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">15</span>        <span class="c"># 拼接状态和动作：$[s, a]$</span>
+<span class="lineno">15</span>        <span class="c"># 拼接状态和动作：[s, a]</span>
 <span class="lineno">16</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">cat</span><span class="p">(</span><span class="p">[</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">17</span>        <span class="k">return</span> <span class="nb">self</span><span class="p">.</span><span class="nf">network</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="p">.</span><span class="nf">squeeze</span><span class="p">(</span><span class="o">-</span><span class="m">1</span><span class="p">)</span>
 <span class="lineno">18</span>
@@ -358,18 +358,18 @@ $$L(\theta) = -\mathbb{E}_{s \sim D}\left[Q_\phi(s, \mu_\theta(s))\right]$$
 <span class="lineno">11</span>        <span class="n">rewards</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">12</span>        <span class="n">dones</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">,</span>
 <span class="lineno">13</span>    <span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
-<span class="lineno">14</span>        <span class="c"># 目标值：$y = r + \gamma Q_{\phi&#x27;}(s&#x27;, \mu_{\theta&#x27;}(s&#x27;)) \times (1 - \text{done})$</span>
+<span class="lineno">14</span>        <span class="c"># 目标值：y = r + \gamma Q_{\phi'}(s', \mu_{\theta'}(s')) \times (1 - \text{done})</span>
 <span class="lineno">15</span>        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
 <span class="lineno">16</span>            <span class="n">target_q</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="nb">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">next_q_values</span> <span class="o">*</span> <span class="p">(</span><span class="m">1</span> <span class="o">-</span> <span class="n">dones</span><span class="p">)</span>
 <span class="lineno">17</span>
-<span class="lineno">18</span>        <span class="c"># MSE损失：$L(\phi) = \mathbb{E}[(Q_\phi(s, a) - y)^2]$</span>
+<span class="lineno">18</span>        <span class="c"># MSE损失：L(\phi) = \mathbb{E}[(Q_\phi(s, a) - y)^2]</span>
 <span class="lineno">19</span>        <span class="n">critic_loss</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nf">MSELoss</span><span class="p">(</span><span class="p">)</span><span class="p">(</span><span class="n">q_values</span><span class="p">,</span> <span class="n">target_q</span><span class="p">)</span>
 <span class="lineno">20</span>
 <span class="lineno">21</span>        <span class="k">return</span> <span class="n">critic_loss</span>
 <span class="lineno">22</span>
 <span class="lineno">23</span>    <span class="k">def</span> <span class="nf">compute_actor_loss</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="n">q_values</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">)</span> <span class="o">-&</span><span class="n">gt</span><span class="p">;</span> <span class="n">torch</span><span class="p">.</span><span class="nc">Tensor</span><span class="p">:</span>
 <span class="lineno">24</span>        <span class="c"># 最大化Q值等价于最小化负Q值</span>
-<span class="lineno">25</span>        <span class="c"># $L(\theta) = -\mathbb{E}[Q_\phi(s, \mu_\theta(s))]$</span>
+<span class="lineno">25</span>        <span class="c"># L(\theta) = -\mathbb{E}[Q_\phi(s, \mu_\theta(s))]</span>
 <span class="lineno">26</span>        <span class="n">actor_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">q_values</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="p">)</span>
 <span class="lineno">27</span>        <span class="k">return</span> <span class="n">actor_loss</span>
 <span class="lineno">28</span>
