@@ -272,6 +272,17 @@ _math_counter = 0
 def _render_latex(latex: str, display: bool = False) -> str:
     """Convert LaTeX to MathML HTML."""
     try:
+        # Fix common LaTeX patterns that latex2mathml doesn't handle well
+        # \arg\max -> \operatorname*{arg\,max}
+        latex = re.sub(r'\\arg\s*\\max', r'\\operatorname*{arg\\,max}', latex)
+        # Remove & alignment chars (MathML doesn't use them the same way)
+        latex = latex.replace('&', '')
+        # \textcolor{color}{content} -> just content (MathML doesn't support \textcolor natively)
+        latex = re.sub(r'\\textcolor\{[^}]*\}\{([^}]*)\}', r'\1', latex)
+        # \left. and \right. (null delimiters) -> remove
+        latex = re.sub(r'\\left\.', '', latex)
+        latex = re.sub(r'\\right\.', '', latex)
+
         mathml = latex2mathml.converter.convert(latex)
         if display:
             return f'<div class="math-display">{mathml}</div>'
